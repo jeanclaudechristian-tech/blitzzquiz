@@ -6,7 +6,6 @@
 **/.env
 **/.env.local
 **/.env.*.local
-**/.env.example
 **/auth.json
 
 # --- 移动端 Expo 特有 ---
