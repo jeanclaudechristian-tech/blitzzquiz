@@ -1,0 +1,40 @@
+# --- 依赖包（绝对禁止上传） ---
+**/node_modules/
+**/vendor/
+
+# --- 环境与密钥（隐私保护） ---
+**/.env
+**/.env.local
+**/.env.*.local
+**/.env.example
+**/auth.json
+
+# --- 移动端 Expo 特有 ---
+mobile/.expo/
+mobile/*.jks
+mobile/*.p8
+mobile/*.p12
+mobile/*.key
+mobile/*.mobileprovision
+
+# --- 前端 Vite 编译产物 ---
+**/dist/
+**/.eslintcache
+
+# --- 后端 Laravel 特有 ---
+backend/storage/*.key
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*.log
+backend/bootstrap/cache/*
+
+# --- 系统与 IDE 缓存 ---
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
