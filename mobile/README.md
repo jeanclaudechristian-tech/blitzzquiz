@@ -1,50 +1,65 @@
-# Welcome to your Expo app 👋
+# 📱 BlizzQuiz - Module d'Aperçu Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+[![Hôte](https://img.shields.io/badge/Host-Emperor-orange?logo=ubuntu&logoColor=white)](http://emperor.tail28a528.ts.net)
+[![Network](https://img.shields.io/badge/Network-Tailscale-9993FF?logo=tailscale&logoColor=white)](https://tailscale.com/)
+[![Framework](https://img.shields.io/badge/Framework-Expo_SDK_51-black?logo=expo&logoColor=white)](https://expo.dev/)
 
-## Get started
+## 🚀 Présentation du Déploiement
+Le module BlizzQuiz Mobile est un environnement d'aperçu en temps réel basé sur **Expo**. Il permet de valider les fonctionnalités mobiles directement sur votre appareil **Le Monde** (iPhone 17).
 
-1. Install dependencies
+* **Hôte de service :** Emperor (Ubuntu 24.04 LTS)
+* **Adresse Tailscale :** http://emperor.tail28a528.ts.net:8086
+* **Statut de gestion :** Administré via CasaOS
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## 📲 Guide d'Installation Rapide
 
-   ```bash
-   npx expo start
-   ```
+Pour tester l'application sur votre iPhone ou Android, suivez ces étapes :
 
-In the output, you'll find options to open the app in a
+### 1. Rejoindre le Réseau (Tailscale)
+Le serveur est sur un réseau privé. Sans cela, l'application ne pourra pas se connecter à **Emperor**.
+* **Télécharger :** [Tailscale pour iOS/Android](https://tailscale.com/download)
+* **Connexion :** Connectez-vous au compte autorisé.
+* **Vérification :** Assurez-vous que le statut est "Active" et que le nœud `emperor` est joignable.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 2. Installer le Runtime (Expo Go)
+Expo Go permet d'exécuter le code de développement sans compiler de fichier IPA/APK.
+* **Télécharger iOS :** [Expo Go sur l'App Store](https://apps.apple.com/app/expo-go/id982107779)
+* **Télécharger Android :** [Expo Go sur Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 3. Lancement
+1. Ouvrez **Expo Go**.
+2. Scannez le QR Code fourni par le terminal ou saisissez l'URL : `exp://emperor.tail28a528.ts.net:8086`.
+![QR.png](QR.png)
+3. 
+> ⚠️ **Note Importante :** Vous devez être membre du réseau Tailscale de **Siyuan** pour accéder au serveur. Si vous n'avez pas d'accès, une erreur de réseau apparaîtra.
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## 🛠️ Stack Technique
 
+| Composant | Technologie | Version / Détails |
+| :--- | :--- | :--- |
+| **Framework** | Expo (React Native Web) | SDK 51+ |
+| **Runtime Node** | Node.js | v20.19.0 (Bullseye) |
+| **Réseau** | Tailscale Mesh | Sécurisé de bout en bout |
+
+---
+
+## 📦 Méthodes de Déploiement (Admin)
+
+### Option A : Déploiement via Docker (Recommandé)
 ```bash
-npm run reset-project
+cd /DevMultiRuntime/BlizzQuiz/mobile/
+sudo docker compose up -d
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Option B : Déploiement Temporaire Dans Terminale Windows (Développement local)
+```bash
+npm install
+npx expo start
+```
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+*Dernière mise à jour : Janvier 2026*
