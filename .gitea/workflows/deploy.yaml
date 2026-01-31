@@ -1,0 +1,19 @@
+name: Deploy BlizzQuiz Separately
+on: [push]
+
+jobs:
+  deploy-mobile:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Mobile
+        uses: actions/checkout@v3
+
+      - name: Sync Mobile Code
+        run: |
+          mkdir -p /DevMultiRuntime/BlizzQuiz/mobile/
+          rsync -av --delete --exclude='node_modules' ./mobile/ /DevMultiRuntime/BlizzQuiz/mobile/
+
+      - name: Run Expo Container
+        run: |
+          mkdir -p /DevMultiRuntime/BlizzQuiz/mobile/
+          rsync -av --delete --exclude='node_modules' ./mobile/ /DevMultiRuntime/BlizzQuiz/mobile/
