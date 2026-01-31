@@ -1,0 +1,12 @@
+services:
+  expo-app:
+    build: .
+    container_name: blizzquiz-expo
+    restart: always
+    network_mode: host
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - EXPO_PACKAGER_HOSTNAME=100.103.175.42
+      - RCT_METRO_PORT=8086
