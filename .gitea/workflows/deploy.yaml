@@ -12,3 +12,5 @@ jobs:
         run: |
           mkdir -p /DevMultiRuntime/BlizzQuiz/mobile/
           rsync -av --delete --exclude='node_modules' --exclude='.git' ./mobile/ /DevMultiRuntime/BlizzQuiz/mobile/
+          cd /DevMultiRuntime/BlizzQuiz/mobile/
+          npm install
