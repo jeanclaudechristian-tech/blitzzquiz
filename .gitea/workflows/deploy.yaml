@@ -20,3 +20,17 @@ jobs:
           rsync -av --delete --exclude='node_modules' --exclude='.git' ./mobile/ /DevMultiRuntime/BlizzQuiz/mobile/
           cd /DevMultiRuntime/BlizzQuiz/mobile/
           npm install
+
+  deploy-frontend:
+    runs-on: self-hosted
+    needs: deploy-mobile
+    steps:
+      - name: Checkout Frontend
+        uses: actions/checkout@v4
+      - name: Sync Frontend to Emperor
+        run: |
+          mkdir -p /DevMultiRuntime/BlizzQuiz/frontend/
+          rsync -av --delete --exclude='node_modules' --exclude='.git' ./frontend/ /DevMultiRuntime/BlizzQuiz/frontend/
+          cd /DevMultiRuntime/BlizzQuiz/frontend
+          npm install --omit=dev
+          docker restart blizzquiz-web || echo "Frontend container not ready"
