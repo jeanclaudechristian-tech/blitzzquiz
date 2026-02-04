@@ -1,23 +1,41 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, View, ViewStyle } from "react-native";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  View,
+  ViewStyle,
+  ActivityIndicator // 1. 引入菊花组件
+} from "react-native";
 import { colors, sizes, fonts } from "./tokens";
 
 type DarkButtonProps = {
   label: string;
   icon?: React.ReactNode;
   style?: ViewStyle;
-  onPress?: () => void; // 1. 声明点击属性
+  onPress?: () => void;
+  isLoading?: boolean; // 2. 新增属性：是否加载中
 };
 
-export function DarkButton({ label, icon, style, onPress }: DarkButtonProps) {
+export function DarkButton({ label, icon, style, onPress, isLoading = false }: DarkButtonProps) {
   return (
       <TouchableOpacity
-          style={[styles.button, style]}
-          onPress={onPress} // 2. 绑定点击事件
+          // 3. 加载时降低透明度，增加视觉反馈
+          style={[styles.button, style, isLoading && { opacity: 0.8 }]}
+          onPress={onPress}
           activeOpacity={0.8}
+          // 4. 关键：加载中禁止点击
+          disabled={isLoading}
       >
-        {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
-        <Text style={styles.text}>{label}</Text>
+        {/* 5. 互斥渲染：加载时显示菊花，平时显示内容 */}
+        {isLoading ? (
+            <ActivityIndicator size="small" color={colors.light} />
+        ) : (
+            <>
+              {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
+              <Text style={styles.text}>{label}</Text>
+            </>
+        )}
       </TouchableOpacity>
   );
 }
@@ -30,7 +48,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    gap: 10,
+    gap: 10, // 保持你原有的间距设计
   },
   text: {
     color: colors.light,

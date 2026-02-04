@@ -20,10 +20,11 @@ const styles = StyleSheet.create({
     height: 24,
     alignItems: "center",
     justifyContent: "center",
+    top: 2
   },
   leaf: {
     position: "absolute",
-    top: 2,
-    left: 12,
+    top: -1,
+    left: 11,
   },
 });
