@@ -1,24 +1,18 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+    return (
+        <Stack
+            screenOptions={{
+                // 这行代码会干掉所有页面的顶部导航栏，包括那个返回箭头
+                headerShown: false,
+                // 建议顺便把背景色统一
+                contentStyle: { backgroundColor: '#FFFFFF' }
+            }}
+        >
+            {/* 你可以在这里为特定页面单独开启，但通常全局关闭最清爽 */}
+            <Stack.Screen name="index" />
+            <Stack.Screen name="auth/LoginScreen" />
+        </Stack>
+    );
 }

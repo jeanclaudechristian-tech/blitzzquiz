@@ -1,0 +1,18 @@
+export const assets = {
+  logoBoltSmall: require("../../assets/blizz/LogoMinBlitzz.svg"),
+  logoBoltLarge: require("../../assets/blizz/LogoBlitzzQuizLarge.svg"),
+  userIcon: require("../../assets/blizz/userIcon.svg"),
+  passwordIcon: require("../../assets/blizz/passwordIcon.svg"),
+  eyeIcon: require("../../assets/blizz/eyeIcon.svg"),
+  emailIcon: require("../../assets/blizz/envelopeIcon.svg"),
+  checkIcon: require("../../assets/blizz/checkIcon.svg"),
+  dropdownIcon: require("../../assets/blizz/dropDownIcon.svg"),
+  envelopeIcon: require("../../assets/blizz/envelopeIcon.svg"),
+  dividerLine: require("../../assets/blizz/Diverline.svg"),
+  appleIconMain: require("../../assets/blizz/appleIconMain.svg"),
+  appleIconLeaf: require("../../assets/blizz/appleIconLeaf.svg"),
+  googleIcon1: require("../../assets/blizz/googleIcon1.svg"),
+  googleIcon2: require("../../assets/blizz/googleIcon1.svg"),
+  googleIcon3: require("../../assets/blizz/googleIcon1.svg"),
+  googleIcon4: require("../../assets/blizz/googleIcon1.svg"),
+};
