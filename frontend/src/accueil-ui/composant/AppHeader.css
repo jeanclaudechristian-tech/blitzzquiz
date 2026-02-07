@@ -1,0 +1,64 @@
+.app-header {
+  background-color: white;
+  width: 100%;
+  padding: clamp(12px, 2vw, 16px) 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(20px, 4vw, 48px);
+  flex-wrap: wrap;
+}
+
+.header-logo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.header-logo-img {
+  height: clamp(32px, 4vw, 44px);
+  width: auto;
+  display: block;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.5vw, 16px);
+  flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Tablette */
+@media (max-width: 1024px) {
+  .header-content {
+    gap: 16px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .navigation {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 4px;
+  }
+}

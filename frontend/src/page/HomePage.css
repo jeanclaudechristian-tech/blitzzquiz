@@ -1,0 +1,15 @@
+.home-page {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f6feff;
+}
+
+/* Défilement fluide : laisser de la marge sous le header fixe */
+#section-jouer,
+#section-community,
+#section-contact,
+#section-resources {
+  scroll-margin-top: 80px;
+}

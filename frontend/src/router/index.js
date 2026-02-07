@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import HomePage from '../page/HomePage.vue'
 import DesktopConnexion from '../auth-ui/pages/DesktopConnexion.vue'
 import DesktopInscriptionPage1 from '../auth-ui/pages/DesktopInscriptionPage1.vue'
 import DesktopInscriptionPage2 from '../auth-ui/pages/DesktopInscriptionPage2.vue'
@@ -10,7 +11,12 @@ import DesktopSucces from '../auth-ui/pages/DesktopSucces.vue'
 const routes = [
     {
       path: '/',
-      redirect: '/connexion'
+      name: 'Home',
+      component: HomePage
+    },
+    {
+      path: '/home',
+      redirect: '/'
     },
     {
       path: '/connexion',
