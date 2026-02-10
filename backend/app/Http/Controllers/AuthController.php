@@ -19,12 +19,14 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users',
             'nickname' => 'required|string|max:50',
             'password' => 'required|min:8|confirmed',
+            'role' => 'string'
         ]);
 
         $user = User::create([
             'email' => $request->email,
             'nickname' => $request->nickname,
             'password' => Hash::make($request->password),
+            'role' => $request->input('role', 'STUDENT'),
         ]);
 
         $token = $user->createToken('quiz-token')->plainTextToken;
@@ -76,8 +78,7 @@ class AuthController extends Controller
 
 public function googleCallback(Request $request)
 {
-    $googleUser = Socialite::driver('google')->stateless()->user();
-
+    $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->token);
     // Trouve ou crée l’utilisateur par google_id
     $user = User::updateOrCreate(
         ['google_id' => $googleUser->id],

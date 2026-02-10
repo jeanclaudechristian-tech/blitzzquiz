@@ -1,7 +1,9 @@
-import React, { useState, useCallback } from "react";
+import React, {useState, useCallback, useEffect} from "react";
 import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import Animated, { Layout, SlideInUp, SlideOutDown } from "react-native-reanimated";
+import * as WebBrowser from 'expo-web-browser'; // 1. 引入浏览器支持
+import * as Google from 'expo-auth-session/providers/google'; // 2. 引入 Google 验证
 // 引入 AuthContext
 import { useAuth } from "../../services/AuthContext";
 import { InputField } from "../../components/blitzz/InputField";
@@ -15,11 +17,18 @@ import { IconSvg } from "../../components/blitzz/IconSvg";
 import { assets } from "../../components/blitzz/assets";
 import { colors, fonts } from "../../components/blitzz/tokens";
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen() {
     const router = useRouter();
     // 1. 获取登录方法
-    const { login } = useAuth();
+    const { login, googleLogin } = useAuth();
 
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        androidClientId: "532138498181-14l35enq3ifpe2log0qevjfusipklovj.apps.googleusercontent.com",
+        iosClientId: "rtushc0olk7vp3m15b8go1htdf0netre.apps.googleusercontent.com",
+        webClientId: "532138498181-val9blpnrt3ns8r7jimn87s7f18eupvg.apps.googleusercontent.com",
+    });
     // 2. 定义输入框状态
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -35,6 +44,28 @@ export default function LoginScreen() {
             setIsVisible(true);
         }, [])
     );
+
+    useEffect(() => {
+        if (response?.type === 'success') {
+            const { authentication } = response;
+            if (authentication?.accessToken) {
+                // 拿到 Token 了！交给 AuthContext 去找后端换用户信息
+                handleBackendGoogleLogin(authentication.accessToken);
+            }
+        } else if (response?.type === 'error') {
+            Alert.alert("Erreur", "Google Login Failed");
+        }
+    }, [response]);
+
+    const handleBackendGoogleLogin = async (token: string) => {
+        setIsLoggingIn(true); // 复用一下 loading 状态或者单独定义
+        try {
+            await googleLogin(token);
+            // 成功后 AuthContext 会处理跳转，这里不用管
+        } catch (e) {
+            setIsLoggingIn(false);
+        }
+    };
 
     // 3. 真实登录逻辑
     const handleLogin = async () => {
@@ -194,8 +225,9 @@ export default function LoginScreen() {
                                     <DarkButton
                                         label="Inscription with Google"
                                         icon={<GoogleIcon />}
-                                        onPress={handleGoogleLogin}
-                                        isLoading={isLoggingInGoogle}
+                                        // 这里的 disabled 是防止重复点击
+                                        onPress={() => !request ? null : promptAsync()}
+                                        isLoading={false} // Google 自己的 SDK 会处理状态
                                     />
                                 </Animated.View>
                             </View>
