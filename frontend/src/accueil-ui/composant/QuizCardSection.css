@@ -1,0 +1,24 @@
+.quiz-card-section {
+  background-color: white;
+  width: 100%;
+  padding: clamp(40px, 10vw, 80px) clamp(16px, 3vw, 24px);
+  scroll-margin-top: 80px;
+}
+
+.section-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(20px, 4vw, 32px);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}

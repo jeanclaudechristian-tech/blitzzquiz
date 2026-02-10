@@ -1,0 +1,36 @@
+.cta-button {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  width: auto;
+  max-width: none;
+}
+
+.cta-button.dark {
+  background-color: #24201D;
+}
+
+.cta-button.dark:hover {
+  background-color: #3a3530;
+  transform: translateY(-2px);
+}
+
+.cta-button.blue {
+  background-color: #50CAFF;
+}
+
+.cta-button.blue:hover {
+  background-color: #3ab8e8;
+  transform: translateY(-2px);
+}
+
+.cta-button:active {
+  transform: translateY(0);
+}
