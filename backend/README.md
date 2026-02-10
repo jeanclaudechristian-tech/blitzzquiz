@@ -71,8 +71,8 @@ php artisan key:generate
 ### 4. Base de Données (PostgreSQL)
 * **Vérification** : S'assurer que PostgreSQL est installé et actif sur le port 5432.
 * **Lien de téléchargement** : [postgresql.org](https://www.postgresql.org/download/).
-* **Ouvrez pgAdmin 4
-* ** créer votre mot de passe
+* Ouvrez pgAdmin 4
+* Créer votre mot de passe
 * ***Vous devez avoir les mêmes
   `DB_USERNAME`
   `DB_PASSWORD`
