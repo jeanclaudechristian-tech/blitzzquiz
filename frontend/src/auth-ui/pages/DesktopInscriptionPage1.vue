@@ -3,17 +3,20 @@
     <div class="background-video">
       <video autoplay loop playsinline muted>
         <source src="/videos/LandingPage.mp4" type="video/mp4" />
-
       </video>
     </div>
+
     <div class="espace-inscription">
       <div class="form-content">
         <BlackBlitzzQuiz class="logo" />
+
         <div class="titre">
-          <span>Quel est votre</span><br>
+          <span>Quel est votre</span><br />
           <span>niveau d'étude ?</span>
         </div>
+
         <DropdownNiveauEtude v-model="niveauEtude" />
+
         <BoutonSuivant @click="goToInscriptionDetails" />
         <BoutonRetour text="Page de connexion" @click="goToConnexion" />
       </div>
@@ -51,12 +54,13 @@ export default {
         alert('Veuillez sélectionner un niveau d\'étude')
         return
       }
-
-      // Sauvegarde dans le store
       this.registrationStore.setNiveauEtude(this.niveauEtude)
-
-      // Va vers la page 2
-      this.$router.push('/inscription/details')
+      this.$router.push({
+        path: '/inscription/details',
+        query: {
+          role: this.registrationStore.role || 'STUDENT'
+        }
+      })
     },
     goToConnexion() {
       this.$router.push('/connexion')
@@ -64,7 +68,6 @@ export default {
   }
 }
 </script>
-
 
 <style scoped>
 @import './DesktopInscriptionPage1.css';

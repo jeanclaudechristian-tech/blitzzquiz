@@ -97,7 +97,7 @@ export default {
           this.formData.confirmPassword
         )
 
-        console.log('📝 Données complètes d\'inscription:', {
+        console.log(' Données complètes d\'inscription:', {
           niveauEtude: this.registrationStore.niveauEtude,
           email: this.formData.email,
           username: this.formData.username
@@ -115,7 +115,7 @@ export default {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
 
-        console.log('✅ Inscription réussie:', data.user)
+        console.log(' Inscription réussie:', data.user)
 
         // Reset le store après succès
         this.registrationStore.reset()
@@ -124,7 +124,7 @@ export default {
         this.$router.push('/validation')
 
       } catch (error) {
-        console.error('❌ Erreur d\'inscription:', error)
+        console.error(' Erreur d\'inscription:', error)
 
         if (error.response?.status === 422) {
           const errors = error.response.data.errors
