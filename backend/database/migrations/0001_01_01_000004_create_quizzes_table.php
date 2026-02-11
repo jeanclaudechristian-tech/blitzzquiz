@@ -13,6 +13,7 @@ return new class extends Migration
 
             $table->string('titre', 100);
             $table->text('description')->nullable();
+            $table->string('category')->nullable();
             $table->boolean('is_public')->default(false);
             $table->char('code_quiz', 6)->unique();
 

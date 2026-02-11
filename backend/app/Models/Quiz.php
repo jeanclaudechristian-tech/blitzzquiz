@@ -14,6 +14,7 @@ class Quiz extends Model
     protected $fillable = [
         'titre',
         'description',
+        'category',
         'is_public',
         'code_quiz',
         'owner_id',
