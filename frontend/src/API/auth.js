@@ -6,12 +6,13 @@ export const authService = {
     return response.data
   },
 
-  async register(email, nickname, password, password_confirmation) {
+  async register(email, username, password, password_confirmation, role) {
     const response = await api.post('/register', {
       email,
-      nickname,
+      nickname : username,                 // ou nickname si ton backend l’attend
       password,
-      password_confirmation
+      password_confirmation,
+      role                      // très important pour ta BD
     })
     return response.data
   },
