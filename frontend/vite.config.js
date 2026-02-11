@@ -9,7 +9,7 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     hmr: {
-      clientPort: 8088, // force connection on hot update
+      clientPort: 3000, // force connection on hot update
     },
     allowedHosts: [
       'emperor.tail28a528.ts.net'
