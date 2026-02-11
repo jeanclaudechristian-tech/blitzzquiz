@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import { DarkButton } from '../../components/blitzz/DarkButton';
 import { useAuth } from '../../services/AuthContext';
 import { colors, fonts } from '../../components/blitzz/tokens';
+import { DashboardHeader } from '../../components/blitzz/DashboardHeader'; // 确保路径正确
 
 export default function HomeScreen() {
     // 从 Context 中获取用户信息和登出方法
@@ -11,6 +12,12 @@ export default function HomeScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
+
+                <DashboardHeader
+                    averageScore={78}
+                    completedQuizzes={23}
+                    onProfilClick={() => console.log('Profil Clicked')}
+                />
 
                 {/* 顶部欢迎语 */}
                 <View style={styles.header}>

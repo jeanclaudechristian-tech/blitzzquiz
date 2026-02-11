@@ -15,4 +15,6 @@ export const assets = {
   googleIcon2: require("../../assets/blizz/googleIcon1.svg"),
   googleIcon3: require("../../assets/blizz/googleIcon1.svg"),
   googleIcon4: require("../../assets/blizz/googleIcon1.svg"),
+  statIcon: require("../../assets/blizz/lets-icons_stat.svg"),
+  historyIcon: require("../../assets/blizz/History Icon.svg"),
 };
