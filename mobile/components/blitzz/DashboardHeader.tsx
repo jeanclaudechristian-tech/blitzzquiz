@@ -103,7 +103,7 @@ export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onPr
                 justifyContent: 'center' }]}>
                 <View style={{ width: 56, alignItems: 'center' }}>
                     <ProfilIcon onPress={onProfil}/>
-                </View>r
+                </View>
             </Animated.View>
         </View>
     );

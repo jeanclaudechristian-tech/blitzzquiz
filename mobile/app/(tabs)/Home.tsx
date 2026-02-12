@@ -16,7 +16,7 @@ export default function HomeScreen() {
                 <DashboardHeader
                     averageScore={78}
                     completedQuizzes={23}
-                    onProfilClick={() => console.log('Profil Clicked')}
+                    onProfil={() => console.log('Profil Clicked')}
                 />
 
                 {/* 顶部欢迎语 */}

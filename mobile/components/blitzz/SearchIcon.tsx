@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        overflow: 'hidden', // 关键：裁剪掉溢出的 Pressable 点击效果
     },
     innerButton: {
         flex: 1, // 填满 Animated.View

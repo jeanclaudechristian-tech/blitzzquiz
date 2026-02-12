@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // ⚠️ 替换成你电脑的 IP 地址，不要用 localhost
-const API_URL = 'http://10.103.43.174:8000/api';
+const API_URL = 'http://192.168.1.101:8000/api';
 
 const api = axios.create({
     baseURL: API_URL,
