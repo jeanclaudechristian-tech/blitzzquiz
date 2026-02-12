@@ -19,8 +19,8 @@ return new class extends Migration
             $table->id();
 
             // Basic info
-            $table->string('email')->unique();
-            $table->string('password');
+            $table->string('email')->unique()->nullable();
+            $table->string('password')->nullable();
             $table->string('nickname', 50);
 
             // Role

@@ -14,6 +14,10 @@ Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
 
+    //  Only TEACHER/ADMIN can create
+    Route::post('quizzes', [QuizController::class, 'store'])
+        ->middleware('can:create,' . Quiz::class);
+
     Route::apiResource('quizzes', QuizController::class);
     Route::post('quizzes/{quiz}/join', [QuizController::class, 'join']);
 });
