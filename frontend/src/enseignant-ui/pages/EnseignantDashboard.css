@@ -1,0 +1,344 @@
+.enseignant-page {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f6feff;
+}
+
+.enseignant-main {
+  flex: 1;
+  padding: clamp(32px, 6vw, 56px) clamp(16px, 4vw, 40px);
+}
+
+.enseignant-hero {
+  max-width: 1100px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: clamp(24px, 4vw, 32px);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  animation: fade-up 0.3s ease-out;
+}
+
+.enseignant-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  flex: 2;
+}
+
+.enseignant-hero-text h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  color: #24201d;
+  margin: 0;
+}
+
+.enseignant-hero-text p {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #4f4f4f;
+  margin: 0 0 8px 0;
+}
+
+.enseignant-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #269aff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  color: #1b6fb8;
+}
+
+.enseignant-hero-stats {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.stat-card {
+  align-self: stretch;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #50caff, #269aff);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.stat-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.shortcuts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.shortcut-btn {
+  border-radius: 999px;
+  border: 1px solid #d0d0d0;
+  background-color: #ffffff;
+  padding: 6px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #24201d;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.shortcut-btn.primary {
+  background-color: #50caff;
+  border-color: #50caff;
+  color: #ffffff;
+}
+
+.shortcut-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.shortcut-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.mes-quiz-section {
+  max-width: 1100px;
+  margin: clamp(32px, 6vw, 40px) auto 0;
+}
+
+.mes-quiz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mes-quiz-header h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #24201d;
+  margin: 0;
+}
+
+.mes-quiz-table {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.mes-quiz-row {
+  display: grid;
+  grid-template-columns: 2.5fr 1fr 1fr 1fr 1.7fr;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #24201d;
+}
+
+.mes-quiz-row--header {
+  background-color: #f4f6fb;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mes-quiz-row:not(.mes-quiz-row--header):hover {
+  background-color: rgba(80, 202, 255, 0.06);
+}
+
+.quiz-title {
+  font-weight: 600;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pill--success {
+  background-color: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+}
+
+.pill--draft {
+  background-color: rgba(241, 196, 15, 0.18);
+  color: #e2a400;
+}
+
+.pill--public {
+  background-color: rgba(80, 202, 255, 0.16);
+  color: #269aff;
+}
+
+.pill--private {
+  background-color: rgba(36, 32, 29, 0.1);
+  color: #24201d;
+}
+
+.quiz-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #269aff;
+  cursor: pointer;
+}
+
+.action-link:hover {
+  text-decoration: underline;
+}
+
+.action-link.danger {
+  color: #c0392b;
+}
+
+.mes-quiz-empty {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #4f4f4f;
+  margin: 12px 2px 0 2px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.modal {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 20px 22px;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.modal-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #24201d;
+  margin: 0 0 8px 0;
+}
+
+.modal-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #4f4f4f;
+  margin: 0 0 14px 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.shortcut-btn.danger {
+  background-color: #c0392b;
+  border-color: #c0392b;
+  color: #ffffff;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .enseignant-main {
+    padding: 24px 12px;
+  }
+
+  .enseignant-hero {
+    padding: 24px 16px;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .enseignant-hero-stats {
+    align-items: stretch;
+  }
+
+  .mes-quiz-row {
+    grid-template-columns: 1.8fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 6px;
+  }
+
+  .mes-quiz-row span:nth-child(2),
+  .mes-quiz-row span:nth-child(3),
+  .mes-quiz-row span:nth-child(4),
+  .mes-quiz-row span:nth-child(5) {
+    font-size: 12px;
+  }
+}
+

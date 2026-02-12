@@ -1,7 +1,12 @@
 <template>
   <div class="dropdown-niveau-etude" @click="toggleDropdown" ref="dropdown">
     <div class="dropdown-header">
-      <span class="dropdown-text">{{ selectedLabel || 'Choisir' }}</span>
+      <span
+        class="dropdown-text"
+        :class="{ placeholder: !modelValue }"
+      >
+        {{ selectedLabel || 'Choisir' }}
+      </span>
       <div class="arrow-icon" :class="{ 'open': isOpen }">
         <img src="../../assets/dropDownIcon.svg" alt="dropdown arrow" />
       </div>

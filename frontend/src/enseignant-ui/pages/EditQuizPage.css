@@ -1,0 +1,234 @@
+.edit-quiz-page {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f6feff;
+}
+
+.edit-main {
+  flex: 1;
+  padding: clamp(32px, 6vw, 56px) clamp(16px, 4vw, 40px);
+}
+
+.edit-card {
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: clamp(24px, 4vw, 32px);
+  animation: fade-up 0.3s ease-out;
+}
+
+.edit-card-header h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(24px, 4vw, 30px);
+  font-weight: 700;
+  color: #24201d;
+  margin: 0 0 4px 0;
+}
+
+.edit-card-header p {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #4f4f4f;
+  margin: 0 0 20px 0;
+}
+
+.edit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1.2fr);
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #24201d;
+}
+
+.field-group input,
+.field-group textarea,
+.field-group select {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d0d0d0;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field-group input:focus,
+.field-group textarea:focus,
+.field-group select:focus {
+  border-color: #50caff;
+  box-shadow: 0 0 0 2px rgba(80, 202, 255, 0.25);
+}
+
+.form-error {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #c0392b;
+  margin: -4px 0 4px 0;
+}
+
+.edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #269aff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  color: #1b6fb8;
+}
+
+.visibility-card {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background-color: #f4f6fb;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.visibility-card h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #24201d;
+  margin: 0;
+}
+
+.toggle {
+  background-color: #d0d0d0;
+  border-radius: 999px;
+  border: none;
+  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.toggle-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+  transform: translateX(0);
+  transition: transform 0.2s ease;
+}
+
+.toggle-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #24201d;
+}
+
+.toggle.active {
+  background-color: #50caff;
+}
+
+.toggle.active .toggle-thumb {
+  transform: translateX(18px);
+}
+
+.toggle:active {
+  transform: scale(0.97);
+}
+
+.code-block {
+  padding-top: 4px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.code-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #24201d;
+  margin: 4px 0 6px 0;
+}
+
+.code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.code-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.copy-btn {
+  border-radius: 999px;
+  border: 1px solid #d0d0d0;
+  padding: 6px 12px;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  background-color: #f0f4ff;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .edit-main {
+    padding: 24px 12px;
+  }
+
+  .edit-layout {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -86,6 +86,89 @@
   margin: 0;
 }
 
+.question-role {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 22px;
+  color: #24201d;
+  text-align: left;
+  width: 100%;
+  margin: 16px 0 8px;
+}
+
+.question-role p {
+  margin: 0;
+}
+
+.role-buttons {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 16px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.role-card {
+  flex: 1;
+  min-width: 130px;
+  max-width: 160px;
+  border-radius: 12px;
+  border: none;
+  padding: 18px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.role-card .role-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.role-card.enseignant {
+  background-color: #24201d;
+  color: #ffffff;
+}
+
+.role-card.etudiant {
+  background-color: #50caff;
+  color: #ffffff;
+}
+
+.role-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+}
+
+.role-card:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+}
+
+.niveau-block {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.fade-up-enter-active,
+.fade-up-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-up-enter-from,
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
 /* =========================
    Responsive
    ========================= */
@@ -159,5 +242,13 @@
 
   .titre {
     font-size: 32px;
+  }
+
+  .role-buttons {
+    flex-direction: column;
+  }
+
+  .role-card {
+    max-width: none;
   }
 }

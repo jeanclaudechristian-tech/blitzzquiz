@@ -7,6 +7,10 @@ import DesktopCourriel from '../auth-ui/pages/DesktopCourriel.vue'
 import DesktopResetMotDePasse from '../auth-ui/pages/DesktopResetMotDePasse.vue'
 import DesktopValidation from '../auth-ui/pages/DesktopValidation.vue'
 import DesktopSucces from '../auth-ui/pages/DesktopSucces.vue'
+import EnseignantDashboard from '../enseignant-ui/pages/EnseignantDashboard.vue'
+import QuizCreatePage from '../enseignant-ui/pages/QuizCreatePage.vue'
+import EditQuizPage from '../enseignant-ui/pages/EditQuizPage.vue'
+import QuizQuestionsPage from '../enseignant-ui/pages/QuizQuestionsPage.vue'
 
 const routes = [
     {
@@ -52,6 +56,26 @@ const routes = [
       path: '/succes',
       name: 'Succes',
       component: DesktopSucces
+    },
+    {
+      path: '/enseignant',
+      name: 'EnseignantDashboard',
+      component: EnseignantDashboard
+    },
+    {
+      path: '/enseignant/quiz/nouveau',
+      name: 'QuizCreate',
+      component: QuizCreatePage
+    },
+    {
+      path: '/enseignant/quiz/:id/editer',
+      name: 'QuizEdit',
+      component: EditQuizPage
+    },
+    {
+      path: '/enseignant/quiz/:id/questions',
+      name: 'QuizQuestions',
+      component: QuizQuestionsPage
     }
   ]
 
