@@ -6,7 +6,8 @@ export const useRegistrationStore = defineStore('registration', {
     email: '',
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: '',        // TEACHER ou STUDENT
   }),
 
   actions: {
@@ -21,12 +22,17 @@ export const useRegistrationStore = defineStore('registration', {
       this.confirmPassword = confirmPassword
     },
 
+    setRole(role) {         
+      this.role = role
+    },
+
     reset() {
       this.niveauEtude = ''
       this.email = ''
       this.username = ''
       this.password = ''
       this.confirmPassword = ''
-    }
-  }
+      this.role = ''
+    },
+  },
 })

@@ -2,7 +2,7 @@
   <div class="desktop-inscription-page-2">
     <div class="background-video">
       <video autoplay loop playsinline muted>
-         <source src="/videos/LandingPage.mp4" type="video/mp4" />
+        <source src="/videos/LandingPage.mp4" type="video/mp4" />
 
       </video>
     </div>
@@ -94,7 +94,7 @@ export default {
           this.formData.email,
           this.formData.username,
           this.formData.password,
-          this.formData.confirmPassword
+          this.formData.confirmPassword,
         )
 
         console.log(' Données complètes d\'inscription:', {
@@ -108,7 +108,8 @@ export default {
           this.formData.email,
           this.formData.username,
           this.formData.password,
-          this.formData.confirmPassword
+          this.formData.confirmPassword,
+          this.registrationStore.role
         )
 
         // Sauvegarde le token et l'utilisateur
@@ -124,19 +125,23 @@ export default {
         this.$router.push('/validation')
 
       } catch (error) {
-        console.error(' Erreur d\'inscription:', error)
+        console.error("Erreur d'inscription brute:", error)
 
-        if (error.response?.status === 422) {
+        if (error && error.response && error.response.status === 422) {
           const errors = error.response.data.errors
+          console.log('Validation errors:', errors)
+
           if (errors.email) {
             this.error = 'Cet email est déjà utilisé'
           } else if (errors.password) {
             this.error = 'Le mot de passe ne respecte pas les critères'
+          } else if (errors.role) {
+            this.error = 'Le type de compte (rôle) est invalide ou manquant'
           } else {
             this.error = 'Erreur de validation. Vérifiez vos informations.'
           }
         } else {
-          this.error = 'Erreur d\'inscription. Réessayez plus tard.'
+          this.error = "Erreur d'inscription. Réessayez plus tard."
         }
 
         alert(this.error)

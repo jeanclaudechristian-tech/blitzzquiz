@@ -16,18 +16,11 @@
         </div>
 
         <div class="role-buttons">
-          <button
-            type="button"
-            class="role-card enseignant"
-            @click="selectRole('TEACHER')"
-          >
+          <button type="button" class="role-card enseignant" @click="selectRole('TEACHER')">
             <span class="role-label">Enseignant</span>
           </button>
-          <button
-            type="button"
-            class="role-card etudiant"
-            @click="selectRole('STUDENT')"
-          >
+
+          <button type="button" class="role-card etudiant" @click="selectRole('STUDENT')">
             <span class="role-label">Étudiant</span>
           </button>
         </div>
@@ -62,7 +55,7 @@ export default {
     BlackBlitzzQuiz,
     DropdownNiveauEtude,
     BoutonSuivant,
-    BoutonRetour
+    BoutonRetour,
   },
   setup() {
     const registrationStore = useRegistrationStore()
@@ -71,35 +64,49 @@ export default {
   data() {
     return {
       niveauEtude: this.registrationStore.niveauEtude || '',
-      role: ''
+      role: '',
     }
   },
   methods: {
     selectRole(role) {
+      console.log('selectRole called with', role)
+      console.log('registrationStore methods:', this.registrationStore)
+
       this.role = role
+      this.registrationStore.setRole(role)
+
       if (role === 'TEACHER') {
-        this.$router.push({ path: '/inscription/details', query: { role: 'TEACHER' } })
+        console.log('redirect to /inscription/details')
+        this.$router.push({
+          path: '/inscription/details',
+          query: { role: 'TEACHER' },
+        })
       }
     },
+
     goToInscriptionDetails() {
       if (!this.niveauEtude) {
-        alert('Veuillez sélectionner un niveau d\'étude')
+        alert("Veuillez sélectionner un niveau d'étude")
         return
       }
+
       this.registrationStore.setNiveauEtude(this.niveauEtude)
+
       this.$router.push({
         path: '/inscription/details',
         query: {
-          role: this.registrationStore.role || 'STUDENT'
-        }
+          role: this.registrationStore.role || 'STUDENT',
+        },
       })
     },
+
     goToConnexion() {
       this.$router.push('/connexion')
-    }
-  }
+    },
+  },
 }
 </script>
+
 
 <style scoped>
 @import './DesktopInscriptionPage1.css';

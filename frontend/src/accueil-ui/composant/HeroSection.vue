@@ -9,8 +9,8 @@
       <div class="hero-text">
         <h1 class="hero-title">
           <span class="hero-title-line1">Bat la</span>
-          <span class="hero-title-line2">compétition,</span>
-          <span class="hero-title-line3">passe en mode</span>
+          <span class="hero-title-line1">compétition,</span>
+          <span class="hero-title-line1">passe en mode</span>
         </h1>
         <div class="hero-app-name">
           <img

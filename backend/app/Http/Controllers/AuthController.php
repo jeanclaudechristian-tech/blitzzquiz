@@ -19,12 +19,15 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users',
             'nickname' => 'required|string|max:50',
             'password' => 'required|min:8|confirmed',
+            'role' => 'required|in:TEACHER,STUDENT',
         ]);
 
         $user = User::create([
             'email' => $request->email,
             'nickname' => $request->nickname,
             'password' => Hash::make($request->password),
+            'role' => $request ->role,
+
         ]);
 
         $token = $user->createToken('quiz-token')->plainTextToken;

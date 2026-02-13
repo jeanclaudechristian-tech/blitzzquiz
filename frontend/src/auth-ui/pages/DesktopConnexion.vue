@@ -2,7 +2,7 @@
   <div class="desktop-connexion">
     <div class="background-video">
       <video autoplay loop playsinline muted>
-      <source src="/videos/LandingPage.mp4" type="video/mp4" />
+        <source src="/videos/LandingPage.mp4" type="video/mp4" />
       </video>
     </div>
     <div class="espace-connexion">
@@ -54,7 +54,8 @@ export default {
     return {
       formData: {
         username: '', // Sera utilisé comme email
-        password: ''
+        password: '',
+        role: ''
       },
       loading: false,
       error: null
@@ -75,7 +76,8 @@ export default {
         // Appel API de connexion
         const data = await authService.login(
           this.formData.username, // email
-          this.formData.password
+          this.formData.password,
+          this.formData.role
         )
 
         // Sauvegarde le token et l'utilisateur
@@ -84,18 +86,27 @@ export default {
 
         console.log('Connexion réussie:', data.user)
 
-        // Redirection vers le dashboard (adapte selon ta route)
-        this.$router.push('/dashboard')
+        const role = data.user.role
+        
+        if (role === 'TEACHER') {
+          this.$router.push('/enseignant')
+        } else if (role === 'STUDENT') {
+          this.$router.push('/etudiant')
+        } else {
+          // fallback si jamais
+          this.$router.push('/')
+        }
+
 
       } catch (error) {
         console.error('Erreur de connexion:', error)
-        
+
         if (error.response?.status === 422) {
           this.error = 'Email ou mot de passe incorrect'
         } else {
           this.error = 'Erreur de connexion. Réessayez plus tard.'
         }
-        
+
         alert(this.error)
       } finally {
         this.loading = false
