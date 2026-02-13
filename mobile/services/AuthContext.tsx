@@ -113,16 +113,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const googleLogin = async (token: string) => {
         setIsLoading(true);
         try {
-            // 这里假设后端接收 token 的字段名是 token
+            console.log("🧐 [Debug] 准备发给后端的 Token:", token.substring(0, 30) + "...");
+
             const response = await api.post('/auth/google/callback', { token });
             const { user, token: jwt } = response.data;
 
             await SecureStore.setItemAsync('auth_token', jwt);
             setUser(user);
+
             // @ts-ignore
-            router.replace('/(tabs)');
+            router.replace('/(tabs)/Home'); // 顺手帮你把路由补全了
+
         } catch (error: any) {
-            console.log(error);
+            // 🛑 核心解密代码：把后端的报错底裤扒出来
+            console.log("\n💥 ----------------- 错误开始 ----------------- 💥");
+
+            if (error.response) {
+                // 请求发成功了，但后端返回了 400 报错
+                console.log("🔥 HTTP 状态码:", error.response.status);
+                // 这里会把你后端 Laravel 写的 details 完完整整打印出来
+                console.log("🔥 后端报错详情:", JSON.stringify(error.response.data, null, 2));
+            } else if (error.request) {
+                // 连不上后端（可能是 IP 变了或者服务没开）
+                console.log("💀 没收到后端回应 (请检查网络或IP):", error.request);
+            } else {
+                // 纯前端代码错误
+                console.log("💥 请求发送失败:", error.message);
+            }
+
+            console.log("💥 ----------------- 错误结束 ----------------- 💥\n");
+
             Alert.alert('Erreur', 'Google Login Failed');
             throw error;
         } finally {

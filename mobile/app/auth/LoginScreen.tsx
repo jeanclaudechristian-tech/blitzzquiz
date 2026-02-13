@@ -16,6 +16,7 @@ import { GoogleIcon } from "../../components/blitzz/GoogleIcon";
 import { IconSvg } from "../../components/blitzz/IconSvg";
 import { assets } from "../../components/blitzz/assets";
 import { colors, fonts } from "../../components/blitzz/tokens";
+import { makeRedirectUri } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -28,6 +29,10 @@ export default function LoginScreen() {
         androidClientId: "532138498181-14l35enq3ifpe2log0qevjfusipklovj.apps.googleusercontent.com",
         iosClientId: "rtushc0olk7vp3m15b8go1htdf0netre.apps.googleusercontent.com",
         webClientId: "532138498181-val9blpnrt3ns8r7jimn87s7f18eupvg.apps.googleusercontent.com",
+        redirectUri: makeRedirectUri({
+            // @ts-ignore
+            useProxy: true,
+        }),
     });
     // 2. 定义输入框状态
     const [email, setEmail] = useState("");
@@ -55,7 +60,10 @@ export default function LoginScreen() {
         } else if (response?.type === 'error') {
             Alert.alert("Erreur", "Google Login Failed");
         }
-    }, [response]);
+        if (request?.url) {
+            console.log("🔗 即将访问的 Google 授权网址: ", request.url);
+        }
+    }, [response, request]);
 
     const handleBackendGoogleLogin = async (token: string) => {
         setIsLoggingIn(true); // 复用一下 loading 状态或者单独定义
