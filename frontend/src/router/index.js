@@ -5,7 +5,6 @@ import DesktopInscriptionPage1 from '../auth-ui/pages/DesktopInscriptionPage1.vu
 import DesktopInscriptionPage2 from '../auth-ui/pages/DesktopInscriptionPage2.vue'
 import DesktopCourriel from '../auth-ui/pages/DesktopCourriel.vue'
 import DesktopResetMotDePasse from '../auth-ui/pages/DesktopResetMotDePasse.vue'
-import DesktopValidation from '../auth-ui/pages/DesktopValidation.vue'
 import DesktopSucces from '../auth-ui/pages/DesktopSucces.vue'
 import EnseignantDashboard from '../enseignant-ui/pages/EnseignantDashboard.vue'
 import QuizCreatePage from '../enseignant-ui/pages/QuizCreatePage.vue'
@@ -53,11 +52,6 @@ const routes = [
       path: '/reset-mot-de-passe',
       name: 'ResetMotDePasse',
       component: DesktopResetMotDePasse
-    },
-    {
-      path: '/validation',
-      name: 'Validation',
-      component: DesktopValidation
     },
     {
       path: '/succes',

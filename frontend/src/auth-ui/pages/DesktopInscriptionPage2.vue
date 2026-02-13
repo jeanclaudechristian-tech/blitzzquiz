@@ -47,7 +47,7 @@ export default {
     InputMotDePasse,
     InputConfirmerMotDePasse,
     BoutonRetour,
-    BoutonConfirmer
+    BoutonConfirmer,
   },
   setup() {
     const registrationStore = useRegistrationStore()
@@ -59,27 +59,30 @@ export default {
         email: this.registrationStore.email || '',
         username: this.registrationStore.username || '',
         password: this.registrationStore.password || '',
-        confirmPassword: this.registrationStore.confirmPassword || ''
+        confirmPassword: this.registrationStore.confirmPassword || '',
       },
       loading: false,
-      error: null
+      error: null,
     }
   },
   methods: {
     async goToValidation() {
       // Validation basique
-      if (!this.formData.email || !this.formData.username || !this.formData.password || !this.formData.confirmPassword) {
+      if (
+        !this.formData.email ||
+        !this.formData.username ||
+        !this.formData.password ||
+        !this.formData.confirmPassword
+      ) {
         alert('Veuillez remplir tous les champs')
         return
       }
 
-      // Vérifie que les mots de passe correspondent
       if (this.formData.password !== this.formData.confirmPassword) {
         alert('Les mots de passe ne correspondent pas')
         return
       }
 
-      // Vérifie la longueur du mot de passe (min 8 caractères)
       if (this.formData.password.length < 8) {
         alert('Le mot de passe doit contenir au moins 8 caractères')
         return
@@ -89,21 +92,22 @@ export default {
       this.error = null
 
       try {
-        // Sauvegarde dans le store avant l'appel API
+        // Sauvegarde dans le store avant l'appel API (sans rôle)
         this.registrationStore.setCredentials(
           this.formData.email,
           this.formData.username,
           this.formData.password,
-          this.formData.confirmPassword,
+          this.formData.confirmPassword
         )
 
-        console.log(' Données complètes d\'inscription:', {
+        console.log("Données complètes d'inscription:", {
+          role: this.registrationStore.role,
           niveauEtude: this.registrationStore.niveauEtude,
           email: this.formData.email,
-          username: this.formData.username
+          username: this.formData.username,
         })
 
-        // Appel API d'inscription
+        // Appel API d'inscription avec le rôle du store
         const data = await authService.register(
           this.formData.email,
           this.formData.username,
@@ -112,18 +116,23 @@ export default {
           this.registrationStore.role
         )
 
-        // Sauvegarde le token et l'utilisateur
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
 
-        console.log(' Inscription réussie:', data.user)
+        console.log('Inscription réussie:', data.user)
 
-        // Reset le store après succès
+        const userRole = this.registrationStore.role
+
         this.registrationStore.reset()
 
-        // Redirection vers validation ou dashboard
-        this.$router.push('/validation')
-
+        // Redirection vers le bon dashboard
+        if (userRole === 'TEACHER') {
+          this.$router.push('/enseignant')
+        } else if (userRole === 'STUDENT') {
+          this.$router.push('/etudiant')
+        } else {
+          this.$router.push('/')
+        }
       } catch (error) {
         console.error("Erreur d'inscription brute:", error)
 
@@ -148,10 +157,11 @@ export default {
       } finally {
         this.loading = false
       }
-    }
-  }
+    },
+  },
 }
 </script>
+
 
 
 <style scoped>
