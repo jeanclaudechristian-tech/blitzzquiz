@@ -81,14 +81,13 @@ public function googleCallback(Request $request)
 {
     $googleUser = Socialite::driver('google')->stateless()->user();
 
-    // Trouve ou crée l’utilisateur par google_id
-    $user = User::updateOrCreate(
+        $user = User::updateOrCreate(
         ['google_id' => $googleUser->id],
         [
             'email' => $googleUser->email,
             'nickname' => $googleUser->name,
             'avatar' => $googleUser->avatar ?? null,
-            'password' => Hash::make(Str::random(40)), // random pour OAuth
+            'password' => Hash::make(Str::random(40)), 
         ]
     );
 

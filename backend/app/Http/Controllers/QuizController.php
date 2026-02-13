@@ -40,5 +40,30 @@ class QuizController extends Controller
                ]);
 
                return response()->json($quiz->load('questions'), 201);
-           }
-       }
+    }
+  public function index(Request $request): JsonResponse
+{
+    $user = $request->user();
+
+    if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
+        // Prof/Admin : voit ses quiz + tous les quiz publics
+        $quizzes = Quiz::withCount('questions')
+            ->where(function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhere('is_public', true);
+            })
+            ->latest()
+            ->get();
+    } elseif ($user->role === 'STUDENT') {
+        // Étudiant : pour l’instant → uniquement les quiz publics
+        $quizzes = Quiz::withCount('questions')
+            ->where('is_public', true)
+            ->latest()
+            ->get();
+    } else {
+        return response()->json(['error' => 'Rôle non autorisé'], 403);
+    }
+
+    return response()->json($quizzes);
+}
+}

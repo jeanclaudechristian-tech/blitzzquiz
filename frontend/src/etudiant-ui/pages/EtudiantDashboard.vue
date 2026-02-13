@@ -43,6 +43,32 @@
           </button>
         </div>
       </section>
+          
+  <section class="etudiant-public-quizzes">
+  <header class="suggestions-header">
+    <h2>Quiz publics</h2>
+  </header>
+
+  <div v-if="loadingQuizzes">Chargement des quiz...</div>
+  <div v-else-if="publicQuizzes.length === 0 && !errorQuizzes">
+    Aucun quiz public pour le moment.
+  </div>
+  <div v-else-if="errorQuizzes">
+    {{ errorQuizzes }}
+  </div>
+  <div v-else class="public-quizzes-grid">
+    <div
+      v-for="quiz in publicQuizzes"
+      :key="quiz.id"
+      class="public-quiz-card"
+    >
+      <h3>{{ quiz.titre }}</h3>
+      <p>{{ quiz.categorie }}</p>
+      <p>{{ quiz.nbQuestions }} questions</p>
+      <button @click="openQuizFromDashboard(quiz)">Jouer</button>
+    </div>
+  </div>
+</section>
     </main>
     <AppFooter />
   </div>
@@ -62,8 +88,14 @@ export default {
   },
   data() {
     return {
-      categories: ['Math', 'Français', 'Sciences', 'Histoire']
+      categories: ['Math', 'Français', 'Sciences', 'Histoire'],
+      publicQuizzes: [],      // utilisés dans le template
+      loadingQuizzes: false,
+      errorQuizzes: ''
     }
+  },
+  mounted() {
+    this.loadPublicQuizzes()
   },
   methods: {
     goToCatalogue() {
@@ -73,10 +105,39 @@ export default {
       this.$router.push('/etudiant/code')
     },
     goToCatalogueWithFilter(cat) {
-      // TODO (Laravel) : plus tard, charger les suggestions et les quiz filtrés
-      // via GET /api/quizzes?visibility=public&category={cat}
-      // et éventuellement GET /api/student/profile pour personnaliser les catégories.
       this.$router.push({ path: '/etudiant/catalogue', query: { categorie: cat } })
+    },
+
+    loadPublicQuizzes() {
+      this.loadingQuizzes = true
+      this.errorQuizzes = ''
+      const storageKey = 'enseignant_quizzes'
+
+      try {
+        const saved = localStorage.getItem(storageKey)
+        if (!saved) {
+          this.publicQuizzes = []
+          return
+        }
+
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          // mêmes données que dans la page catalogue : garder les publics
+          this.publicQuizzes = parsed.filter((q) => q.isPublic)
+        } else {
+          this.publicQuizzes = []
+        }
+      } catch (e) {
+        console.error('Erreur lecture localStorage', e)
+        this.publicQuizzes = []
+        this.errorQuizzes = 'Impossible de charger les quiz publics.'
+      } finally {
+        this.loadingQuizzes = false
+      }
+    },
+
+    openQuizFromDashboard(quiz) {
+      this.$router.push(`/etudiant/quiz/${quiz.id}`)
     }
   }
 }
