@@ -11,6 +11,13 @@ import EnseignantDashboard from '../enseignant-ui/pages/EnseignantDashboard.vue'
 import QuizCreatePage from '../enseignant-ui/pages/QuizCreatePage.vue'
 import EditQuizPage from '../enseignant-ui/pages/EditQuizPage.vue'
 import QuizQuestionsPage from '../enseignant-ui/pages/QuizQuestionsPage.vue'
+import EtudiantDashboard from '../etudiant-ui/pages/EtudiantDashboard.vue'
+import QuizCataloguePage from '../etudiant-ui/pages/QuizCataloguePage.vue'
+import EnterQuizCodePage from '../etudiant-ui/pages/EnterQuizCodePage.vue'
+import EtudiantQuizLobbyPage from '../etudiant-ui/pages/EtudiantQuizLobbyPage.vue'
+import EtudiantQuizPlayPage from '../etudiant-ui/pages/EtudiantQuizPlayPage.vue'
+import EtudiantQuizLoadingPage from '../etudiant-ui/pages/EtudiantQuizLoadingPage.vue'
+import EtudiantQuizResultPage from '../etudiant-ui/pages/EtudiantQuizResultPage.vue'
 
 const routes = [
     {
@@ -76,6 +83,41 @@ const routes = [
       path: '/enseignant/quiz/:id/questions',
       name: 'QuizQuestions',
       component: QuizQuestionsPage
+    },
+    {
+      path: '/etudiant',
+      name: 'EtudiantDashboard',
+      component: EtudiantDashboard
+    },
+    {
+      path: '/etudiant/catalogue',
+      name: 'EtudiantCatalogue',
+      component: QuizCataloguePage
+    },
+    {
+      path: '/etudiant/code',
+      name: 'EtudiantEnterCode',
+      component: EnterQuizCodePage
+    },
+    {
+      path: '/etudiant/quiz/:id',
+      name: 'EtudiantQuizLobby',
+      component: EtudiantQuizLobbyPage
+    },
+    {
+      path: '/etudiant/quiz/:id/jouer',
+      name: 'EtudiantQuizPlay',
+      component: EtudiantQuizPlayPage
+    },
+    {
+      path: '/etudiant/quiz/:id/loading',
+      name: 'EtudiantQuizLoading',
+      component: EtudiantQuizLoadingPage
+    },
+    {
+      path: '/etudiant/quiz/:id/resultat',
+      name: 'EtudiantQuizResult',
+      component: EtudiantQuizResultPage
     }
   ]
 
