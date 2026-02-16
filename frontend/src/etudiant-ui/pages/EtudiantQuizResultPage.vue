@@ -3,6 +3,7 @@
     <AppHeader />
     <main class="result-main">
       <section class="result-card" v-if="result">
+        <div class="result-icon">🎉</div>
         <h1>Résultat du quiz</h1>
         <p class="score-main">{{ result.correct }} / {{ result.total }}</p>
         <p class="score-percent">{{ result.percent }} % de réussite</p>
@@ -22,13 +23,21 @@
             variant="blue"
             @click="goHome"
           />
-          <button type="button" class="link-button" @click="seeHistory">
-            Voir historique
-          </button>
+          
+          <div class="secondary-actions">
+            <button type="button" class="secondary-btn" @click="seeHistory">
+              <span class="btn-icon">📜</span>
+              <span class="btn-text">Historique</span>
+            </button>
+            <button type="button" class="secondary-btn" @click="seeLeaderboard">
+              <span class="btn-icon">🏆</span>
+              <span class="btn-text">Classement</span>
+            </button>
+          </div>
         </div>
       </section>
     </main>
-    <AppFooter />
+    <AppFooter class="compact-footer" />
   </div>
 </template>
 
@@ -51,7 +60,6 @@ export default {
   },
   computed: {
     rankingPercent() {
-      // estimation simple pour l'instant ; à remplacer par un vrai classement côté backend.
       return Math.max(1, 100 - (this.result?.percent || 0))
     }
   },
@@ -77,9 +85,12 @@ export default {
       this.$router.push('/etudiant')
     },
     seeHistory() {
-      // TODO (Laravel) : GET /api/student/history pour afficher
-      // la liste des tentatives et scores passés.
-      console.log('Voir historique (à implémenter)')
+      // TODO (Laravel) : créer une vraie page historique
+      // GET /api/student/history pour afficher toutes les tentatives
+      alert('Page Historique en construction. Cette fonctionnalité affichera toutes vos tentatives passées.')
+    },
+    seeLeaderboard() {
+      this.$router.push(`/classement?quiz=${this.$route.params.id}`)
     }
   },
   mounted() {
@@ -91,4 +102,3 @@ export default {
 <style scoped>
 @import './EtudiantQuizResultPage.css';
 </style>
-

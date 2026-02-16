@@ -17,6 +17,7 @@ import EtudiantQuizLobbyPage from '../etudiant-ui/pages/EtudiantQuizLobbyPage.vu
 import EtudiantQuizPlayPage from '../etudiant-ui/pages/EtudiantQuizPlayPage.vue'
 import EtudiantQuizLoadingPage from '../etudiant-ui/pages/EtudiantQuizLoadingPage.vue'
 import EtudiantQuizResultPage from '../etudiant-ui/pages/EtudiantQuizResultPage.vue'
+import LeaderboardPage from '../classement-ui/pages/LeaderboardPage.vue'
 import GroupesListPage from '../enseignant-ui/pages/GroupesListPage.vue'
 import GroupeCreatePage from '../enseignant-ui/pages/GroupeCreatePage.vue'
 import GroupeDetailsPage from '../enseignant-ui/pages/GroupeDetailsPage.vue'
@@ -130,6 +131,11 @@ const routes = [
       path: '/etudiant/quiz/:id/resultat',
       name: 'EtudiantQuizResult',
       component: EtudiantQuizResultPage
+    },
+    {
+      path: '/classement',
+      name: 'Leaderboard',
+      component: LeaderboardPage
     }
   ]
 
