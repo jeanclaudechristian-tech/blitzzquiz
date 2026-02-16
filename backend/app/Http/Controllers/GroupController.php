@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
@@ -12,39 +12,61 @@ use Illuminate\Validation\Rule;
 
 class GroupController extends Controller
 {
-    public function __construct()
+
+
+
+    public function index()
     {
-        $this->middleware('auth:sanctum'); // ou 'jwt.auth'
-        $this->middleware('role:enseignant|admin')->except(['index', 'show', 'join']); // Seul owner/enseignant crée/gère
+        $user = Auth::user();
+
+        $groups = Group::where('owner_id', $user->id)
+            ->orWhereHas('members', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->with(['owner', 'members'])
+            ->get();
+
+        $mapped = $groups->map(function ($g) {
+            return [
+                'id' => $g->id,
+                'nom' => $g->nom,
+                'is_public' => $g->is_public,
+                'nb_membres' => $g->members->count(),
+            ];
+        });
+
+        return response()->json($mapped);
     }
 
     /**
      * Liste des groupes (utilisateur connecté : owned + membre).
      */
-    public function index()
-    {
-        $user = Auth::user();
-        $groups = Group::where('owner_id', $user->id)
-            ->orWhereHas('members', fn($q) => $q->where('user_id', $user->id))
-            ->with(['owner:id,name', 'members:id,name', 'assignments:id'])
-            ->paginate(10);
-
-        return response()->json($groups);
-    }
-
-    /**
-     * Détails groupe (vérif membre ou owner).
-     */
     public function show(Group $group)
     {
-        if (!Auth::user()->id === $group->owner_id || !$group->members()->where('user_id', Auth::id())->exists()) {
+        $userId = Auth::id();
+
+        $isOwner = ($userId === $group->owner_id);
+        $isMember = $group->members()->where('user_id', $userId)->exists();
+
+        if (!$isOwner && !$isMember) {
             return response()->json(['error' => 'Accès refusé'], 403);
         }
 
-        $group->load(['owner:id,name', 'members:id,name', 'assignments.quiz']);
+        $group->load(['owner', 'members']);
 
-        return response()->json($group);
+        return response()->json([
+            'id' => $group->id,
+            'nom' => $group->nom,
+            'description' => null,
+            'is_public' => $group->is_public,
+            'code_invitation' => $group->code_invitation,
+            'members' => $group->members,
+            'nb_membres' => $group->members->count(),
+            'assignments' => [],
+        ]);
     }
+
+
 
     /**
      * Créer groupe (enseignant/owner).
@@ -56,10 +78,12 @@ class GroupController extends Controller
             'is_public' => 'boolean',
         ]);
 
+        $isPublic = $validated['is_public'] ?? true;
+
         $group = Group::create([
             'nom' => $validated['nom'],
-            'code_invitation' => $validated['is_public'] ? null : Str::upper(Str::random(6)),
-            'is_public' => $validated['is_public'] ?? false,
+            'code_invitation' => Str::upper(Str::random(6)), // toujours un code
+            'is_public' => $isPublic,
             'owner_id' => Auth::id(),
         ]);
 
@@ -67,6 +91,7 @@ class GroupController extends Controller
 
         return response()->json($group, 201);
     }
+
 
     /**
      * Mettre à jour groupe (seul owner).
@@ -82,14 +107,25 @@ class GroupController extends Controller
             'is_public' => 'boolean',
         ]);
 
-        $group->update(array_merge($validated, [
-            'code_invitation' => $validated['is_public'] ? null : Str::upper(Str::random(6))
-        ]));
+        if (array_key_exists('is_public', $validated)) {
+            $group->is_public = $validated['is_public'];
+            // si tu veux régénérer un code seulement quand on passe en privé :
+            // if (!$group->is_public) {
+            //     $group->code_invitation = Str::upper(Str::random(6));
+            // }
+        }
+
+        if (array_key_exists('nom', $validated)) {
+            $group->nom = $validated['nom'];
+        }
+
+        $group->save();
 
         $group->load(['owner', 'members']);
 
         return response()->json($group);
     }
+
 
     /**
      * Supprimer groupe (seul owner).
