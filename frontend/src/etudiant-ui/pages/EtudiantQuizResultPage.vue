@@ -85,9 +85,7 @@ export default {
       this.$router.push('/etudiant')
     },
     seeHistory() {
-      // TODO (Laravel) : créer une vraie page historique
-      // GET /api/student/history pour afficher toutes les tentatives
-      alert('Page Historique en construction. Cette fonctionnalité affichera toutes vos tentatives passées.')
+      this.$router.push('/historique')
     },
     seeLeaderboard() {
       this.$router.push(`/classement?quiz=${this.$route.params.id}`)
