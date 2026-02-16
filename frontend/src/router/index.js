@@ -17,6 +17,9 @@ import EtudiantQuizLobbyPage from '../etudiant-ui/pages/EtudiantQuizLobbyPage.vu
 import EtudiantQuizPlayPage from '../etudiant-ui/pages/EtudiantQuizPlayPage.vue'
 import EtudiantQuizLoadingPage from '../etudiant-ui/pages/EtudiantQuizLoadingPage.vue'
 import EtudiantQuizResultPage from '../etudiant-ui/pages/EtudiantQuizResultPage.vue'
+import GroupesListPage from '../enseignant-ui/pages/GroupesListPage.vue'
+import GroupeCreatePage from '../enseignant-ui/pages/GroupeCreatePage.vue'
+import GroupeDetailsPage from '../enseignant-ui/pages/GroupeDetailsPage.vue'
 
 const routes = [
     {
@@ -77,6 +80,21 @@ const routes = [
       path: '/enseignant/quiz/:id/questions',
       name: 'QuizQuestions',
       component: QuizQuestionsPage
+    },
+    {
+      path: '/enseignant/groupes',
+      name: 'GroupesList',
+      component: GroupesListPage
+    },
+    {
+      path: '/enseignant/groupes/nouveau',
+      name: 'GroupeCreate',
+      component: GroupeCreatePage
+    },
+    {
+      path: '/enseignant/groupes/:id',
+      name: 'GroupeDetails',
+      component: GroupeDetailsPage
     },
     {
       path: '/etudiant',
