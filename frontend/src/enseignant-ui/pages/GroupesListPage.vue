@@ -89,9 +89,8 @@ export default {
           id: g.id,
           nom: g.nom,
           isPublic: !!g.is_public,
-          nbMembres: g.nb_membres ?? 0,
+          nbMembres: g.nb_membres ?? (g.members ? g.members.length : 0),
         }))
-
       } catch (e) {
         console.error('Erreur chargement groupes', e)
         this.groupes = []
