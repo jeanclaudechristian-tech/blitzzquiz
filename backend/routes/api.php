@@ -12,7 +12,7 @@ Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
 
@@ -22,4 +22,14 @@ Route::post('login', [AuthController::class, 'login']);
 
     Route::apiResource('quizzes', QuizController::class);
     Route::post('quizzes/{quiz}/join', [QuizController::class, 'join']);
+
+
+    //ROUTES FOR THE GROUPS
+    Route::apiResource('groups', GroupController::class)->only(['index', 'show']);
+    Route::post('groups', [GroupController::class, 'store']);
+    Route::apiResource('groups', GroupController::class)->only(['update', 'destroy'])->where(['group' => '[0-9]+']);
+    Route::post('groups/{group}/join', [GroupController::class, 'join']);
+    Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
+    Route::delete('groups/{group}/leave', [GroupController::class, 'leave']);
+
 });
