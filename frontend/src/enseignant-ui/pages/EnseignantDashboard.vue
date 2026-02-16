@@ -147,8 +147,7 @@ export default {
       }
     },
     goToGroups() {
-      // Raccourci réservé pour une future fonctionnalité Groupes
-      console.log('Navigation vers Groupes (à implémenter)')
+      this.$router.push('/enseignant/groupes')
     },
     editQuiz(quiz) {
       this.$router.push(`/enseignant/quiz/${quiz.id}/editer`)
