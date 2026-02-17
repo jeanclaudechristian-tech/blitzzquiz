@@ -65,6 +65,7 @@ class GroupController extends Controller
             'members' => $group->members,
             'nb_membres' => $group->members->count(),
             'assignments' => [],
+            'owner_id' => $group->owner_id
         ]);
     }
 

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Modal } from 'react-native';
+import {View, Text, StyleSheet, FlatList, TextInput, Modal, TouchableOpacity} from 'react-native';
 import { useGroups } from '@/services/GroupContext'; //
 import { DarkButton } from '../../components/blitzz/DarkButton';
 import { colors, fonts } from '../../components/blitzz/tokens';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import {useAuth} from "@/services/AuthContext";
+import {Group} from "@/types";
 
-export default function Groups({ onBack }: { onBack: () => void }) {
+export default function Groups({ onBack, onSelectGroup }: { onBack: () => void, onSelectGroup: (g: Group) => void } ) {
     const { groups, isLoading, fetchGroups, joinGroup } = useGroups();
     const [modalVisible, setModalVisible] = useState(false);
     const [inviteCode, setInviteCode] = useState('');
@@ -44,21 +45,23 @@ export default function Groups({ onBack }: { onBack: () => void }) {
                     const isOwner = user?.id === item.owner_id; // 比对数据库里的 owner_id
 
                     return (
-                        <Animated.View entering={FadeInUp} style={styles.card}>
-                            <View>
-                                <Text style={styles.groupName}>{item.nom}</Text>
-                                {/* 身份标识：根据 isOwner 切换显示内容和颜色 */}
-                                <Text style={[
-                                    styles.roleBadge,
-                                    { color: isOwner ? colors.primary : colors.secondaryText }
-                                ]}>
-                                    {isOwner ? 'Propriétaire' : 'Membre'}
-                                </Text>
-                            </View>
-                            <View style={styles.rightInfo}>
-                                <Text style={styles.codeSubtitle}>Code: {item.code_invitation}</Text>
-                            </View>
-                        </Animated.View>
+                        <TouchableOpacity onPress={() => onSelectGroup(item)}>
+                            <Animated.View entering={FadeInUp} style={styles.card}>
+                                <View>
+                                    <Text style={styles.groupName}>{item.nom}</Text>
+                                    {/* 身份标识：根据 isOwner 切换显示内容和颜色 */}
+                                    <Text style={[
+                                        styles.roleBadge,
+                                        { color: isOwner ? colors.primary : colors.secondaryText }
+                                    ]}>
+                                        {isOwner ? 'Propriétaire' : 'Membre'}
+                                    </Text>
+                                </View>
+                                <View style={styles.rightInfo}>
+                                    <Text style={styles.codeSubtitle}>Code: {item.code_invitation}</Text>
+                                </View>
+                            </Animated.View>
+                        </TouchableOpacity>
                     );
                 }}
                 ListEmptyComponent={

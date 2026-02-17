@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LoadingScreen } from "@/components/blitzz/LoadingScreen"; // 我们刚才讨论的加载页
 import { colors, fonts } from "@/components/blitzz/tokens";
 import {GroupProvider} from "@/services/GroupContext";
+import {GroupDetailProvider} from "@/services/GroupDetailContext";
 
 function RootLayoutNav() {
     const { isLoading } = useAuth();
@@ -35,7 +36,7 @@ export default function RootLayout() {
     return (
         <AuthProvider>
             <GroupProvider>
-                <RootLayoutNav />
+                <RootLayoutNav/>
             </GroupProvider>
         </AuthProvider>
     );

@@ -8,11 +8,16 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import Dashboard from './Dashboard';
 import Profile from './Profile';
 import Groups from "@/app/(tabs)/Groups";
+import {Group} from "@/types";
+import GroupDetail from "@/app/(tabs)/GroupDetail";
+import {GroupDetailProvider} from "@/services/GroupDetailContext";
 
 export default function HomeScreen() {
     // 定义当前显示的位面：'dashboard' (主页) 或 'profile' (个人资料)
-    const [currentTab, setCurrentTab] = useState<'dashboard' | 'profile' | 'groups'>('dashboard');
+    const [currentTab, setCurrentTab] = useState<'dashboard' | 'profile' | 'groups' | 'group-detail'>('dashboard');
+    const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
+    // @ts-ignore
     return (
         <SafeAreaView style={styles.container}>
             <Animated.View
@@ -43,9 +48,24 @@ export default function HomeScreen() {
 
                 {currentTab === 'groups' && (
                     <Animated.View entering={FadeIn} style={{ flex: 1 }}>
-                        <Groups onBack={() => setCurrentTab('profile')} />
+                        <Groups onBack={() => setCurrentTab('profile')} onSelectGroup={(group) => {
+                            setSelectedGroup(group);
+                            // @ts-ignore
+                            setCurrentTab('group-detail');
+                        }}/>
                     </Animated.View>
                 )}
+
+                {currentTab === 'group-detail' && selectedGroup ? (
+                    <GroupDetailProvider>
+                        <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                            <GroupDetail
+                                group={selectedGroup}
+                                onBack={() => setCurrentTab('groups')}
+                            />
+                        </Animated.View>
+                    </GroupDetailProvider>
+                ) : null}
 
             </View>
             </Animated.View>
