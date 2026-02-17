@@ -1,14 +1,29 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, { useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withTiming, Easing, FadeInDown, FadeOutDown, ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { StatisticIsland } from './StatisticIsland';
 import { ProfilIcon } from './ProfilIcon';
+import { HomeIcon } from './HomeIcon';
 import { SearchIcon } from './SearchIcon';
 
 // @ts-ignore
-export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onProfil }) => {
+export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onProfil, onHome, currentTab = 'dashboard'}) => {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [isIslandExpanded, setIsIslandExpanded] = useState(false);
+
+    // 模拟数据
+    const categories = [
+        { id: 1, name: 'Science', score: 68 },
+        { id: 2, name: 'Math', score: 82 },
+        { id: 3, name: 'History', score: 45 },
+        { id: 4, name: 'Physique', score: 74 },
+        { id: 5, name: 'Français', score: 91 },
+        { id: 6, name: 'Informatique', score: 88 },
+        { id: 7, name: 'Chimie', score: 56 },
+        { id: 8, name: 'Géographie', score: 79 },
+        { id: 9, name: 'Art Visuel', score: 95 },
+        { id: 10, name: 'Philosophie', score: 62 },
+    ];
 
     const config = { duration: 300, easing: Easing.inOut(Easing.quad) };
 
@@ -33,7 +48,7 @@ export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onPr
 
             // 2. 避免从 '100%' 直接跳回固定数值，动画过程中使用固定的参考宽
             // 当 flex 为 0 时，组件会回落到这个 width
-            width: withTiming(isHiding ? 0 : 215, config),
+            width: withTiming(isHiding ? 0 : 200, config),
 
             opacity: withTiming(isHiding ? 0 : 1, config),
         };
@@ -89,6 +104,7 @@ export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onPr
                     completedQuizzes={completedQuizzes}
                     isExpanded={isIslandExpanded}
                     onToggle={toggleIsland}
+                    categories={categories}
                 />
             </Animated.View>
 
@@ -98,11 +114,27 @@ export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onPr
                 <SearchIcon isExpanded={isSearchExpanded} onToggle={toggleSearch} />
             </Animated.View>
 
-            <Animated.View style={[profileStyle, {
-                alignItems: 'flex-start', // ✅ 关键：确保收缩时内容保持居中，不被单侧切掉
-                justifyContent: 'center' }]}>
+            <Animated.View
+                style={[profileStyle, { alignItems: 'flex-start', justifyContent: 'center' }]}
+            >
                 <View style={{ width: 56, alignItems: 'center' }}>
-                    <ProfilIcon onPress={onProfil}/>
+                    {currentTab === 'dashboard' ? (
+                        <Animated.View
+                            key="profil-btn"
+                            entering={ZoomIn.duration(200)}  // 从远处飞到前面
+                            exiting={ZoomOut.duration(200)} // 往后/往下飞走
+                        >
+                            <ProfilIcon onPress={onProfil}/>
+                        </Animated.View>
+                    ) : (
+                        <Animated.View
+                            key="home-btn"
+                            entering={ZoomIn.duration(200)}
+                            exiting={ZoomOut.duration(200)}
+                        >
+                            <HomeIcon onPress={onHome}/>
+                        </Animated.View>
+                    )}
                 </View>
             </Animated.View>
         </View>
