@@ -3,142 +3,162 @@
     <AppHeader />
     <main class="questions-main" v-if="quizLoaded">
       <header class="questions-header">
-        <h1>Questions – {{ quizTitle }}</h1>
-        <button type="button" class="link-button" @click="goBack">
-          Retour à Mes quiz
-        </button>
+        <h1>✏️ Créer des questions</h1>
+        <p class="subtitle">{{ quizTitle }}</p>
       </header>
 
-      <section class="questions-layout">
-        <aside class="questions-list">
-          <div class="questions-list-header">
-            <h2>Questions</h2>
+      <div class="questions-container">
+        <!-- Sidebar avec liste des questions -->
+        <aside class="questions-sidebar">
+          <div class="sidebar-header">
+            <h2>Questions ({{ questions.length }})</h2>
           </div>
-          <div
-            v-for="(q, index) in questions"
-            :key="q.id"
-            :class="['question-item', { active: index === currentIndex }]"
-            @click="loadQuestion(index)"
-          >
-            <span>Q{{ index + 1 }}</span>
-            <button
-              type="button"
-              class="question-delete"
-              @click.stop="deleteQuestion(index)"
+          <div class="questions-list">
+            <div
+              v-for="(q, index) in questions"
+              :key="q.id"
+              :class="['question-card', { active: index === currentIndex }]"
+              @click="loadQuestion(index)"
             >
-              Supprimer
-            </button>
+              <div class="question-number">Q{{ index + 1 }}</div>
+              <div class="question-preview">{{ truncate(q.texte, 30) }}</div>
+              <button
+                type="button"
+                class="delete-icon-btn"
+                @click.stop="deleteQuestion(index)"
+                title="Supprimer"
+              >
+                🗑️
+              </button>
+            </div>
           </div>
           <button type="button" class="add-question-btn" @click="newQuestion">
             + Nouvelle question
           </button>
         </aside>
 
-        <section class="question-form">
-          <form @submit.prevent="addOrUpdateQuestion">
-            <div class="field-group">
+        <!-- Formulaire -->
+        <section class="question-form-section">
+          <form class="question-form" @submit.prevent="addOrUpdateQuestion">
+            <div class="form-group">
               <label for="texte">Texte de la question *</label>
               <textarea
                 id="texte"
                 v-model="form.texte"
+                placeholder="Ex: Quelle est la capitale de la France ?"
                 rows="3"
+                required
               ></textarea>
             </div>
 
-            <div class="field-group">
-              <label>Choix de réponse *</label>
+            <div class="form-group">
+              <label>Choix de réponse (4 choix obligatoires) *</label>
               <div class="choices-grid">
-                <div class="choice-item">
-                  <span class="choice-label">A</span>
-                  <input v-model="form.choixA" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">A</span>
+                  <input
+                    v-model="form.choixA"
+                    type="text"
+                    placeholder="Réponse A"
+                    required
+                  />
                 </div>
-                <div class="choice-item">
-                  <span class="choice-label">B</span>
-                  <input v-model="form.choixB" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">B</span>
+                  <input
+                    v-model="form.choixB"
+                    type="text"
+                    placeholder="Réponse B"
+                    required
+                  />
                 </div>
-                <div class="choice-item">
-                  <span class="choice-label">C</span>
-                  <input v-model="form.choixC" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">C</span>
+                  <input
+                    v-model="form.choixC"
+                    type="text"
+                    placeholder="Réponse C"
+                    required
+                  />
                 </div>
-                <div class="choice-item">
-                  <span class="choice-label">D</span>
-                  <input v-model="form.choixD" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">D</span>
+                  <input
+                    v-model="form.choixD"
+                    type="text"
+                    placeholder="Réponse D"
+                    required
+                  />
                 </div>
               </div>
             </div>
 
-            <div class="field-group">
+            <div class="form-group">
               <label>Bonne réponse *</label>
               <div class="answer-radios">
-                <label v-for="opt in ['A','B','C','D']" :key="opt">
+                <label v-for="opt in ['A','B','C','D']" :key="opt" class="radio-label">
                   <input
                     type="radio"
                     :value="opt"
                     v-model="form.bonneReponse"
+                    required
                   />
-                  <span>{{ opt }}</span>
+                  <span class="radio-text">{{ opt }}</span>
                 </label>
               </div>
             </div>
 
-            <div class="field-group">
+            <div class="form-group">
               <label for="explication">Explication (optionnel)</label>
               <textarea
                 id="explication"
                 v-model="form.explication"
+                placeholder="Ajoutez une explication pour cette question..."
                 rows="2"
               ></textarea>
             </div>
 
             <p v-if="error" class="form-error">{{ error }}</p>
 
-            <div class="builder-actions">
-              <CallToActionBtn
-                text="Ajouter la question"
-                variant="dark"
-                @click="addOrUpdateQuestion"
-              />
-              <CallToActionBtn
-                text="Enregistrer"
-                variant="blue"
-                @click="saveAll"
-              />
-              <button type="button" class="link-button" @click="preview">
-                Prévisualiser
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="btn-primary"
+              >
+                {{ currentIndex !== null ? '✓ Mettre à jour' : '➕ Ajouter la question' }}
+              </button>
+              <button
+                type="button"
+                class="btn-secondary"
+                @click="saveAndContinue"
+              >
+                💾 Enregistrer les questions
+              </button>
+              <button
+                type="button"
+                class="btn-cancel"
+                @click="goBack"
+              >
+                Annuler
               </button>
             </div>
           </form>
-
-          <transition name="fade-up">
-            <div v-if="showPreview" class="preview-card">
-              <h3>Aperçu</h3>
-              <p class="preview-question">{{ form.texte }}</p>
-              <ul class="preview-choices">
-                <li><strong>A.</strong> {{ form.choixA }}</li>
-                <li><strong>B.</strong> {{ form.choixB }}</li>
-                <li><strong>C.</strong> {{ form.choixC }}</li>
-                <li><strong>D.</strong> {{ form.choixD }}</li>
-              </ul>
-            </div>
-          </transition>
         </section>
-      </section>
+      </div>
     </main>
-    <AppFooter />
+    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
-import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
 export default {
   name: 'QuizQuestionsPage',
   components: {
     AppHeader,
-    AppFooter,
-    CallToActionBtn
+    AppFooter
   },
   data() {
     return {
@@ -155,8 +175,7 @@ export default {
         bonneReponse: 'A',
         explication: ''
       },
-      error: '',
-      showPreview: false
+      error: ''
     }
   },
   computed: {
@@ -167,8 +186,7 @@ export default {
   },
   methods: {
     loadQuizMeta() {
-      // TODO (Laravel) : remplacer cette lecture localStorage
-      // par GET /api/quizzes/{id} pour récupérer le titre et les métadonnées.
+      // TODO (Laravel) : GET /api/quizzes/{id}
       const quizzesKey = 'enseignant_quizzes'
       const id = Number(this.$route.params.id)
       try {
@@ -190,6 +208,7 @@ export default {
       }
     },
     loadQuestions() {
+      // TODO (Laravel) : GET /api/quizzes/{id}/questions
       try {
         const saved = localStorage.getItem(this.storageKey)
         if (!saved) return
@@ -200,6 +219,7 @@ export default {
       }
     },
     saveQuestions() {
+      // TODO (Laravel) : POST /api/quizzes/{id}/questions
       localStorage.setItem(this.storageKey, JSON.stringify(this.questions))
       this.updateQuizQuestionCount()
     },
@@ -240,25 +260,28 @@ export default {
         this.error = 'Veuillez remplir le texte de la question et les 4 choix.'
         return
       }
+      
       const question = {
-        // TODO (Laravel) : dans une vraie API, l'id de question
-        // viendra de la réponse POST /api/quizzes/{id}/questions.
+        // TODO (Laravel) : remplacer Date.now() par l'id renvoyé par l'API
         id: this.currentIndex != null && this.questions[this.currentIndex]
           ? this.questions[this.currentIndex].id
           : Date.now(),
         ...this.form
       }
+      
       if (this.currentIndex == null) {
         this.questions.push(question)
         this.currentIndex = this.questions.length - 1
       } else {
         this.questions.splice(this.currentIndex, 1, question)
       }
+      
       this.saveQuestions()
-      this.showPreview = true
+      this.resetForm()
     },
     deleteQuestion(index) {
       if (index < 0 || index >= this.questions.length) return
+      // TODO (Laravel) : DELETE /api/questions/{questionId}
       this.questions.splice(index, 1)
       if (this.currentIndex === index) {
         this.resetForm()
@@ -268,6 +291,7 @@ export default {
       this.saveQuestions()
     },
     updateQuizQuestionCount() {
+      // TODO (Laravel) : Ce compteur sera automatiquement mis à jour côté backend
       const quizzesKey = 'enseignant_quizzes'
       const id = Number(this.$route.params.id)
       try {
@@ -277,21 +301,21 @@ export default {
         if (!Array.isArray(parsed)) return
         const idx = parsed.findIndex(q => q.id === id)
         if (idx === -1) return
-        // TODO (Laravel) : à terme, ce compteur viendra
-        // du backend (par ex. GET /api/quizzes/{id})
-        // après enregistrement des questions.
         parsed[idx].nbQuestions = this.questions.length
         localStorage.setItem(quizzesKey, JSON.stringify(parsed))
       } catch {
         // ignore
       }
     },
-    saveAll() {
-      this.saveQuestions()
-      this.$router.push('/enseignant')
+    truncate(text, length) {
+      if (!text) return ''
+      return text.length > length ? text.substring(0, length) + '...' : text
     },
-    preview() {
-      this.showPreview = true
+    saveAndContinue() {
+      // Sauvegarder les questions actuelles
+      this.saveQuestions()
+      // Rediriger vers la page d'édition du quiz pour finaliser
+      this.$router.push(`/enseignant/quiz/${this.$route.params.id}/editer`)
     },
     goBack() {
       this.$router.push('/enseignant')
@@ -307,4 +331,3 @@ export default {
 <style scoped>
 @import './QuizQuestionsPage.css';
 </style>
-

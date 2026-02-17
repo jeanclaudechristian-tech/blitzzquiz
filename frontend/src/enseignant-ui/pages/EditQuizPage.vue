@@ -4,35 +4,37 @@
     <main class="edit-main">
       <section v-if="quizLoaded" class="edit-card">
         <header class="edit-card-header">
-          <h1>Éditer le quiz</h1>
-          <p>Modifie les informations de base de ton quiz.</p>
+          <h1>✏️ Éditer le quiz</h1>
+          <p class="subtitle">Modifiez les informations de base de votre quiz</p>
         </header>
 
-        <div class="edit-layout">
-          <form class="edit-form" @submit.prevent="saveQuiz()">
-            <div class="field-group">
-              <label for="titre">Titre du quiz *</label>
-              <input
-                id="titre"
-                v-model="form.titre"
-                type="text"
-                required
-              />
-            </div>
+        <form class="edit-form" @submit.prevent="saveQuiz(false)">
+          <div class="field-group">
+            <label for="titre">Titre du quiz *</label>
+            <input
+              id="titre"
+              v-model="form.titre"
+              type="text"
+              placeholder="Titre de votre quiz"
+              required
+            />
+          </div>
 
-            <div class="field-group">
-              <label for="description">Description</label>
-              <textarea
-                id="description"
-                v-model="form.description"
-                rows="3"
-              ></textarea>
-            </div>
+          <div class="field-group">
+            <label for="description">Description</label>
+            <textarea
+              id="description"
+              v-model="form.description"
+              rows="3"
+              placeholder="Ajoutez des consignes ou un contexte (optionnel)"
+            ></textarea>
+          </div>
 
+          <div class="field-row">
             <div class="field-group">
               <label for="categorie">Catégorie</label>
               <select id="categorie" v-model="form.categorie">
-                <option value="">Choisir</option>
+                <option value="">Choisir une catégorie</option>
                 <option value="Math">Math</option>
                 <option value="Français">Français</option>
                 <option value="Sciences">Sciences</option>
@@ -40,38 +42,33 @@
               </select>
             </div>
 
-            <p v-if="error" class="form-error">{{ error }}</p>
+            <div class="field-group">
+              <label for="niveau">Niveau d'étude</label>
+              <select id="niveau" v-model="form.niveau">
+                <option value="">Choisir un niveau</option>
+                <option value="Primaire">Primaire</option>
+                <option value="Secondaire">Secondaire</option>
+                <option value="Collégiale">Collégiale</option>
+                <option value="Universitaire">Universitaire</option>
+              </select>
+            </div>
+          </div>
 
-            <div class="edit-actions">
-              <CallToActionBtn
-                text="Enregistrer"
-                variant="dark"
-                @click="saveQuiz(false)"
-              />
-              <CallToActionBtn
-                text="Publier"
-                variant="blue"
-                @click="saveQuiz(true)"
-              />
-              <button type="button" class="link-button" @click="goBack">
-                Retour à Mes quiz
+          <div class="visibility-section">
+            <div class="field-group visibility-group">
+              <span class="field-label">Visibilité</span>
+              <button
+                type="button"
+                class="toggle"
+                :class="{ active: form.isPublic }"
+                @click="form.isPublic = !form.isPublic"
+              >
+                <span class="toggle-thumb"></span>
+                <span class="toggle-label">
+                  {{ form.isPublic ? 'Public' : 'Privé' }}
+                </span>
               </button>
             </div>
-          </form>
-
-          <aside class="visibility-card">
-            <h2>Visibilité</h2>
-            <button
-              type="button"
-              class="toggle"
-              :class="{ active: form.isPublic }"
-              @click="form.isPublic = !form.isPublic"
-            >
-              <span class="toggle-thumb"></span>
-              <span class="toggle-label">
-                {{ form.isPublic ? 'Public' : 'Privé' }}
-              </span>
-            </button>
 
             <div v-if="!form.isPublic" class="code-block">
               <p class="code-label">Code du quiz</p>
@@ -81,30 +78,68 @@
                   type="button"
                   class="copy-btn"
                   @click="copyCode"
+                  title="Copier le code"
                 >
-                  Copier
+                  📋 Copier
                 </button>
               </div>
             </div>
-          </aside>
-        </div>
+          </div>
+
+          <p v-if="error" class="form-error">{{ error }}</p>
+
+          <p v-if="!hasQuestions" class="form-warning">
+            ⚠️ Vous devez créer au moins une question avant d'enregistrer le quiz.
+          </p>
+
+          <div class="actions">
+            <div class="primary-actions">
+              <button
+                type="button"
+                class="btn-primary"
+                @click="saveQuiz(false)"
+                :disabled="!hasQuestions"
+                :title="!hasQuestions ? 'Ajoutez des questions avant d\'enregistrer' : ''"
+              >
+                💾 Enregistrer le quiz
+              </button>
+              <button
+                type="button"
+                class="btn-publish"
+                @click="saveQuiz(true)"
+                :disabled="!hasQuestions"
+                :title="!hasQuestions ? 'Ajoutez des questions avant de publier' : ''"
+              >
+                📢 Publier
+              </button>
+              <button
+                type="button"
+                class="btn-secondary"
+                @click="goToQuestions"
+              >
+                ➕ Gérer les questions
+              </button>
+            </div>
+            <button type="button" class="btn-cancel" @click="goBack">
+              Retour à Mes quiz
+            </button>
+          </div>
+        </form>
       </section>
     </main>
-    <AppFooter />
+    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
-import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
 export default {
   name: 'EditQuizPage',
   components: {
     AppHeader,
-    AppFooter,
-    CallToActionBtn
+    AppFooter
   },
   data() {
     return {
@@ -114,6 +149,7 @@ export default {
         titre: '',
         description: '',
         categorie: '',
+        niveau: '',
         isPublic: false,
         code_quiz: '',
         statut: 'Brouillon'
@@ -121,13 +157,29 @@ export default {
       error: ''
     }
   },
+  computed: {
+    hasQuestions() {
+      if (!this.form.id) return false
+      
+      const questionsKey = `enseignant_quiz_questions_${this.form.id}`
+      const saved = localStorage.getItem(questionsKey)
+      
+      if (!saved) return false
+      
+      try {
+        const questions = JSON.parse(saved)
+        return Array.isArray(questions) && questions.length > 0
+      } catch {
+        return false
+      }
+    }
+  },
   methods: {
     generateCode() {
       return Math.random().toString(36).substring(2, 8).toUpperCase()
     },
     loadQuiz() {
-      // TODO (Laravel) : remplacer cette lecture localStorage
-      // par GET /api/quizzes/{id}.
+      // TODO (Laravel) : GET /api/quizzes/{id}
       const storageKey = 'enseignant_quizzes'
       const id = Number(this.$route.params.id)
       const saved = localStorage.getItem(storageKey)
@@ -157,6 +209,7 @@ export default {
         titre: quiz.titre,
         description: quiz.description || '',
         categorie: quiz.categorie || '',
+        niveau: quiz.niveau || '',
         isPublic: !!quiz.isPublic,
         code_quiz: quiz.code_quiz,
         statut: quiz.statut || 'Brouillon'
@@ -169,8 +222,14 @@ export default {
         this.error = 'Le titre du quiz est obligatoire.'
         return
       }
-      // TODO (Laravel) : remplacer tout ce bloc par
-      // PATCH/PUT /api/quizzes/{id} avec les champs du formulaire.
+      
+      if (!this.hasQuestions) {
+        this.error = 'Vous devez créer au moins une question avant d\'enregistrer le quiz.'
+        return
+      }
+      
+      // TODO (Laravel) : PUT /api/quizzes/{id}
+      // Enregistrer les informations du quiz ET toutes les questions
       const storageKey = 'enseignant_quizzes'
       let quizzes = []
       try {
@@ -187,20 +246,36 @@ export default {
         this.$router.push('/enseignant')
         return
       }
+      
+      // Mettre à jour le nombre de questions
+      const questionsKey = `enseignant_quiz_questions_${this.form.id}`
+      const questionsData = localStorage.getItem(questionsKey)
+      let nbQuestions = 0
+      if (questionsData) {
+        try {
+          const questions = JSON.parse(questionsData)
+          nbQuestions = Array.isArray(questions) ? questions.length : 0
+        } catch {
+          nbQuestions = 0
+        }
+      }
+      
       quizzes[idx] = {
         ...quizzes[idx],
         titre: this.form.titre.trim(),
         description: this.form.description.trim(),
         categorie: this.form.categorie,
+        niveau: this.form.niveau,
         isPublic: this.form.isPublic,
         code_quiz: this.form.code_quiz,
+        nbQuestions: nbQuestions,
         statut: publish ? 'Publié' : (quizzes[idx].statut || 'Brouillon')
       }
       localStorage.setItem(storageKey, JSON.stringify(quizzes))
-      if (publish) {
-        console.log('Quiz publié')
-      }
       this.$router.push('/enseignant')
+    },
+    goToQuestions() {
+      this.$router.push(`/enseignant/quiz/${this.form.id}/questions`)
     },
     goBack() {
       this.$router.push('/enseignant')
@@ -219,4 +294,3 @@ export default {
 <style scoped>
 @import './EditQuizPage.css';
 </style>
-
