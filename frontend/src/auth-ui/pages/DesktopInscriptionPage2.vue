@@ -97,7 +97,8 @@ export default {
           this.formData.email,
           this.formData.username,
           this.formData.password,
-          this.formData.confirmPassword
+          this.formData.confirmPassword,
+          this.registrationStore.niveauEtude
         )
 
         console.log("Données complètes d'inscription:", {
@@ -113,7 +114,8 @@ export default {
           this.formData.username,
           this.formData.password,
           this.formData.confirmPassword,
-          this.registrationStore.role
+          this.registrationStore.role,
+          this.registrationStore.niveauEtude
         )
 
         localStorage.setItem('token', data.token)

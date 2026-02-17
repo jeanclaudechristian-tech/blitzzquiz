@@ -36,14 +36,15 @@ export default {
       default: ''
     }
   },
-  emits: ['update:modelValue'],
+  // CORRECTION : On ne met que le nom de l'événement ici
+  emits: ['update:modelValue'], 
   data() {
     return {
       isOpen: false,
       options: [
         { value: '', label: 'Choisir' },
         { value: 'universitaire', label: 'Universitaire' },
-        { value: 'collegial', label: 'Collégial' },
+        { value: 'collegial', label: 'Collegial' },
         { value: 'secondaire', label: 'Secondaire' },
         { value: 'primaire', label: 'Primaire' }
       ]
@@ -61,6 +62,7 @@ export default {
     },
     selectOption(value) {
       if (value !== '') {
+        // Envoie la "value" (ex: 'collegial') au composant parent [web:3]
         this.$emit('update:modelValue', value);
       }
       this.isOpen = false;
