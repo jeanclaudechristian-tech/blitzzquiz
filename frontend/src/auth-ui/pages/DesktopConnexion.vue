@@ -36,9 +36,13 @@ import BoutonConnexion from '../components/BoutonConnexion.vue'
 import Diviseur from '../components/Diviseur.vue'
 import BoutonCreerUnCompte from '../components/BoutonCreerUnCompte.vue'
 import BoutonGoogle from '../components/BoutonGoogle.vue'
+<<<<<<< HEAD
 import { authService } from '../../API/auth'
 import axios from 'axios'
 
+=======
+import { authService } from '../../api/auth'
+>>>>>>> 1463e24d3617341f35efa68ca83130845281e3bd
 
 export default {
   name: 'DesktopConnexion',

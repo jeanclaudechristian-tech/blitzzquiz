@@ -3,18 +3,16 @@
     <AppHeader />
     <main class="questions-main" v-if="quizLoaded">
       <header class="questions-header">
-        <h1>Questions – {{ quizTitle }}</h1>
-        <button type="button" class="link-button" @click="goBack">
-          Retour à Mes quiz
-        </button>
+        <h1>✏️ Créer des questions</h1>
+        <p class="subtitle">{{ quizTitle }}</p>
       </header>
 
-      <section class="questions-layout">
-        <aside class="questions-list">
-          <div class="questions-list-header">
-            <h2>Questions</h2>
+      <div class="questions-container">
+        <!-- Sidebar avec liste des questions -->
+        <aside class="questions-sidebar">
+          <div class="sidebar-header">
+            <h2>Questions ({{ questions.length }})</h2>
           </div>
-
           <div
             v-for="(q, index) in questions"
             :key="q.id"
@@ -36,97 +34,116 @@
           </button>
         </aside>
 
-        <section class="question-form">
-          <form @submit.prevent="addOrUpdateQuestion">
-            <div class="field-group">
+        <!-- Formulaire -->
+        <section class="question-form-section">
+          <form class="question-form" @submit.prevent="addOrUpdateQuestion">
+            <div class="form-group">
               <label for="texte">Texte de la question *</label>
               <textarea
                 id="texte"
                 v-model="form.texte"
+                placeholder="Ex: Quelle est la capitale de la France ?"
                 rows="3"
+                required
               ></textarea>
             </div>
 
-            <div class="field-group">
-              <label>Choix de réponse *</label>
+            <div class="form-group">
+              <label>Choix de réponse (4 choix obligatoires) *</label>
               <div class="choices-grid">
-                <div class="choice-item">
-                  <span class="choice-label">A</span>
-                  <input v-model="form.choixA" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">A</span>
+                  <input
+                    v-model="form.choixA"
+                    type="text"
+                    placeholder="Réponse A"
+                    required
+                  />
                 </div>
-                <div class="choice-item">
-                  <span class="choice-label">B</span>
-                  <input v-model="form.choixB" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">B</span>
+                  <input
+                    v-model="form.choixB"
+                    type="text"
+                    placeholder="Réponse B"
+                    required
+                  />
                 </div>
-                <div class="choice-item">
-                  <span class="choice-label">C</span>
-                  <input v-model="form.choixC" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">C</span>
+                  <input
+                    v-model="form.choixC"
+                    type="text"
+                    placeholder="Réponse C"
+                    required
+                  />
                 </div>
-                <div class="choice-item">
-                  <span class="choice-label">D</span>
-                  <input v-model="form.choixD" type="text" />
+                <div class="choice-field">
+                  <span class="choice-letter">D</span>
+                  <input
+                    v-model="form.choixD"
+                    type="text"
+                    placeholder="Réponse D"
+                    required
+                  />
                 </div>
               </div>
             </div>
 
-            <div class="field-group">
+            <div class="form-group">
               <label>Bonne réponse *</label>
               <div class="answer-radios">
-                <label v-for="opt in ['A','B','C','D']" :key="opt">
+                <label v-for="opt in ['A','B','C','D']" :key="opt" class="radio-label">
                   <input
                     type="radio"
                     :value="opt"
                     v-model="form.bonneReponse"
+                    required
                   />
-                  <span>{{ opt }}</span>
+                  <span class="radio-text">{{ opt }}</span>
                 </label>
               </div>
             </div>
 
-            <div class="field-group">
+            <div class="form-group">
               <label for="explication">Explication (optionnel)</label>
               <textarea
                 id="explication"
                 v-model="form.explication"
+                placeholder="Ajoutez une explication pour cette question..."
                 rows="2"
               ></textarea>
             </div>
 
             <p v-if="error" class="form-error">{{ error }}</p>
 
-            <div class="builder-actions">
-              <CallToActionBtn
-                text="Ajouter la question"
-                variant="dark"
-                @click="addOrUpdateQuestion"
-              />
-              <CallToActionBtn
-                text="Enregistrer"
-                variant="blue"
-                @click="saveAll"
-              />
-              <button type="button" class="link-button" @click="preview">
-                Prévisualiser
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="btn-primary"
+              >
+                {{ currentIndex !== null ? '✓ Mettre à jour' : '➕ Ajouter la question' }}
+              </button>
+              <button
+                type="button"
+                class="btn-secondary"
+                @click="saveAndContinue"
+              >
+                💾 Enregistrer les questions
+              </button>
+              <button
+                type="button"
+                class="btn-cancel"
+                @click="goBack"
+              >
+                Annuler
               </button>
             </div>
           </form>
-
-          <transition name="fade-up">
-            <div v-if="showPreview" class="preview-card">
-              <h3>Aperçu</h3>
-              <p class="preview-question">{{ form.texte }}</p>
-              <ul class="preview-choices">
-                <li><strong>A.</strong> {{ form.choixA }}</li>
-                <li><strong>B.</strong> {{ form.choixB }}</li>
-                <li><strong>C.</strong> {{ form.choixC }}</li>
-                <li><strong>D.</strong> {{ form.choixD }}</li>
-              </ul>
-            </div>
-          </transition>
         </section>
-      </section>
+      </div>
     </main>
-    <AppFooter />
+    <AppFooter class="compact-footer" />
   </div>
 </template>
 
@@ -134,14 +151,12 @@
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
-import api from '../../api/Axios' // adapte le chemin si besoin [web:383]
 
 export default {
   name: 'QuizQuestionsPage',
   components: {
     AppHeader,
-    AppFooter,
-    CallToActionBtn
+    AppFooter
   },
   data() {
     return {
@@ -158,25 +173,40 @@ export default {
         bonneReponse: 'A',
         explication: ''
       },
-      error: '',
-      showPreview: false
+      error: ''
     }
   },
   methods: {
     async loadQuizMeta() {
       const id = this.$route.params.id
+      return `enseignant_quiz_questions_${id}`
+    }
+  },
+  methods: {
+    loadQuizMeta() {
+      // TODO (Laravel) : remplacer cette lecture localStorage
+      // par GET /api/quizzes/{id} pour récupérer le titre et les métadonnées.
+      const quizzesKey = 'enseignant_quizzes'
+      const id = Number(this.$route.params.id)
       try {
-        const { data } = await api.get(`/quizzes/${id}`)
-        this.quizTitle = data.titre
-        this.quizLoaded = true
-      } catch (e) {
-        console.error('Erreur chargement quiz', e.response?.data || e)
+        const saved = localStorage.getItem(quizzesKey)
+        if (!saved) return
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          const quiz = parsed.find(q => q.id === id)
+          if (quiz) {
+            this.quizTitle = quiz.titre
+            this.quizLoaded = true
+          }
+        }
+      } catch {
+        // ignore
+      }
+      if (!this.quizLoaded) {
         this.$router.push('/enseignant')
       }
     },
-
-    async loadQuestions() {
-      const id = this.$route.params.id
+    loadQuestions() {
       try {
         const { data } = await api.get(`/quizzes/${id}/questions`)
         this.questions = data
@@ -185,7 +215,10 @@ export default {
         this.questions = []
       }
     },
-
+    saveQuestions() {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.questions))
+      this.updateQuizQuestionCount()
+    },
     resetForm() {
       this.form = {
         texte: '',
@@ -227,70 +260,56 @@ export default {
         this.error = 'Veuillez remplir le texte de la question et les 4 choix.'
         return
       }
-
-      const payload = {
-        texte: texte.trim(),
-        choixA: choixA.trim(),
-        choixB: choixB.trim(),
-        choixC: choixC.trim(),
-        choixD: choixD.trim(),
-        bonneReponse,
-        explication: explication?.trim() ?? ''
+      const question = {
+        // TODO (Laravel) : dans une vraie API, l'id de question
+        // viendra de la réponse POST /api/quizzes/{id}/questions.
+        id: this.currentIndex != null && this.questions[this.currentIndex]
+          ? this.questions[this.currentIndex].id
+          : Date.now(),
+        ...this.form
       }
-
-      const quizId = this.$route.params.id
-
-      try {
-        if (this.currentIndex == null || !this.questions[this.currentIndex]?.id) {
-          // création
-          const { data } = await api.post(`/quizzes/${quizId}/questions`, payload)
-          this.questions.push(data)
-          this.currentIndex = this.questions.length - 1
-        } else {
-          // mise à jour
-          const qId = this.questions[this.currentIndex].id
-          const { data } = await api.put(`/questions/${qId}`, payload)
-          this.questions.splice(this.currentIndex, 1, data)
-        }
-
-        this.showPreview = true
-      } catch (e) {
-        console.error('Erreur enregistrement question', e.response?.data || e)
-        this.error = "Erreur lors de l'enregistrement de la question."
+      if (this.currentIndex == null) {
+        this.questions.push(question)
+        this.currentIndex = this.questions.length - 1
+      } else {
+        this.questions.splice(this.currentIndex, 1, question)
       }
+      this.saveQuestions()
+      this.showPreview = true
     },
-
-    async deleteQuestion(index) {
+    deleteQuestion(index) {
       if (index < 0 || index >= this.questions.length) return
-
-      const question = this.questions[index]
-      if (!question?.id) {
-        this.questions.splice(index, 1)
-        if (this.currentIndex === index) this.resetForm()
-        else if (this.currentIndex > index) this.currentIndex -= 1
-        return
+      this.questions.splice(index, 1)
+      if (this.currentIndex === index) {
+        this.resetForm()
+      } else if (this.currentIndex > index) {
+        this.currentIndex -= 1
       }
-
-      if (!confirm('Supprimer cette question ?')) return
-
+      this.saveQuestions()
+    },
+    updateQuizQuestionCount() {
+      const quizzesKey = 'enseignant_quizzes'
+      const id = Number(this.$route.params.id)
       try {
-        await api.delete(`/questions/${question.id}`)
-        this.questions.splice(index, 1)
-        if (this.currentIndex === index) {
-          this.resetForm()
-        } else if (this.currentIndex > index) {
-          this.currentIndex -= 1
-        }
-      } catch (e) {
-        console.error('Erreur suppression question', e.response?.data || e)
-        alert("Impossible de supprimer la question.")
+        const saved = localStorage.getItem(quizzesKey)
+        if (!saved) return
+        const parsed = JSON.parse(saved)
+        if (!Array.isArray(parsed)) return
+        const idx = parsed.findIndex(q => q.id === id)
+        if (idx === -1) return
+        // TODO (Laravel) : à terme, ce compteur viendra
+        // du backend (par ex. GET /api/quizzes/{id})
+        // après enregistrement des questions.
+        parsed[idx].nbQuestions = this.questions.length
+        localStorage.setItem(quizzesKey, JSON.stringify(parsed))
+      } catch {
+        // ignore
       }
     },
-
     saveAll() {
+      this.saveQuestions()
       this.$router.push('/enseignant')
     },
-
     preview() {
       this.showPreview = true
     },

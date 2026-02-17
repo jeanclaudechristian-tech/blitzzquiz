@@ -35,7 +35,7 @@ import InputMotDePasse from '../components/InputMotDePasse.vue'
 import InputConfirmerMotDePasse from '../components/InputConfirmerMotDePasse.vue'
 import BoutonRetour from '../components/BoutonRetour.vue'
 import BoutonConfirmer from '../components/BoutonConfirmer.vue'
-import { authService } from '../../API/auth'
+import { authService } from '../../api/auth'
 import { useRegistrationStore } from '../../stores/registration'
 
 export default {
@@ -97,7 +97,8 @@ export default {
           this.formData.email,
           this.formData.username,
           this.formData.password,
-          this.formData.confirmPassword
+          this.formData.confirmPassword,
+          this.registrationStore.niveauEtude
         )
 
         console.log("Données complètes d'inscription:", {
@@ -113,7 +114,8 @@ export default {
           this.formData.username,
           this.formData.password,
           this.formData.confirmPassword,
-          this.registrationStore.role
+          this.registrationStore.role,
+          this.registrationStore.niveauEtude
         )
 
         localStorage.setItem('token', data.token)

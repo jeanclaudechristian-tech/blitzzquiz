@@ -1,15 +1,16 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "BlitzzQuiz",
+    "slug": "blitzzquiz",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "blitzzquiz",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.blitzzquiz.collegeahuntsic"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +20,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.blitzzquiz.collegeahuntsic",
+      "keystore": {
+        "keystorePath": "./my-release-key.jks",
+        "keystorePassword": "123456",
+        "keyAlias": "my-key-alias",
+        "keyPassword": "123456"
+      }
     },
     "web": {
       "output": "static",
@@ -39,11 +47,18 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "97e152af-4bb5-42a9-af37-b8464bf15ea8"
+      }
     }
   }
 }

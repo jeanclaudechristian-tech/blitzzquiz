@@ -6,13 +6,14 @@ export const authService = {
     return response.data;
   },
 
-  async register(email, username, password, password_confirmation, role) {
+  async register(email, username, password, password_confirmation, role, educationLevel) {
     console.log("register payload", {
       email,
       username,
       password,
       password_confirmation,
       role,
+      education_level: educationLevel,
     });
 
     const response = await api.post("/register", {
@@ -20,7 +21,9 @@ export const authService = {
       nickname: username,
       password,
       password_confirmation,
-      role,
+      role,     
+      education_level: educationLevel,
+
     });
     return response.data;
   },

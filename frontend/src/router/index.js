@@ -17,6 +17,14 @@ import EtudiantQuizLobbyPage from '../etudiant-ui/pages/EtudiantQuizLobbyPage.vu
 import EtudiantQuizPlayPage from '../etudiant-ui/pages/EtudiantQuizPlayPage.vue'
 import EtudiantQuizLoadingPage from '../etudiant-ui/pages/EtudiantQuizLoadingPage.vue'
 import EtudiantQuizResultPage from '../etudiant-ui/pages/EtudiantQuizResultPage.vue'
+import LeaderboardPage from '../classement-ui/pages/LeaderboardPage.vue'
+import HistoriquePage from '../historique-ui/pages/HistoriquePage.vue'
+import AdminDashboard from '../admin-ui/pages/AdminDashboard.vue'
+import UsersListPage from '../admin-ui/pages/UsersListPage.vue'
+import SuperAdminView from '../admin-ui/pages/SuperAdminView.vue'
+import GroupesListPage from '../enseignant-ui/pages/GroupesListPage.vue'
+import GroupeCreatePage from '../enseignant-ui/pages/GroupeCreatePage.vue'
+import GroupeDetailsPage from '../enseignant-ui/pages/GroupeDetailsPage.vue'
 
 const routes = [
     {
@@ -79,6 +87,21 @@ const routes = [
       component: QuizQuestionsPage
     },
     {
+      path: '/enseignant/groupes',
+      name: 'GroupesList',
+      component: GroupesListPage
+    },
+    {
+      path: '/enseignant/groupes/nouveau',
+      name: 'GroupeCreate',
+      component: GroupeCreatePage
+    },
+    {
+      path: '/enseignant/groupes/:id',
+      name: 'GroupeDetails',
+      component: GroupeDetailsPage
+    },
+    {
       path: '/etudiant',
       name: 'EtudiantDashboard',
       component: EtudiantDashboard
@@ -112,6 +135,31 @@ const routes = [
       path: '/etudiant/quiz/:id/resultat',
       name: 'EtudiantQuizResult',
       component: EtudiantQuizResultPage
+    },
+    {
+      path: '/classement',
+      name: 'Leaderboard',
+      component: LeaderboardPage
+    },
+    {
+      path: '/historique',
+      name: 'Historique',
+      component: HistoriquePage
+    },
+    {
+      path: '/admin',
+      name: 'AdminDashboard',
+      component: AdminDashboard
+    },
+    {
+      path: '/admin/users',
+      name: 'AdminUsersList',
+      component: UsersListPage
+    },
+    {
+      path: '/admin/super',
+      name: 'SuperAdmin',
+      component: SuperAdminView
     }
   ]
 

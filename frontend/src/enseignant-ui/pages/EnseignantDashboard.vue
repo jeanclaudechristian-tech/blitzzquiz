@@ -72,14 +72,14 @@
             </span>
             <span>{{ quiz.nbQuestions }}</span>
             <span class="quiz-actions">
-              <button type="button" class="action-link" @click="editQuiz(quiz)">
-                Éditer
+              <button type="button" class="action-btn action-btn--edit" @click="editQuiz(quiz)" title="Éditer le quiz">
+                ✏️ Éditer
               </button>
-              <button type="button" class="action-link" @click="previewQuiz(quiz)">
-                Prévisualiser
+              <button type="button" class="action-btn action-btn--preview" @click="previewQuiz(quiz)" title="Prévisualiser et modifier les questions">
+                👁️ Prévisualiser
               </button>
-              <button type="button" class="action-link danger" @click="requestDelete(quiz)">
-                Supprimer
+              <button type="button" class="action-btn action-btn--delete" @click="requestDelete(quiz)" title="Supprimer le quiz">
+                🗑️ Supprimer
               </button>
             </span>
           </div>
@@ -151,12 +151,14 @@ export default {
       }
     },
     goToGroups() {
+      // Raccourci réservé pour une future fonctionnalité Groupes
       console.log('Navigation vers Groupes (à implémenter)')
     },
     editQuiz(quiz) {
       this.$router.push(`/enseignant/quiz/${quiz.id}/editer`)
     },
     previewQuiz(quiz) {
+      // Redirige vers la page de gestion des questions où l'enseignant peut voir et modifier toutes les questions
       this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
     },
 

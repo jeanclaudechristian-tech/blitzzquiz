@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace app\Models;
 
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password',
         'nickname',
         'role',
+        'education_level',
         'avatar',
         'google_id',
         'apple_id',
