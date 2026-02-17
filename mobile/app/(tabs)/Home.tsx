@@ -7,10 +7,11 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 // 导入你新创建的模块
 import Dashboard from './Dashboard';
 import Profile from './Profile';
+import Groups from "@/app/(tabs)/Groups";
 
 export default function HomeScreen() {
     // 定义当前显示的位面：'dashboard' (主页) 或 'profile' (个人资料)
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'profile'>('dashboard');
+    const [currentTab, setCurrentTab] = useState<'dashboard' | 'profile' | 'groups'>('dashboard');
 
     return (
         <SafeAreaView style={styles.container}>
@@ -19,16 +20,32 @@ export default function HomeScreen() {
                 style={{ flex: 1}}
             >
             <View style={styles.content}>
-
-                {/* Header 逻辑控制 */}
+                {/* Header 逻辑：当在 groups 时，Header 应该显示为 profile 选中状态或根据你设计调整 */}
                 <DashboardHeader
-                    currentTab={activeTab} // 告诉 Header 现在在哪里
-                    onProfil={() => setActiveTab('profile')} // 点击 Profile 跳去 Profile
-                    onHome={() => setActiveTab('dashboard')}    // 点击 Home 跳回 Dashboard
+                    currentTab={currentTab === 'groups' ? 'profile' : currentTab}
+                    onProfil={() => setCurrentTab('profile')}
+                    onHome={() => setCurrentTab('dashboard')}
                 />
 
-                {/* 根据状态条件渲染内容 */}
-                {activeTab === 'dashboard' ? <Dashboard /> : <Profile />}
+                {/* 条件渲染逻辑：确保互斥，一次只显示一个 */}
+                {currentTab === 'dashboard' && (
+                    <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                        <Dashboard />
+                    </Animated.View>
+                )}
+
+                {currentTab === 'profile' && (
+                    <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                        {/* 传入真正的切换函数，不再 throw error */}
+                        <Profile onViewGroups={() => setCurrentTab('groups')} />
+                    </Animated.View>
+                )}
+
+                {currentTab === 'groups' && (
+                    <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                        <Groups onBack={() => setCurrentTab('profile')} />
+                    </Animated.View>
+                )}
 
             </View>
             </Animated.View>

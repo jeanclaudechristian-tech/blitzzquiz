@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LoadingScreen } from "@/components/blitzz/LoadingScreen"; // 我们刚才讨论的加载页
 import { colors, fonts } from "@/components/blitzz/tokens";
+import {GroupProvider} from "@/services/GroupContext";
 
 function RootLayoutNav() {
     const { isLoading } = useAuth();
@@ -33,7 +34,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
     return (
         <AuthProvider>
-            <RootLayoutNav />
+            <GroupProvider>
+                <RootLayoutNav />
+            </GroupProvider>
         </AuthProvider>
     );
 }

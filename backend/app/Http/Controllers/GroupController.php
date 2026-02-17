@@ -30,6 +30,8 @@ class GroupController extends Controller
             return [
                 'id' => $g->id,
                 'nom' => $g->nom,
+                'owner_id' => $g->owner_id, // ✅ 别忘了这个，用来判断身份
+                'code_invitation' => $g->code_invitation, // ✅ 补上这一行！
                 'is_public' => $g->is_public,
                 'nb_membres' => $g->members->count(),
             ];

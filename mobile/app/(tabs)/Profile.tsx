@@ -3,8 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { DarkButton } from '../../components/blitzz/DarkButton';
 import { colors, fonts } from '../../components/blitzz/tokens';
 import {useAuth} from "@/services/AuthContext";
+import {PrimaryButton} from "@/components/blitzz/PrimaryButton";
 
-export default function Profile() {
+export default function Profile({ onViewGroups }: { onViewGroups: () => void }) {
     const { user, logout, isLoading } = useAuth();
 
     return (
@@ -37,6 +38,14 @@ export default function Profile() {
                 </View>
             </View>
 
+            <View style={styles.spacer}></View>
+
+            <PrimaryButton
+                label="Mes Groupes"
+                onPress={onViewGroups}
+                isLoading={isLoading}
+            />
+
             {/* 底部操作 */}
             <View style={styles.footer}>
                 <DarkButton
@@ -60,4 +69,5 @@ const styles = StyleSheet.create({
     infoValue: { fontFamily: fonts.inter, fontSize: 15, fontWeight: '600', color: colors.dark },
     divider: { height: 1, backgroundColor: colors.light, opacity: 0.5 },
     footer: { marginTop: 'auto', marginBottom: 20 },
+    spacer: { flex: 0.1, flexDirection: 'row', justifyContent: 'space-between' },
 });
