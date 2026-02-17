@@ -78,6 +78,7 @@
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
@@ -100,48 +101,47 @@ export default {
       error: ''
     }
   },
-  methods: {
-    handleSubmit() {
-      this.error = ''
+ methods: {
+  async handleSubmit() {
+    this.error = ''
 
-      if (!this.form.titre.trim()) {
-        this.error = 'Le titre du quiz est obligatoire.'
-        return
-      }
+    if (!this.form.titre.trim()) {
+      this.error = 'Le titre du quiz est obligatoire.'
+      return
+    }
 
-      const storageKey = 'enseignant_quizzes'
-      let existing = []
-      try {
-        const saved = localStorage.getItem(storageKey)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed)) existing = parsed
-        }
-      } catch {
-        existing = []
-      }
-
-      const newQuiz = {
-        // TODO (Laravel) : remplacer Date.now() par l'id renvoyé
-        // par l'API (par ex. POST /api/quizzes) et enlever ce stockage local.
-        id: Date.now(),
+    try {
+      // Appel API Laravel : POST /api/quizzes
+      const { data } = await api.post('/quizzes', {
         titre: this.form.titre.trim(),
         description: this.form.description.trim(),
-        categorie: this.form.categorie,
-        isPublic: this.form.isPublic,
-        statut: 'Brouillon',
-        nbQuestions: 0
+        is_public: this.form.isPublic,      // bool → Laravel cast
+        // category est en DB, tu peux l'ajouter aussi si tu veux :
+        category: this.form.categorie || null
+      })
+
+      console.log('Quiz créé en DB :', data)
+
+      // Après création en DB, on retourne au dashboard enseignant
+      this.$router.push('/enseignant')
+    } catch (e) {
+      console.error('Erreur création quiz', e.response?.data || e)
+      if (e.response?.status === 422) {
+        this.error = 'Données invalides, vérifie le titre et la description.'
+      } else if (e.response?.status === 401) {
+        this.error = 'Session expirée, reconnecte-toi.'
+      } else if (e.response?.status === 403) {
+        this.error = 'Tu n’as pas le droit de créer un quiz (rôle).'
+      } else {
+        this.error = 'Erreur lors de la création du quiz.'
       }
-
-      existing.push(newQuiz)
-      localStorage.setItem(storageKey, JSON.stringify(existing))
-
-      this.$router.push('/enseignant')
-    },
-    goBack() {
-      this.$router.push('/enseignant')
     }
+  },
+  goBack() {
+    this.$router.push('/enseignant')
   }
+}
+
 }
 </script>
 

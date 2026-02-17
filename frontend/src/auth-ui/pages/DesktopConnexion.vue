@@ -37,6 +37,8 @@ import Diviseur from '../components/Diviseur.vue'
 import BoutonCreerUnCompte from '../components/BoutonCreerUnCompte.vue'
 import BoutonGoogle from '../components/BoutonGoogle.vue'
 import { authService } from '../../API/auth'
+import axios from 'axios'
+
 
 export default {
   name: 'DesktopConnexion',
@@ -62,56 +64,49 @@ export default {
     }
   },
   methods: {
-    async handleConnexion() {
-      // Validation basique
-      if (!this.formData.username || !this.formData.password) {
-        alert('Veuillez remplir tous les champs')
-        return
-      }
 
-      this.loading = true
-      this.error = null
+async handleConnexion() {
+  // ... validation + this.loading = true
 
-      try {
-        // Appel API de connexion
-        const data = await authService.login(
-          this.formData.username, // email
-          this.formData.password,
-          this.formData.role
-        )
+  try {
+    const data = await authService.login(
+      this.formData.username, // email
+      this.formData.password,
+      this.formData.role
+    )
 
-        // Sauvegarde le token et l'utilisateur
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
+    // Sauvegarde le token et l'utilisateur
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(data.user))
 
-        console.log('Connexion réussie:', data.user)
+    // 🔥 Très important : configurer Axios pour toutes les requêtes suivantes
+    axios.defaults.baseURL = 'http://localhost:8000/api'
+    axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
 
-        const role = data.user.role
-        
-        if (role === 'TEACHER') {
-          this.$router.push('/enseignant')
-        } else if (role === 'STUDENT') {
-          this.$router.push('/etudiant')
-        } else {
-          // fallback si jamais
-          this.$router.push('/')
-        }
+    console.log('Connexion réussie:', data.user)
 
-
-      } catch (error) {
-        console.error('Erreur de connexion:', error)
-
-        if (error.response?.status === 422) {
-          this.error = 'Email ou mot de passe incorrect'
-        } else {
-          this.error = 'Erreur de connexion. Réessayez plus tard.'
-        }
-
-        alert(this.error)
-      } finally {
-        this.loading = false
-      }
+    const role = data.user.role
+    if (role === 'TEACHER') {
+      this.$router.push('/enseignant')
+    } else if (role === 'STUDENT') {
+      this.$router.push('/etudiant')
+    } else {
+      this.$router.push('/')
     }
+
+  } catch (error) {
+    console.error('Erreur de connexion:', error)
+    if (error.response?.status === 422) {
+      this.error = 'Email ou mot de passe incorrect'
+    } else {
+      this.error = 'Erreur de connexion. Réessayez plus tard.'
+    }
+    alert(this.error)
+  } finally {
+    this.loading = false
+  }
+}
+
   }
 }
 </script>
