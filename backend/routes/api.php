@@ -22,4 +22,12 @@ Route::post('login', [AuthController::class, 'login']);
 
     Route::apiResource('quizzes', QuizController::class);
     Route::post('quizzes/{quiz}/join', [QuizController::class, 'join']);
+    Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
+     Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
+    Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
+    Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
+    Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
+       
+
 });
+

@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Broadcast;
+use App\Models\Question;
+
 
 class QuizController extends Controller
 {
@@ -66,4 +67,86 @@ class QuizController extends Controller
 
     return response()->json($quizzes);
 }
+public function destroy(Quiz $quiz)
+{
+    $user = Auth::user();
+
+    // Autorisation : seul le owner ou un admin peut supprimer
+    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    $quiz->delete();
+
+    return response()->json(['message' => 'Quiz supprimé avec succès']);
+}
+
+
+public function questionsIndex(Quiz $quiz)
+{
+    $user = Auth::user();
+    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    return $quiz->questions()->orderBy('id')->get();
+}
+
+public function questionsStore(Request $request, Quiz $quiz)
+{
+    $user = Auth::user();
+    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    $data = $request->validate([
+        'texte' => 'required|string',
+        'choixA' => 'required|string',
+        'choixB' => 'required|string',
+        'choixC' => 'required|string',
+        'choixD' => 'required|string',
+        'bonneReponse' => 'required|in:A,B,C,D',
+        'explication' => 'nullable|string',
+    ]);
+
+    $question = $quiz->questions()->create($data);
+
+    return response()->json($question, 201);
+}
+
+public function questionsUpdate(Request $request, Question $question)
+{
+    $user = Auth::user();
+    if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    $data = $request->validate([
+        'texte' => 'required|string',
+        'choixA' => 'required|string',
+        'choixB' => 'required|string',
+        'choixC' => 'required|string',
+        'choixD' => 'required|string',
+        'bonneReponse' => 'required|in:A,B,C,D',
+        'explication' => 'nullable|string',
+    ]);
+
+    $question->update($data);
+
+    return response()->json($question);
+}
+
+public function questionsDestroy(Question $question)
+{
+    $user = Auth::user();
+    if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    $question->delete();
+
+    return response()->json(['message' => 'Question supprimée']);
+}
+
+
 }
