@@ -7,23 +7,18 @@ import { TextLink } from "../../components/blitzz/TextLink";
 import { IconSvg } from "../../components/blitzz/IconSvg";
 import { assets } from "../../components/blitzz/assets";
 import { colors, fonts } from "../../components/blitzz/tokens";
-import Animated, { Layout, SlideInDown, SlideOutDown } from "react-native-reanimated";
+import Animated, { Layout, SlideInDown, SlideOutUp } from "react-native-reanimated";
 // 引入 AuthContext
 import { useAuth } from "../../services/AuthContext";
 
 export default function RegisterScreen() {
     const router = useRouter();
     const navigation = useNavigation();
-    // 1. 获取注册方法
-    const { register } = useAuth();
-
-    // 2. 定义状态
     const [nickname, setNickname] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const [isVisible, setIsVisible] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 复活机制：页面获得焦点时重置可见性
     useFocusEffect(
@@ -48,20 +43,22 @@ export default function RegisterScreen() {
         return unsubscribe;
     }, [navigation, isVisible]);
 
-    // 3. 注册逻辑
-    const handleRegister = async () => {
+    const handleNextStep = () => {
         if (!nickname || !email || !password) {
             Alert.alert("Erreur", "Veuillez remplir tous les champs.");
             return;
         }
 
-        setIsSubmitting(true);
-        try {
-            // 调用 API，成功后 AuthContext 会处理跳转
-            await register(email, nickname, password);
-        } catch (e) {
-            setIsSubmitting(false);
-        }
+        // 1. 手动触发离场动画 (让 isVisible 变 false)
+        setIsVisible(false);
+
+        // 2. 等待动画播放完毕 (600ms 与你的 duration 一致)
+        setTimeout(() => {
+            router.push({
+                pathname: "/auth/EducationLevelScreen",
+                params: { nickname, email, password }
+            });
+        }, 600);
     };
 
     const handleNav = (action: 'back' | 'confirm') => {
@@ -69,7 +66,7 @@ export default function RegisterScreen() {
             router.back(); // 触发上面 useEffect 里的拦截动画
         } else {
             // 点击 Confirm 执行注册
-            handleRegister();
+            handleNextStep();
         }
     };
 
@@ -85,7 +82,7 @@ export default function RegisterScreen() {
                         <>
                             <Animated.View
                                 entering={SlideInDown.delay(100).duration(600).springify()}
-                                exiting={SlideOutDown.duration(500)}
+                                exiting={SlideOutUp.duration(500)}
                             >
                                 <Text style={styles.title}>
                                     Création{"\n"}du compte
@@ -95,7 +92,7 @@ export default function RegisterScreen() {
                             <View style={styles.formSection}>
                                 <Animated.View
                                     entering={SlideInDown.delay(150).springify()}
-                                    exiting={SlideOutDown.delay(25).duration(500)}
+                                    exiting={SlideOutUp.delay(25).duration(500)}
                                 >
                                     <InputField
                                         placeholder="Nom d'utilisateur"
@@ -110,7 +107,7 @@ export default function RegisterScreen() {
 
                                 <Animated.View
                                     entering={SlideInDown.delay(200).springify()}
-                                    exiting={SlideOutDown.delay(50).duration(500)}
+                                    exiting={SlideOutUp.delay(50).duration(500)}
                                 >
                                     <InputField
                                         placeholder="Courriel (personnel ou scolaire)"
@@ -127,7 +124,7 @@ export default function RegisterScreen() {
 
                                 <Animated.View
                                     entering={SlideInDown.delay(250).springify()}
-                                    exiting={SlideOutDown.delay(75).duration(500)}
+                                    exiting={SlideOutUp.delay(75).duration(500)}
                                 >
                                     <InputField
                                         placeholder="Mot de passe"
@@ -144,7 +141,7 @@ export default function RegisterScreen() {
                             <View style={styles.buttonSection}>
                                 <Animated.View
                                     entering={SlideInDown.delay(600).springify()}
-                                    exiting={SlideOutDown.delay(250).duration(500)}
+                                    exiting={SlideOutUp.delay(250).duration(500)}
                                 >
                                     <View style={styles.backLink}>
                                         <TextLink label="Retour" onPress={() => handleNav('back')} />
@@ -153,12 +150,11 @@ export default function RegisterScreen() {
 
                                 <Animated.View
                                     entering={SlideInDown.delay(700).springify()}
-                                    exiting={SlideOutDown.delay(300).duration(500)}
+                                    exiting={SlideOutUp.delay(300).duration(500)}
                                 >
                                     <DarkButton
-                                        label="Confirmer"
+                                        label="Suivant"
                                         onPress={() => handleNav('confirm')}
-                                        isLoading={isSubmitting} // 绑定 Loading 状态
                                     />
                                 </Animated.View>
                             </View>
