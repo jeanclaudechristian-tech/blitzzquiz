@@ -18,7 +18,8 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    // 💡 修复：初始化必须为 true！
+    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
@@ -26,16 +27,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const checkLoginStatus = async () => {
+        // 这里不需要写 setIsLoading(true)，因为初始化就是 true
         try {
             const token = await SecureStore.getItemAsync('auth_token');
             if (token) {
                 const response = await api.get('/user');
                 setUser(response.data);
-                router.replace("/(tabs)/Home")
+                // 💡 这里的 router.replace 建议删掉，交给 index.tsx 统一分发，防止冲突
             }
         } catch (e) {
             await SecureStore.deleteItemAsync('auth_token');
             setUser(null);
+        } finally {
+            // ✅ 关键：无论成功失败，最后才把加载位面关闭
+            setIsLoading(false);
         }
     };
 
@@ -151,6 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = async () => {
+        setIsLoading(true);
+        console.log("🚶 正在退出登录...");
         try {
             await api.post('/logout');
         } catch(e) {
@@ -158,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         await SecureStore.deleteItemAsync('auth_token');
         setUser(null);
+        setIsLoading(false);
         router.replace('/auth/LoginScreen');
     };
 

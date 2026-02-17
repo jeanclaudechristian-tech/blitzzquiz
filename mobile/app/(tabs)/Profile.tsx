@@ -2,8 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DarkButton } from '../../components/blitzz/DarkButton';
 import { colors, fonts } from '../../components/blitzz/tokens';
+import {useAuth} from "@/services/AuthContext";
 
-export default function Profile({ user, logout, onBack }: any) {
+export default function Profile() {
+    const { user, logout, isLoading } = useAuth();
+
     return (
         <View style={styles.container}>
             {/* 欢迎语 */}
@@ -36,9 +39,11 @@ export default function Profile({ user, logout, onBack }: any) {
 
             {/* 底部操作 */}
             <View style={styles.footer}>
-                <DarkButton label="Retour" onPress={onBack} />
-                <View style={{ height: 10 }} />
-                <DarkButton label="Se déconnecter" onPress={logout} />
+                <DarkButton
+                    label="Se déconnecter"
+                    onPress={logout}
+                    isLoading={isLoading}
+                />
             </View>
         </View>
     );
