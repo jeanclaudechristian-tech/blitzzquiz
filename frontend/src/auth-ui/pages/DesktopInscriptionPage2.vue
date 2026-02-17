@@ -35,7 +35,7 @@ import InputMotDePasse from '../components/InputMotDePasse.vue'
 import InputConfirmerMotDePasse from '../components/InputConfirmerMotDePasse.vue'
 import BoutonRetour from '../components/BoutonRetour.vue'
 import BoutonConfirmer from '../components/BoutonConfirmer.vue'
-import { authService } from '../../API/auth'
+import { authService } from '../../api/auth'
 import { useRegistrationStore } from '../../stores/registration'
 
 export default {

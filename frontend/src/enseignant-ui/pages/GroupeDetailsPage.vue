@@ -17,7 +17,7 @@
 
       <!-- Section 1 : Infos groupe -->
       <section class="details-section">
-        <h2>📋 Informations du groupe</h2>
+        <h2>Informations du groupe</h2>
         <div class="info-card">
           <div class="info-row">
             <span class="info-label">Nom :</span>
@@ -53,7 +53,7 @@
       <!-- Section 2 : Liste membres -->
       <section class="details-section">
         <div class="section-header">
-          <h2>👥 Membres ({{ groupe.membres.length }})</h2>
+          <h2>Membres ({{ groupe.membres.length }})</h2>
           <button type="button" class="action-button" @click="showInviteModal = true">
             + Inviter un membre
           </button>
@@ -73,8 +73,8 @@
 
       <!-- Section 3 : Quiz assignés -->
       <section class="details-section">
-        <h2>📝 Quiz assignés au groupe</h2>
-        
+        <h2>Quiz assignés au groupe</h2>
+
         <!-- Formulaire d'assignation -->
         <div class="assign-form">
           <select v-model="selectedQuizId" class="quiz-select">
@@ -167,12 +167,13 @@
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
+import { groupService } from '../../api/groups'
 
 export default {
   name: 'GroupeDetailsPage',
   components: {
     AppHeader,
-    AppFooter
+    AppFooter,
   },
   data() {
     return {
@@ -182,52 +183,39 @@ export default {
       codeCopied: false,
       showDeleteModal: false,
       showInviteModal: false,
-      inviteEmail: ''
+      inviteEmail: '',
     }
   },
   computed: {
     availableQuizzes() {
-      // Quizz qui ne sont pas déjà assignés
-      const assignedIds = this.groupe.quizAssignes.map((qa) => qa.quizId)
+      const assignedIds = this.groupe?.quizAssignes?.map((qa) => qa.quizId) ?? []
       return this.allQuizzes.filter((q) => !assignedIds.includes(q.id))
-    }
+    },
   },
   methods: {
-    loadGroupe() {
-      // TODO (Laravel) : RÉCUPÉRER les détails d'un groupe spécifique
-      // Route API : GET /api/groupes/{id}
-      // Headers : Authorization: Bearer {token}
-      // Réponse attendue : { id, nom, description, isPublic, code, nbMembres, membres: [...], quizAssignes: [...] }
-      // Exemple d'appel :
-      // const id = this.$route.params.id
-      // axios.get(`/api/groupes/${id}`, { headers: { Authorization: `Bearer ${token}` } })
-      //   .then(response => { this.groupe = response.data })
-      //   .catch(() => { this.$router.push('/enseignant/groupes') })
-      
-      // Code temporaire front-only (à supprimer après Laravel)
-      const storageKey = 'enseignant_groupes'
-      const id = Number(this.$route.params.id)
+    async loadGroupe() {
+      // VERSION API : plus de localStorage
       try {
-        const saved = localStorage.getItem(storageKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          this.groupe = parsed.find((g) => g.id === id)
+        const id = this.$route.params.id
+        const { data } = await groupService.show(id)
+
+        this.groupe = {
+          id: data.id,
+          nom: data.nom,
+          description: data.description ?? '',
+          isPublic: !!data.is_public,
+          code: data.code_invitation,
+          membres: data.members ?? [],
+          nbMembres: data.nb_membres ?? (data.members ? data.members.length : 0),
+          quizAssignes: data.assignments ?? [],
         }
-      } catch {
-        this.groupe = null
-      }
-      if (!this.groupe) {
+      } catch (e) {
+        console.error(e)
         this.$router.push('/enseignant/groupes')
       }
     },
     loadQuizzes() {
-      // TODO (Laravel) : RÉCUPÉRER tous les quiz de l'enseignant
-      // Route API : GET /api/quizzes
-      // Headers : Authorization: Bearer {token}
-      // Réponse attendue : [{ id, titre, nbQuestions, ... }]
-      
-      // Code temporaire front-only (à supprimer après Laravel)
+      // tu gardes ton mock ou tu brancheras plus tard sur /api/quizzes
       const storageKey = 'enseignant_quizzes'
       try {
         const saved = localStorage.getItem(storageKey)
@@ -251,121 +239,46 @@ export default {
         this.codeCopied = false
       }, 2000)
     },
-    toggleVisibility() {
-      this.groupe.isPublic = !this.groupe.isPublic
-      this.saveGroupe()
-      
-      // TODO (Laravel) : METTRE À JOUR la visibilité du groupe dans la DB
-      // Route API : PATCH /api/groupes/{id}
-      // Headers : Authorization: Bearer {token}
-      // Body à envoyer : { isPublic: this.groupe.isPublic }
-      // Exemple d'appel :
-      // axios.patch(`/api/groupes/${this.groupe.id}`, { isPublic: this.groupe.isPublic }, { headers: { Authorization: `Bearer ${token}` } })
-      
-      // À METTRE À JOUR dans la table `groupes` :
-      // - is_public (boolean)
-      // - updated_at (timestamp)
+    async toggleVisibility() {
+      const newValue = !this.groupe.isPublic
+      try {
+        const { data } = await groupService.update(this.groupe.id, {
+          is_public: newValue,
+        })
+        this.groupe.isPublic = !!data.is_public
+        this.groupe.code = data.code_invitation
+      } catch (e) {
+        console.error(e)
+      }
     },
     assignQuiz() {
+      // inchangé (mock), tu brancheras ensuite sur l’API
       if (!this.selectedQuizId) return
-      
       const newAssignment = {
         quizId: this.selectedQuizId,
         statut: 'actif',
-        dateAssignation: new Date().toISOString()
+        dateAssignation: new Date().toISOString(),
       }
-      
       this.groupe.quizAssignes.push(newAssignment)
       this.selectedQuizId = ''
-      this.saveGroupe()
-      
-      // TODO (Laravel) : ASSIGNER un quiz à un groupe (créer relation)
-      // Route API : POST /api/groupes/{id}/quizzes
-      // Headers : Authorization: Bearer {token}
-      // Body à envoyer : { quiz_id: this.selectedQuizId }
-      // Réponse attendue : { success: true, message: "Quiz assigné" }
-      // Exemple d'appel :
-      // axios.post(`/api/groupes/${this.groupe.id}/quizzes`, { quiz_id: this.selectedQuizId }, { headers: { Authorization: `Bearer ${token}` } })
-      
-      // À ENREGISTRER dans la table pivot `groupe_quiz` :
-      // - groupe_id (foreign key -> groupes.id)
-      // - quiz_id (foreign key -> quizzes.id)
-      // - statut (enum: 'actif', 'termine')
-      // - date_assignation (timestamp)
-      // - created_at, updated_at
     },
     removeQuizAssignment(quizId) {
       this.groupe.quizAssignes = this.groupe.quizAssignes.filter(
-        (qa) => qa.quizId !== quizId
+        (qa) => qa.quizId !== quizId,
       )
-      this.saveGroupe()
-      
-      // TODO (Laravel) : RETIRER l'assignation d'un quiz (supprimer relation)
-      // Route API : DELETE /api/groupes/{id}/quizzes/{quizId}
-      // Headers : Authorization: Bearer {token}
-      // Réponse attendue : { success: true, message: "Quiz retiré" }
-      // Exemple d'appel :
-      // axios.delete(`/api/groupes/${this.groupe.id}/quizzes/${quizId}`, { headers: { Authorization: `Bearer ${token}` } })
-      
-      // À SUPPRIMER de la table pivot `groupe_quiz` :
-      // WHERE groupe_id = {id} AND quiz_id = {quizId}
     },
     inviteMembre() {
+      // pour l’instant mock; tu brancheras plus tard
       if (!this.inviteEmail) return
-      
-      // Simulation simple d'ajout de membre
       const newMembre = {
         id: Date.now(),
         nom: this.inviteEmail.split('@')[0],
-        email: this.inviteEmail
+        email: this.inviteEmail,
       }
-      
       this.groupe.membres.push(newMembre)
       this.groupe.nbMembres = this.groupe.membres.length
-      this.saveGroupe()
       this.inviteEmail = ''
       this.showInviteModal = false
-      
-      // TODO (Laravel) : INVITER un membre au groupe (ajouter relation)
-      // Route API : POST /api/groupes/{id}/membres
-      // Headers : Authorization: Bearer {token}
-      // Body à envoyer : { email: this.inviteEmail }
-      // Réponse attendue : { success: true, membre: { id, nom, email }, message: "Invitation envoyée" }
-      // Exemple d'appel :
-      // axios.post(`/api/groupes/${this.groupe.id}/membres`, { email: this.inviteEmail }, { headers: { Authorization: `Bearer ${token}` } })
-      //   .then(response => { this.groupe.membres.push(response.data.membre); this.groupe.nbMembres++ })
-      
-      // À ENREGISTRER dans la table pivot `groupe_user` (ou `groupe_etudiant`) :
-      // - groupe_id (foreign key -> groupes.id)
-      // - user_id (foreign key -> users.id, trouvé via email)
-      // - role (enum: 'membre', 'admin', default 'membre')
-      // - date_ajout (timestamp)
-      // - created_at, updated_at
-      
-      // ALTERNATIVE : envoyer une notification/email d'invitation
-      // - Créer une entrée dans `invitations` avec un token unique
-      // - L'étudiant confirme via un lien pour rejoindre le groupe
-    },
-    saveGroupe() {
-      // TODO (Laravel) : METTRE À JOUR le groupe dans la DB (méthode générique)
-      // Route API : PATCH /api/groupes/{id}
-      // Headers : Authorization: Bearer {token}
-      // Body à envoyer : { nom, description, isPublic, ... } (tous les champs modifiés)
-      // Cette méthode est utilisée par toggleVisibility(), assignQuiz(), etc.
-      
-      // Code temporaire front-only (à supprimer après Laravel)
-      const storageKey = 'enseignant_groupes'
-      try {
-        const saved = localStorage.getItem(storageKey)
-        const groupes = saved ? JSON.parse(saved) : []
-        const index = groupes.findIndex((g) => g.id === this.groupe.id)
-        if (index !== -1) {
-          groupes[index] = this.groupe
-          localStorage.setItem(storageKey, JSON.stringify(groupes))
-        }
-      } catch (error) {
-        console.error('Erreur lors de la sauvegarde', error)
-      }
     },
     requestDelete() {
       this.showDeleteModal = true
@@ -373,42 +286,22 @@ export default {
     closeDeleteModal() {
       this.showDeleteModal = false
     },
-    confirmDelete() {
-      // TODO (Laravel) : SUPPRIMER le groupe de la base de données
-      // Route API : DELETE /api/groupes/{id}
-      // Headers : Authorization: Bearer {token}
-      // Réponse attendue : { success: true, message: "Groupe supprimé" }
-      // Exemple d'appel :
-      // axios.delete(`/api/groupes/${this.groupe.id}`, { headers: { Authorization: `Bearer ${token}` } })
-      //   .then(() => { this.$router.push('/enseignant/groupes') })
-      //   .catch(error => { console.error('Erreur suppression', error) })
-      
-      // À SUPPRIMER de la DB :
-      // 1. Entrée dans la table `groupes` WHERE id = {id}
-      // 2. Toutes les relations dans `groupe_quiz` WHERE groupe_id = {id}
-      // 3. Toutes les relations dans `groupe_user` WHERE groupe_id = {id}
-      // (utiliser les cascades ON DELETE ou le faire manuellement)
-      
-      // Code temporaire front-only (à supprimer après Laravel)
-      const storageKey = 'enseignant_groupes'
+    async confirmDelete() {
       try {
-        const saved = localStorage.getItem(storageKey)
-        const groupes = saved ? JSON.parse(saved) : []
-        const filtered = groupes.filter((g) => g.id !== this.groupe.id)
-        localStorage.setItem(storageKey, JSON.stringify(filtered))
-      } catch (error) {
-        console.error('Erreur lors de la suppression', error)
+        await groupService.destroy(this.groupe.id)
+      } catch (e) {
+        console.error(e)
       }
       this.$router.push('/enseignant/groupes')
     },
     goBack() {
       this.$router.push('/enseignant/groupes')
-    }
+    },
   },
   mounted() {
     this.loadGroupe()
     this.loadQuizzes()
-  }
+  },
 }
 </script>
 

@@ -99,23 +99,24 @@
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
+import { groupService } from '../../api/groups' // AJOUT
 
 export default {
   name: 'GroupeCreatePage',
   components: {
     AppHeader,
-    AppFooter
+    AppFooter,
   },
   data() {
     return {
       formData: {
         nom: '',
         description: '',
-        isPublic: true
+        isPublic: true,
       },
       groupeCode: '',
       codeCopied: false,
-      error: ''
+      error: '',
     }
   },
   methods: {
@@ -135,7 +136,7 @@ export default {
         this.codeCopied = false
       }, 2000)
     },
-    handleSubmit() {
+    async handleSubmit() {
       this.error = ''
 
       // Validation
@@ -144,59 +145,32 @@ export default {
         return
       }
 
-      // TODO (Laravel) : ENREGISTRER le nouveau groupe dans la base de données
-      // Route API : POST /api/groupes
-      // Headers : Authorization: Bearer {token}
-      // Body à envoyer : { nom, description, isPublic, code }
-      // Réponse attendue : { id, nom, description, isPublic, code, nbMembres, created_at, ... }
-      // Exemple d'appel :
-      // const payload = { nom: this.formData.nom, description: this.formData.description, isPublic: this.formData.isPublic, code: this.groupeCode }
-      // axios.post('/api/groupes', payload, { headers: { Authorization: `Bearer ${token}` } })
-      //   .then(response => { const groupe = response.data; this.$router.push(`/enseignant/groupes/${groupe.id}`) })
-      //   .catch(error => { this.error = error.response?.data?.message || 'Erreur' })
-      
-      // À ENREGISTRER dans la table `groupes` :
-      // - nom (string, required)
-      // - description (text, nullable)
-      // - is_public (boolean, default true)
-      // - code (string 6 chars, unique)
-      // - enseignant_id (foreign key -> users.id)
-      // - created_at, updated_at (timestamps)
-      
-      // Code temporaire front-only (à supprimer après Laravel)
-      const newGroupe = {
-        id: Date.now(), // En Laravel, l'ID sera auto-généré par la DB
-        nom: this.formData.nom.trim(),
-        description: this.formData.description.trim(),
-        isPublic: this.formData.isPublic,
-        code: this.groupeCode,
-        nbMembres: 0,
-        membres: [],
-        quizAssignes: []
-      }
-
-      const storageKey = 'enseignant_groupes'
+      // VERSION API (remplace tout le bloc localStorage)
       try {
-        const saved = localStorage.getItem(storageKey)
-        const existing = saved ? JSON.parse(saved) : []
-        existing.push(newGroupe)
-        localStorage.setItem(storageKey, JSON.stringify(existing))
-      } catch {
-        this.error = 'Erreur lors de la création du groupe'
-        return
-      }
+        const payload = {
+          nom: this.formData.nom.trim(),
+          is_public: this.formData.isPublic,
+          // description à ajouter côté BD plus tard si tu veux
+        }
 
-      // Redirection vers la liste des groupes
-      this.$router.push('/enseignant/groupes')
+        const { data: groupe } = await groupService.create(payload)
+
+        // Redirection vers la page détail du groupe créé
+        this.$router.push(`/enseignant/groupes/${groupe.id}`)
+      } catch (e) {
+        console.error(e)
+        this.error =
+          e.response?.data?.message || 'Erreur lors de la création du groupe'
+      }
     },
     goBack() {
       this.$router.push('/enseignant/groupes')
-    }
+    },
   },
   mounted() {
-    // Génère un code au chargement de la page
+    // Génère un code au chargement de la page (visuel pour l'instant)
     this.groupeCode = this.generateCode()
-  }
+  },
 }
 </script>
 
