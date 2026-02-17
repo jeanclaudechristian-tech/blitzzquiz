@@ -148,11 +148,20 @@ export default {
       this.questions.forEach((q, idx) => {
         if (this.answers[idx] && this.answers[idx] === q.bonneReponse) correct += 1
       })
+      const percent = total ? Math.round((correct / total) * 100) : 0
+      const tempsEcoule = 60 - this.remainingSeconds // Temps utilisé en secondes
+      
       const result = {
         total,
         correct,
-        percent: total ? Math.round((correct / total) * 100) : 0
+        percent
       }
+      
+      // TODO (Laravel) : ENREGISTRER le score dans la base de données
+      // Route API : POST /api/quiz/{quizId}/submit
+      // Body : { score, total_questions, percent, temps_ecoule }
+      
+      // Code temporaire front-only (à supprimer après Laravel)
       const key = `etudiant_quiz_result_${this.$route.params.id}`
       sessionStorage.setItem(key, JSON.stringify(result))
       this.$router.push(`/etudiant/quiz/${this.$route.params.id}/loading`)
