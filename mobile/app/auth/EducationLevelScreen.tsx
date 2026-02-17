@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
-import { useRouter, useNavigation, Stack } from "expo-router";
+import { useAuth } from "../../services/AuthContext";
+import { useRouter, useNavigation, Stack, useLocalSearchParams } from "expo-router";
 // 引入动画库：这次我们用左右滑动的动画，体现“流程感”
 import Animated, {
   Layout,
@@ -22,13 +23,22 @@ export default function EducationLevelScreen() {
   const [isVisible, setIsVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // 模拟加载
 
-  const educationOptions = [
-    "École secondaire", // 高中
-    "Cégep / Collège",  // 学院
-    "Université (Bac)", // 本科
-    "Université (Maîtrise/Doctorat)", // 硕博
-    "Autre"
-  ];
+  // ✅ 新增 1：获取注册方法
+  const { register } = useAuth();
+
+  // ✅ 新增 2：接收上一页传来的数据
+  const { nickname, email, password } = useLocalSearchParams();
+
+
+  // ✅ 新增 3：定义身份选项和状态
+  const [selectedRole, setSelectedRole] = useState("");
+  const roleOptions = ["Étudiant", "Enseignant"];
+
+  // 简单的映射表：把法语选项转成数据库的大写英文
+  const roleMap: { [key: string]: string } = {
+    "Étudiant": "STUDENT",
+    "Enseignant": "TEACHER"
+  };
 
   // 1. 拦截器：处理返回/退出动画
   useEffect(() => {
@@ -47,22 +57,36 @@ export default function EducationLevelScreen() {
   }, [navigation, isVisible]);
 
   // 2. 导航处理
-  const handleNav = (action: 'back' | 'next') => {
-    if (action === 'back') {
-      router.back();
-    } else {
-      // 下一步逻辑：先转圈，再跳转
-      setIsSubmitting(true);
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setIsVisible(false); // 触发离场动画
-        setTimeout(() => {
-          // 假设这是注册最后一步，跳转到主页或登录页
-          console.log("Registration Complete");
-          router.replace("/auth/LoginScreen" as any);
-        }, 600);
-      }, 1500);
+  const handleRegister = async () => {
+    if (!selectedRole) {
+      // 如果没选身份，提示一下（这里简单用 console 或 Alert）
+      console.log("Please select a role");
+      return;
     }
+
+    setIsSubmitting(true);
+    try {
+      // 1. 转换角色名 (例如 "Étudiant" -> "STUDENT")
+      const dbRole = roleMap[selectedRole] || "STUDENT";
+
+      // 2. 发送所有数据给后端
+      // 注意：这里需要断言成 string，因为 searchParams 可能是数组
+      await register(
+          email as string,
+          nickname as string,
+          password as string,
+          dbRole
+      );
+
+      // 3. 注册成功后，AuthContext 会自动跳转首页，这里不用管了
+    } catch (e) {
+      setIsSubmitting(false); // 失败停止转圈
+    }
+  };
+
+  // 简单的返回函数
+  const handleBack = () => {
+    router.back();
   };
 
   return (
@@ -82,7 +106,7 @@ export default function EducationLevelScreen() {
                       exiting={SlideOutLeft.duration(500)} // 往左飞走，表示去下一页
                   >
                     <Text style={styles.title}>
-                      Quel est{"\n"}votre{"\n"}niveau d’étude ?
+                      Vous{"\n"}Êtes ?
                     </Text>
                   </Animated.View>
 
@@ -94,8 +118,8 @@ export default function EducationLevelScreen() {
                     >
                       <SelectField
                           label="Choisir"
-                          options={educationOptions}
-                          onSelect={(val) => console.log("Selected:", val)}
+                          options={roleOptions}
+                          onSelect={setSelectedRole}
                           icon={<IconSvg uri={assets.dropdownIcon} width={24} height={24} />}
                       />
                     </Animated.View>
@@ -110,7 +134,7 @@ export default function EducationLevelScreen() {
                             exiting={SlideOutLeft.delay(200).duration(500)}
                         >
                           <View style={styles.backLink}>
-                            <TextLink label="Retour" onPress={() => handleNav('back')} />
+                            <TextLink label="Retour" onPress={() => handleBack()} />
                           </View>
                         </Animated.View>
                     )}
@@ -120,8 +144,8 @@ export default function EducationLevelScreen() {
                         exiting={SlideOutLeft.delay(250).duration(500)}
                     >
                       <DarkButton
-                          label="Suivant"
-                          onPress={() => handleNav('next')}
+                          label="Confirmer"
+                          onPress={() => handleRegister()}
                           isLoading={isSubmitting} // 加上 Loading 效果
                       />
                     </Animated.View>
