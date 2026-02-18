@@ -6,8 +6,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\GroupController;
 use App\Models\Quiz;
+use App\Http\Controllers\PasswordResetController;
 
-// Routes Google existantes
+// Routes publiques (pas besoin d'être connecté)
 Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
 Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
 
@@ -19,6 +20,11 @@ Route::post('auth/google-register', [AuthController::class, 'registerGoogleFinal
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
+// 🔹 Mot de passe oublié / reset : PUBLIC
+Route::post('forgot-password', [PasswordResetController::class, 'forgotPassword']);
+Route::post('reset-password', [PasswordResetController::class, 'resetPassword']);
+
+// Routes protégées par Sanctum
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
