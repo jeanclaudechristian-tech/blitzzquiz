@@ -5,12 +5,14 @@ import { DarkButton } from '../../components/blitzz/DarkButton';
 import { useGroupDetail } from '@/services/GroupDetailContext';
 import {LoadingScreen} from "@/components/blitzz/LoadingScreen";
 import {DangerButton} from "@/components/blitzz/DangerButton";
-import {useGroups} from "@/services/GroupContext"; // ✅ 导入你的新 Context
+import {useGroups} from "@/services/GroupContext";
+import {useAuth} from "@/services/AuthContext"; // ✅ 导入你的新 Context
 
 export default function GroupDetail({ group, onBack }: { group: any, onBack: () => void }) {
     // ✅ 召唤专属 Context 的能力
+    const { user } = useAuth(); // ✅ 获取当前登录的用户
     const { fullGroup, isLoading, loadGroupDetail } = useGroupDetail();
-    const { leaveGroup } = useGroups();
+    const { leaveGroup, deleteGroup } = useGroups();
 
     useEffect(() => {
         loadGroupDetail(group.id); // 只有进入这个位面才触发深度加载
@@ -18,6 +20,7 @@ export default function GroupDetail({ group, onBack }: { group: any, onBack: () 
 
     // 优先使用 fullGroup 的数据，如果还没加载完则回退到基础 group 信息
     const displayData = fullGroup || group;
+    const isMeTheOwner = user?.id === (fullGroup?.owner_id || group?.owner_id);
 
     const sortedMembers = fullGroup?.members ? [...fullGroup.members].sort((a, b) => {
         const ownerId = fullGroup?.owner_id || group?.owner_id;
@@ -65,15 +68,24 @@ export default function GroupDetail({ group, onBack }: { group: any, onBack: () 
             )}
 
             <DangerButton
-                label="Quitter le groupe"
-                confirmTitle="Quitter ce groupe?"
-                confirmMessage="Cette action est irréversible"
+                // ✅ 根据身份切换标签
+                label={isMeTheOwner ? "Dissoudre le groupe" : "Quitter le groupe"}
+                confirmTitle={isMeTheOwner ? "Suppression Totale" : "Rompre le contrat"}
+                confirmMessage={isMeTheOwner
+                    ? "Voulez-vous vraiment supprimer ce groupe et tous ses membres ?"
+                    : "Voulez-vous vraiment quitter ce plan de réalité ?"
+                }
                 onPress={async () => {
-                    await leaveGroup(group.id);
-                    onBack();
+                    if (isMeTheOwner) {
+                        await deleteGroup(group.id); // 执行遣散
+                    } else {
+                        await leaveGroup(group.id); // 执行退出
+                    }
+                    onBack(); // 无论哪种，执行完都回列表
                 }}
                 style={{ marginTop: 10 }}
             />
+
             <DarkButton label="Retour" onPress={onBack} style={{ marginTop: 20 }} />
         </View>
     );

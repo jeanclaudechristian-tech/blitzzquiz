@@ -139,6 +139,7 @@ class GroupController extends Controller
             return response()->json(['error' => 'Seul l\'owner peut supprimer'], 403);
         }
 
+        $group->members()->detach();
         $group->delete();
 
         return response()->json(['message' => 'Groupe supprimé']);

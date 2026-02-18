@@ -9,6 +9,7 @@ interface GroupContextType {
     fetchGroups: () => Promise<void>;
     joinGroup: (inviteCode: string) => Promise<boolean>;
     leaveGroup: (groupId: number) => Promise<void>;
+    deleteGroup: (groupId: number) => Promise<void>;
 }
 
 const GroupContext = createContext<GroupContextType>({} as GroupContextType);
@@ -67,8 +68,18 @@ export function GroupProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const deleteGroup = async (groupId: number) => {
+        try {
+            await api.delete(`/groups/${groupId}/destroy`); // 对应 destroy 方法
+            Alert.alert("Succès", "Le groupe a été dissous.");
+            await fetchGroups(); // 刷新列表，抹除痕迹
+        } catch (error) {
+            Alert.alert("Erreur", "Seul l'owner peut supprimer ce groupe.");
+        }
+    };
+
     return (
-        <GroupContext.Provider value={{ groups, isLoading, fetchGroups, joinGroup, leaveGroup }}>
+        <GroupContext.Provider value={{ groups, isLoading, fetchGroups, joinGroup, leaveGroup, deleteGroup }}>
             {children}
         </GroupContext.Provider>
     );
