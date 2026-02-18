@@ -3,7 +3,6 @@
     <div class="background-video">
       <video autoplay loop playsinline muted>
         <source src="/videos/LandingPage.mp4" type="video/mp4" />
-
       </video>
     </div>
     <div class="espace-inscription">
@@ -21,7 +20,8 @@
         <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" />
         <InputConfirmerMotDePasse v-model="formData.confirmPassword" />
         <BoutonRetour class="bouton-retour-position" @click="$router.back()" />
-        <BoutonConfirmer class="bouton-confirmer-position" @click="goToValidation" />
+        <!-- AJOUT: :disabled="loading" pour empêcher le clic multiple visuellement -->
+        <BoutonConfirmer class="bouton-confirmer-position" @click="goToValidation" :disabled="loading" />
       </div>
     </div>
   </div>
@@ -63,10 +63,14 @@ export default {
       },
       loading: false,
       error: null,
+      isSubmitting: false, // AJOUT: Flag pour empêcher le double appel
     }
   },
   methods: {
     async goToValidation() {
+      // AJOUT: Bloque l'exécution si déjà en cours
+      if (this.isSubmitting) return
+      
       // Validation basique
       if (
         !this.formData.email ||
@@ -89,6 +93,7 @@ export default {
       }
 
       this.loading = true
+      this.isSubmitting = true // AJOUT: Active le verrou
       this.error = null
 
       try {
@@ -142,11 +147,11 @@ export default {
           const errors = error.response.data.errors
           console.log('Validation errors:', errors)
 
-          if (errors.email) {
+          if (errors && errors.email) {
             this.error = 'Cet email est déjà utilisé'
-          } else if (errors.password) {
+          } else if (errors && errors.password) {
             this.error = 'Le mot de passe ne respecte pas les critères'
-          } else if (errors.role) {
+          } else if (errors && errors.role) {
             this.error = 'Le type de compte (rôle) est invalide ou manquant'
           } else {
             this.error = 'Erreur de validation. Vérifiez vos informations.'
@@ -158,13 +163,12 @@ export default {
         alert(this.error)
       } finally {
         this.loading = false
+        this.isSubmitting = false // AJOUT: Libère le verrou
       }
     },
   },
 }
 </script>
-
-
 
 <style scoped>
 @import './DesktopInscriptionPage2.css';
