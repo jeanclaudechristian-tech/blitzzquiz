@@ -136,7 +136,6 @@ class GroupController extends Controller
     public function join(Request $request)
     {
         $userId = Auth::id();
-
         $validated = $request->validate([
             'code_invitation' => 'required|string|size:6',
         ]);

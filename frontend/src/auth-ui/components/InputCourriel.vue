@@ -1,5 +1,5 @@
 <template>
-  <div class="input-courriel">
+  <div class="input-courriel" :class="{ 'disabled-state': disabled }">
     <div class="icon-container">
       <img src="../../assets/envelopeIcon.svg" alt="Email icon" />
     </div>
@@ -9,6 +9,7 @@
       @input="$emit('update:modelValue', $event.target.value)"
       :placeholder="placeholder"
       class="input-field"
+      :disabled="disabled"
     />
   </div>
 </template>
@@ -24,6 +25,10 @@ export default {
     placeholder: {
       type: String,
       default: 'Courriel (personnel ou scolaire)'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['update:modelValue']
@@ -32,4 +37,10 @@ export default {
 
 <style scoped>
 @import './InputCourriel.css';
+
+/* Seul ajout : opacité quand désactivé, sans toucher aux dimensions */
+.disabled-state {
+  opacity: 0.6;
+  pointer-events: none;
+}
 </style>

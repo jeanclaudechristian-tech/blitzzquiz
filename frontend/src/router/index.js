@@ -6,6 +6,7 @@ import DesktopInscriptionPage2 from '../auth-ui/pages/DesktopInscriptionPage2.vu
 import DesktopCourriel from '../auth-ui/pages/DesktopCourriel.vue'
 import DesktopResetMotDePasse from '../auth-ui/pages/DesktopResetMotDePasse.vue'
 import DesktopSucces from '../auth-ui/pages/DesktopSucces.vue'
+import AuthCallback from '../auth-ui/AuthCallback.vue' // Assure-toi que le chemin est bon (views ou auth-ui/pages ?)
 import EnseignantDashboard from '../enseignant-ui/pages/EnseignantDashboard.vue'
 import QuizCreatePage from '../enseignant-ui/pages/QuizCreatePage.vue'
 import EditQuizPage from '../enseignant-ui/pages/EditQuizPage.vue'
@@ -27,145 +28,151 @@ import GroupeCreatePage from '../enseignant-ui/pages/GroupeCreatePage.vue'
 import GroupeDetailsPage from '../enseignant-ui/pages/GroupeDetailsPage.vue'
 
 const routes = [
-    {
-      path: '/',
-      name: 'Home',
-      component: HomePage
-    },
-    {
-      path: '/home',
-      redirect: '/'
-    },
-    {
-      path: '/connexion',
-      name: 'Connexion',
-      component: DesktopConnexion
-    },
-    {
-      path: '/inscription',
-      name: 'Inscription1',
-      component: DesktopInscriptionPage1
-    },
-    {
-      path: '/inscription/details',
-      name: 'Inscription2',
-      component: DesktopInscriptionPage2
-    },
-    {
-      path: '/reset-courriel',
-      name: 'ResetCourriel',
-      component: DesktopCourriel
-    },
-    {
-      path: '/reset-mot-de-passe',
-      name: 'ResetMotDePasse',
-      component: DesktopResetMotDePasse
-    },
-    {
-      path: '/succes',
-      name: 'Succes',
-      component: DesktopSucces
-    },
-    {
-      path: '/enseignant',
-      name: 'EnseignantDashboard',
-      component: EnseignantDashboard
-    },
-    {
-      path: '/enseignant/quiz/nouveau',
-      name: 'QuizCreate',
-      component: QuizCreatePage
-    },
-    {
-      path: '/enseignant/quiz/:id/editer',
-      name: 'QuizEdit',
-      component: EditQuizPage
-    },
-    {
-      path: '/enseignant/quiz/:id/questions',
-      name: 'QuizQuestions',
-      component: QuizQuestionsPage
-    },
-    {
-      path: '/enseignant/groupes',
-      name: 'GroupesList',
-      component: GroupesListPage
-    },
-    {
-      path: '/enseignant/groupes/nouveau',
-      name: 'GroupeCreate',
-      component: GroupeCreatePage
-    },
-    {
-      path: '/enseignant/groupes/:id',
-      name: 'GroupeDetails',
-      component: GroupeDetailsPage
-    },
-    {
-      path: '/etudiant',
-      name: 'EtudiantDashboard',
-      component: EtudiantDashboard
-    },
-    {
-      path: '/etudiant/catalogue',
-      name: 'EtudiantCatalogue',
-      component: QuizCataloguePage
-    },
-    {
-      path: '/etudiant/code',
-      name: 'EtudiantEnterCode',
-      component: EnterQuizCodePage
-    },
-    {
-      path: '/etudiant/quiz/:id',
-      name: 'EtudiantQuizLobby',
-      component: EtudiantQuizLobbyPage
-    },
-    {
-      path: '/etudiant/quiz/:id/jouer',
-      name: 'EtudiantQuizPlay',
-      component: EtudiantQuizPlayPage
-    },
-    {
-      path: '/etudiant/quiz/:id/loading',
-      name: 'EtudiantQuizLoading',
-      component: EtudiantQuizLoadingPage
-    },
-    {
-      path: '/etudiant/quiz/:id/resultat',
-      name: 'EtudiantQuizResult',
-      component: EtudiantQuizResultPage
-    },
-    {
-      path: '/classement',
-      name: 'Leaderboard',
-      component: LeaderboardPage
-    },
-    {
-      path: '/historique',
-      name: 'Historique',
-      component: HistoriquePage
-    },
-    {
-      path: '/admin',
-      name: 'AdminDashboard',
-      component: AdminDashboard
-    },
-    {
-      path: '/admin/users',
-      name: 'AdminUsersList',
-      component: UsersListPage
-    },
-    {
-      path: '/admin/super',
-      name: 'SuperAdmin',
-      component: SuperAdminView
-    }
-  ]
+  {
+    path: '/',
+    name: 'Home',
+    component: HomePage
+  },
+  {
+    path: '/home',
+    redirect: '/'
+  },
+  {
+    path: '/connexion',
+    name: 'Connexion',
+    component: DesktopConnexion
+  },
+  {
+    path: '/inscription',
+    name: 'Inscription1',
+    component: DesktopInscriptionPage1
+  },
+  {
+    path: '/inscription/details',
+    name: 'Inscription2',
+    component: DesktopInscriptionPage2
+  },
+  {
+    path: '/reset-courriel',
+    name: 'ResetCourriel',
+    component: DesktopCourriel
+  },
+  {
+    path: '/reset-mot-de-passe',
+    name: 'ResetMotDePasse',
+    component: DesktopResetMotDePasse
+  },
+  {
+    path: '/succes',
+    name: 'Succes',
+    component: DesktopSucces
+  },
+  // ROUTE CALLBACK ACTIVÉE
+  {
+    path: '/auth/callback',
+    name: 'AuthCallback',
+    component: AuthCallback
+  },
+  {
+    path: '/enseignant',
+    name: 'EnseignantDashboard',
+    component: EnseignantDashboard
+  },
+  {
+    path: '/enseignant/quiz/nouveau',
+    name: 'QuizCreate',
+    component: QuizCreatePage
+  },
+  {
+    path: '/enseignant/quiz/:id/editer',
+    name: 'QuizEdit',
+    component: EditQuizPage
+  },
+  {
+    path: '/enseignant/quiz/:id/questions',
+    name: 'QuizQuestions',
+    component: QuizQuestionsPage
+  },
+  {
+    path: '/enseignant/groupes',
+    name: 'GroupesList',
+    component: GroupesListPage
+  },
+  {
+    path: '/enseignant/groupes/nouveau',
+    name: 'GroupeCreate',
+    component: GroupeCreatePage
+  },
+  {
+    path: '/enseignant/groupes/:id',
+    name: 'GroupeDetails',
+    component: GroupeDetailsPage
+  },
+  {
+    path: '/etudiant',
+    name: 'EtudiantDashboard',
+    component: EtudiantDashboard
+  },
+  {
+    path: '/etudiant/catalogue',
+    name: 'EtudiantCatalogue',
+    component: QuizCataloguePage
+  },
+  {
+    path: '/etudiant/code',
+    name: 'EtudiantEnterCode',
+    component: EnterQuizCodePage
+  },
+  {
+    path: '/etudiant/quiz/:id',
+    name: 'EtudiantQuizLobby',
+    component: EtudiantQuizLobbyPage
+  },
+  {
+    path: '/etudiant/quiz/:id/jouer',
+    name: 'EtudiantQuizPlay',
+    component: EtudiantQuizPlayPage
+  },
+  {
+    path: '/etudiant/quiz/:id/loading',
+    name: 'EtudiantQuizLoading',
+    component: EtudiantQuizLoadingPage
+  },
+  {
+    path: '/etudiant/quiz/:id/resultat',
+    name: 'EtudiantQuizResult',
+    component: EtudiantQuizResultPage
+  },
+  {
+    path: '/classement',
+    name: 'Leaderboard',
+    component: LeaderboardPage
+  },
+  {
+    path: '/historique',
+    name: 'Historique',
+    component: HistoriquePage
+  },
+  {
+    path: '/admin',
+    name: 'AdminDashboard',
+    component: AdminDashboard
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsersList',
+    component: UsersListPage
+  },
+  {
+    path: '/admin/super',
+    name: 'SuperAdmin',
+    component: SuperAdminView
+  }
+]
 
-  const router = createRouter({
-    history: createWebHistory(),
-    routes
-  })
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
 
-  export default router
+export default router
