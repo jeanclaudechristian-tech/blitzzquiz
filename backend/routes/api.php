@@ -17,11 +17,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
 
-    // Only TEACHER/ADMIN can create quiz
-    Route::post('quizzes', [QuizController::class, 'store'])
-        ->middleware('can:create,' . Quiz::class);
-
-    Route::apiResource('quizzes', QuizController::class);
-    Route::post('quizzes/{quiz}/join', [QuizController::class, 'join']);
+Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::post('/quizzes', [QuizController::class, 'store']);
+    Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
+    Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
+    Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
+    
+    Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
+    Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
+    Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
+    Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
 });
 

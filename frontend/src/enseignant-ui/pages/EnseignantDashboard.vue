@@ -72,13 +72,28 @@
             </span>
             <span>{{ quiz.nbQuestions }}</span>
             <span class="quiz-actions">
-              <button type="button" class="action-btn action-btn--edit" @click="editQuiz(quiz)" title="Éditer le quiz">
+              <button
+                type="button"
+                class="action-btn action-btn--edit"
+                @click="editQuiz(quiz)"
+                title="Éditer le quiz"
+              >
                 ✏️ Éditer
               </button>
-              <button type="button" class="action-btn action-btn--preview" @click="previewQuiz(quiz)" title="Prévisualiser et modifier les questions">
+              <button
+                type="button"
+                class="action-btn action-btn--preview"
+                @click="previewQuiz(quiz)"
+                title="Prévisualiser et modifier les questions"
+              >
                 👁️ Prévisualiser
               </button>
-              <button type="button" class="action-btn action-btn--delete" @click="requestDelete(quiz)" title="Supprimer le quiz">
+              <button
+                type="button"
+                class="action-btn action-btn--delete"
+                @click="requestDelete(quiz)"
+                title="Supprimer le quiz"
+              >
                 🗑️ Supprimer
               </button>
             </span>
@@ -151,14 +166,12 @@ export default {
       }
     },
     goToGroups() {
-      // Raccourci réservé pour une future fonctionnalité Groupes
       console.log('Navigation vers Groupes (à implémenter)')
     },
     editQuiz(quiz) {
       this.$router.push(`/enseignant/quiz/${quiz.id}/editer`)
     },
     previewQuiz(quiz) {
-      // Redirige vers la page de gestion des questions où l'enseignant peut voir et modifier toutes les questions
       this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
     },
 
@@ -174,7 +187,6 @@ export default {
 
       try {
         await api.delete(`/quizzes/${this.quizToDelete.id}`)
-
         this.quizzes = this.quizzes.filter(q => q.id !== this.quizToDelete.id)
       } catch (e) {
         console.error('Erreur suppression quiz', e.response?.data || e)
@@ -190,26 +202,25 @@ export default {
     },
 
     async loadTeacherQuizzes() {
-  this.loadingQuizzes = true
-  this.errorQuizzes = ''
-  try {
-    const { data } = await api.get('/quizzes')
-    console.log('Enseignant /quizzes =>', data)
-    this.quizzes = data.map(q => ({
-      id: q.id,
-      titre: q.titre,
-      statut: 'Publié',
-      isPublic: q.is_public ? true : false,
-      nbQuestions: q.questions_count ?? 0
-    }))
-  } catch (e) {
-    console.error('Erreur /quizzes enseignant', e.response?.data || e)
-    this.errorQuizzes = 'Impossible de charger vos quiz.'
-  } finally {
-    this.loadingQuizzes = false
-  }
-}
-
+      this.loadingQuizzes = true
+      this.errorQuizzes = ''
+      try {
+        const { data } = await api.get('/quizzes')
+        console.log('Enseignant /quizzes =>', data)
+        this.quizzes = data.map(q => ({
+          id: q.id,
+          titre: q.titre,
+          statut: 'Publié',                 // ou q.status si tu as une colonne
+          isPublic: !!q.is_public,
+          nbQuestions: q.questions_count ?? 0
+        }))
+      } catch (e) {
+        console.error('Erreur /quizzes enseignant', e.response?.data || e)
+        this.errorQuizzes = 'Impossible de charger vos quiz.'
+      } finally {
+        this.loadingQuizzes = false
+      }
+    }
   },
   async mounted() {
     await this.loadTeacherQuizzes()

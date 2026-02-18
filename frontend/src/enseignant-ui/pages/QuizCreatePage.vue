@@ -75,6 +75,7 @@
               type="button"
               class="btn-create-questions"
               @click="saveAndAddQuestions"
+              :disabled="saving"
             >
               ➕ Créer des questions
             </button>
@@ -86,8 +87,7 @@
             <button
               type="submit"
               class="btn-primary"
-              :disabled="!canSave"
-              :title="!canSave ? 'Vous devez ajouter au moins une question avant de sauvegarder' : ''"
+              :disabled="saving"
             >
               Enregistrer le quiz
             </button>
@@ -123,65 +123,58 @@ export default {
         isPublic: false
       },
       error: '',
-      quizId: null
+      saving: false
     }
   },
-  computed: {
-    canSave() {
-      // Vérifier si des questions ont été créées pour ce quiz
-      if (!this.quizId) return false
-      
-      const questionsKey = `enseignant_quiz_questions_${this.quizId}`
-      const saved = localStorage.getItem(questionsKey)
-      
-      if (!saved) return false
-      
-      try {
-        const questions = JSON.parse(saved)
-        return Array.isArray(questions) && questions.length > 0
-      } catch {
-        return false
-      }
-    }
-  },
- methods: {
-  async handleSubmit() {
-    this.error = ''
-
+  methods: {
+    async createQuizOnApi() {
+      this.error = ''
       if (!this.form.titre.trim()) {
         this.error = 'Le titre du quiz est obligatoire.'
-        return
+        throw new Error('invalid')
       }
 
-      const storageKey = 'enseignant_quizzes'
-      let existing = []
-      try {
-        const saved = localStorage.getItem(storageKey)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed)) existing = parsed
-        }
-      } catch {
-        existing = []
-      }
+      this.saving = true
 
-      const newQuiz = {
-        // TODO (Laravel) : remplacer Date.now() par l'id renvoyé
-        // par l'API (par ex. POST /api/quizzes) et enlever ce stockage local.
-        id: Date.now(),
+      const payload = {
         titre: this.form.titre.trim(),
         description: this.form.description.trim(),
-        categorie: this.form.categorie,
-        isPublic: this.form.isPublic,
-        statut: 'Brouillon',
-        nbQuestions: 0
+        categorie: this.form.categorie || null,
+        niveau: this.form.niveau || null,
+        is_public: this.form.isPublic
       }
 
-      existing.push(newQuiz)
-      localStorage.setItem(storageKey, JSON.stringify(existing))
-
-      this.$router.push('/enseignant')
+      const { data } = await api.post('/quizzes', payload)
+      // data doit contenir au moins { id, ... }
+      this.saving = false
+      return data
     },
+
+    async handleSubmit() {
+      try {
+        const quiz = await this.createQuizOnApi()
+        // juste retour au dashboard après création
+        this.$router.push('/enseignant')
+      } catch (e) {
+        if (e.message === 'invalid') return
+        console.error('Erreur création quiz', e.response?.data || e)
+        this.error = "Erreur lors de la création du quiz."
+        this.saving = false
+      }
+    },
+
+    async saveAndAddQuestions() {
+      try {
+        const quiz = await this.createQuizOnApi()
+        this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
+      } catch (e) {
+        if (e.message === 'invalid') return
+        console.error('Erreur création quiz + questions', e.response?.data || e)
+        this.error = "Erreur lors de la création du quiz."
+        this.saving = false
+      }
+    },
+
     goBack() {
       this.$router.push('/enseignant')
     }

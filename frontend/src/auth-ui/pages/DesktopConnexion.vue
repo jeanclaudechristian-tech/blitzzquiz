@@ -16,9 +16,12 @@
           <p>compte</p>
         </div>
         <InputNomUtilisateur v-model="formData.username" />
-        <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" />
+        <InputMotDePasse
+          v-model="formData.password"
+          placeholder="Mot de passe"
+        />
         <BoutonMdpOublie />
-        <BoutonConnexion @click="handleConnexion" />
+        <BoutonConnexion :disabled="loading" @click="handleConnexion" />
         <Diviseur />
         <BoutonCreerUnCompte />
         <BoutonGoogle />
@@ -36,13 +39,8 @@ import BoutonConnexion from '../components/BoutonConnexion.vue'
 import Diviseur from '../components/Diviseur.vue'
 import BoutonCreerUnCompte from '../components/BoutonCreerUnCompte.vue'
 import BoutonGoogle from '../components/BoutonGoogle.vue'
-<<<<<<< HEAD
 import { authService } from '../../API/auth'
 import axios from 'axios'
-
-=======
-import { authService } from '../../api/auth'
->>>>>>> 1463e24d3617341f35efa68ca83130845281e3bd
 
 export default {
   name: 'DesktopConnexion',
@@ -59,62 +57,65 @@ export default {
   data() {
     return {
       formData: {
-        username: '', // Sera utilisé comme email
-        password: '',
-        role: ''
+        username: '', // email
+        password: ''
       },
       loading: false,
       error: null
     }
   },
   methods: {
+    async handleConnexion() {
+      if (this.loading) return
+      this.loading = true
+      this.error = null
 
-async handleConnexion() {
-  // ... validation + this.loading = true
+      if (!this.formData.username || !this.formData.password) {
+        this.error = 'Veuillez remplir votre email et votre mot de passe.'
+        alert(this.error)
+        this.loading = false
+        return
+      }
 
-  try {
-    const data = await authService.login(
-      this.formData.username, // email
-      this.formData.password,
-      this.formData.role
-    )
+      try {
+        const data = await authService.login(
+          this.formData.username,
+          this.formData.password
+        )
 
-    // Sauvegarde le token et l'utilisateur
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
+        // sauvegarde token + user
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
 
-    // 🔥 Très important : configurer Axios pour toutes les requêtes suivantes
-    axios.defaults.baseURL = 'http://localhost:8000/api'
-    axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
+        // config axios globale pour les prochains appels
+        axios.defaults.baseURL = 'http://localhost:8000/api'
+        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
 
-    console.log('Connexion réussie:', data.user)
+        console.log('Connexion réussie:', data.user)
 
-    const role = data.user.role
-    if (role === 'TEACHER') {
-      this.$router.push('/enseignant')
-    } else if (role === 'STUDENT') {
-      this.$router.push('/etudiant')
-    } else {
-      this.$router.push('/')
+        const role = data.user.role
+        if (role === 'TEACHER') {
+          this.$router.push('/enseignant')
+        } else if (role === 'STUDENT') {
+          this.$router.push('/etudiant')
+        } else {
+          this.$router.push('/')
+        }
+      } catch (error) {
+        console.error('Erreur de connexion:', error)
+        if (error.response?.status === 422) {
+          this.error = 'Email ou mot de passe incorrect'
+        } else {
+          this.error = 'Erreur de connexion. Réessayez plus tard.'
+        }
+        alert(this.error)
+      } finally {
+        this.loading = false
+      }
     }
-
-  } catch (error) {
-    console.error('Erreur de connexion:', error)
-    if (error.response?.status === 422) {
-      this.error = 'Email ou mot de passe incorrect'
-    } else {
-      this.error = 'Erreur de connexion. Réessayez plus tard.'
-    }
-    alert(this.error)
-  } finally {
-    this.loading = false
-  }
-}
-
   }
 }
 </script>
-
 
 <style scoped>
 @import './DesktopConnexion.css';

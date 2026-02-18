@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Quiz;
+use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use App\Models\Question;
-
 
 class QuizController extends Controller
 {
@@ -20,133 +19,141 @@ class QuizController extends Controller
             'is_public' => 'boolean',
         ]);
 
-       $user = Auth::user();
-               if (!$user) {
-                   return response()->json(['error' => 'Auth required'], 401);
-               }
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Auth required'], 401);
+        }
 
+        if (!in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
 
-               if (!in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
-                   return response()->json(['error' => 'Forbidden'], 403);
-               }
+        do {
+            $code = strtoupper(Str::random(6));
+        } while (Quiz::where('code_quiz', $code)->exists());
 
-               // Unique code (évite collision)
-               do {
-                   $code = strtoupper(Str::random(6));
-               } while (Quiz::where('code_quiz', $code)->exists());
+        $quiz = Quiz::create($validated + [
+            'code_quiz' => $code,
+            'owner_id'  => $user->id,
+        ]);
 
-               $quiz = Quiz::create($validated + [
-                   'code_quiz' => $code,
-                   'owner_id' => $user->id,
-               ]);
-
-               return response()->json($quiz->load('questions'), 201);
-    }
-  public function index(Request $request): JsonResponse
-{
-    $user = $request->user();
-
-    if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
-        // Prof/Admin : voit ses quiz + tous les quiz publics
-        $quizzes = Quiz::withCount('questions')
-            ->where(function ($q) use ($user) {
-                $q->where('owner_id', $user->id)
-                  ->orWhere('is_public', true);
-            })
-            ->latest()
-            ->get();
-    } elseif ($user->role === 'STUDENT') {
-        // Étudiant : pour l’instant → uniquement les quiz publics
-        $quizzes = Quiz::withCount('questions')
-            ->where('is_public', true)
-            ->latest()
-            ->get();
-    } else {
-        return response()->json(['error' => 'Rôle non autorisé'], 403);
+        return response()->json($quiz->load('questions'), 201);
     }
 
-    return response()->json($quizzes);
-}
-public function destroy(Quiz $quiz)
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
+            $quizzes = Quiz::withCount('questions')
+                ->where(function ($q) use ($user) {
+                    $q->where('owner_id', $user->id)
+                      ->orWhere('is_public', true);
+                })
+                ->latest()
+                ->get();
+        } elseif ($user->role === 'STUDENT') {
+            $quizzes = Quiz::withCount('questions')
+                ->where('is_public', true)
+                ->latest()
+                ->get();
+        } else {
+            return response()->json(['error' => 'Rôle non autorisé'], 403);
+        }
+
+        return response()->json($quizzes);
+    }
+
+    public function show(Quiz $quiz): JsonResponse
 {
     $user = Auth::user();
 
-    // Autorisation : seul le owner ou un admin peut supprimer
-    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+    // owner, admin, OU quiz public
+    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN' && !$quiz->is_public) {
         return response()->json(['error' => 'Forbidden'], 403);
     }
 
-    $quiz->delete();
+    $quiz->loadCount('questions');
 
-    return response()->json(['message' => 'Quiz supprimé avec succès']);
+    return response()->json($quiz);
 }
 
+    public function destroy(Quiz $quiz)
+    {
+        $user = Auth::user();
 
-public function questionsIndex(Quiz $quiz)
+        if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $quiz->delete();
+
+        return response()->json(['message' => 'Quiz supprimé avec succès']);
+    }
+
+   public function questionsIndex(Quiz $quiz)
 {
     $user = Auth::user();
-    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+
+    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN' && !$quiz->is_public) {
         return response()->json(['error' => 'Forbidden'], 403);
     }
 
     return $quiz->questions()->orderBy('id')->get();
 }
+    public function questionsStore(Request $request, Quiz $quiz)
+    {
+        $user = Auth::user();
+        if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
 
-public function questionsStore(Request $request, Quiz $quiz)
-{
-    $user = Auth::user();
-    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-        return response()->json(['error' => 'Forbidden'], 403);
+        $data = $request->validate([
+            'texte'         => 'required|string',
+            'choixA'        => 'required|string',
+            'choixB'        => 'required|string',
+            'choixC'        => 'required|string',
+            'choixD'        => 'required|string',
+            'bonneReponse'  => 'required|in:A,B,C,D',
+            'explication'   => 'nullable|string',
+        ]);
+
+        $question = $quiz->questions()->create($data);
+
+        return response()->json($question, 201);
     }
 
-    $data = $request->validate([
-        'texte' => 'required|string',
-        'choixA' => 'required|string',
-        'choixB' => 'required|string',
-        'choixC' => 'required|string',
-        'choixD' => 'required|string',
-        'bonneReponse' => 'required|in:A,B,C,D',
-        'explication' => 'nullable|string',
-    ]);
+    public function questionsUpdate(Request $request, Question $question)
+    {
+        $user = Auth::user();
+        if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
 
-    $question = $quiz->questions()->create($data);
+        $data = $request->validate([
+            'texte'         => 'required|string',
+            'choixA'        => 'required|string',
+            'choixB'        => 'required|string',
+            'choixC'        => 'required|string',
+            'choixD'        => 'required|string',
+            'bonneReponse'  => 'required|in:A,B,C,D',
+            'explication'   => 'nullable|string',
+        ]);
 
-    return response()->json($question, 201);
-}
+        $question->update($data);
 
-public function questionsUpdate(Request $request, Question $question)
-{
-    $user = Auth::user();
-    if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-        return response()->json(['error' => 'Forbidden'], 403);
+        return response()->json($question);
     }
 
-    $data = $request->validate([
-        'texte' => 'required|string',
-        'choixA' => 'required|string',
-        'choixB' => 'required|string',
-        'choixC' => 'required|string',
-        'choixD' => 'required|string',
-        'bonneReponse' => 'required|in:A,B,C,D',
-        'explication' => 'nullable|string',
-    ]);
+    public function questionsDestroy(Question $question)
+    {
+        $user = Auth::user();
+        if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
 
-    $question->update($data);
+        $question->delete();
 
-    return response()->json($question);
-}
-
-public function questionsDestroy(Question $question)
-{
-    $user = Auth::user();
-    if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-        return response()->json(['error' => 'Forbidden'], 403);
+        return response()->json(['message' => 'Question supprimée']);
     }
-
-    $question->delete();
-
-    return response()->json(['message' => 'Question supprimée']);
-}
-
-
 }
