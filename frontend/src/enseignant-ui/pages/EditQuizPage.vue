@@ -98,7 +98,7 @@
                 type="button"
                 class="btn-primary"
                 @click="saveQuiz(false)"
-                :disabled="!hasQuestions"
+                :disabled="!hasQuestions || saving"
                 :title="!hasQuestions ? 'Ajoutez des questions avant d\'enregistrer' : ''"
               >
                 💾 Enregistrer le quiz
@@ -107,7 +107,7 @@
                 type="button"
                 class="btn-publish"
                 @click="saveQuiz(true)"
-                :disabled="!hasQuestions"
+                :disabled="!hasQuestions || saving"
                 :title="!hasQuestions ? 'Ajoutez des questions avant de publier' : ''"
               >
                 📢 Publier
@@ -134,6 +134,7 @@
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
+import api from '../../api/Axios' // même instance que pour le dashboard / questions
 
 export default {
   name: 'EditQuizPage',
@@ -154,132 +155,95 @@ export default {
         code_quiz: '',
         statut: 'Brouillon'
       },
-      error: ''
+      questionsCount: 0,
+      error: '',
+      saving: false
     }
   },
   computed: {
     hasQuestions() {
-      if (!this.form.id) return false
-      
-      const questionsKey = `enseignant_quiz_questions_${this.form.id}`
-      const saved = localStorage.getItem(questionsKey)
-      
-      if (!saved) return false
-      
-      try {
-        const questions = JSON.parse(saved)
-        return Array.isArray(questions) && questions.length > 0
-      } catch {
-        return false
-      }
+      return this.questionsCount > 0
     }
   },
   methods: {
     generateCode() {
       return Math.random().toString(36).substring(2, 8).toUpperCase()
     },
-    loadQuiz() {
-      // TODO (Laravel) : GET /api/quizzes/{id}
-      const storageKey = 'enseignant_quizzes'
-      const id = Number(this.$route.params.id)
-      const saved = localStorage.getItem(storageKey)
-      if (!saved) {
-        this.$router.push('/enseignant')
-        return
-      }
-      let quizzes = []
+
+    async loadQuiz() {
+      const id = this.$route.params.id
+
       try {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) quizzes = parsed
-      } catch {
+        // 1) charger les infos du quiz
+        const { data: quiz } = await api.get(`/quizzes/${id}`)
+
+        this.form = {
+          id: quiz.id,
+          titre: quiz.titre || '',
+          description: quiz.description || '',
+          categorie: quiz.categorie || '',
+          niveau: quiz.niveau || '',
+          isPublic: !!quiz.is_public,
+          code_quiz: quiz.code_quiz || this.generateCode(),
+          statut: quiz.statut || 'Brouillon'
+        }
+
+        // 2) charger le nombre de questions depuis l'API
+        const { data: questions } = await api.get(`/quizzes/${id}/questions`)
+        this.questionsCount = Array.isArray(questions) ? questions.length : 0
+
+        this.quizLoaded = true
+      } catch (e) {
+        console.error('Erreur chargement quiz', e.response?.data || e)
         this.$router.push('/enseignant')
-        return
       }
-      const quiz = quizzes.find(q => q.id === id)
-      if (!quiz) {
-        this.$router.push('/enseignant')
-        return
-      }
-      if (!quiz.code_quiz) {
-        quiz.code_quiz = this.generateCode()
-        localStorage.setItem(storageKey, JSON.stringify(quizzes))
-      }
-      this.form = {
-        id: quiz.id,
-        titre: quiz.titre,
-        description: quiz.description || '',
-        categorie: quiz.categorie || '',
-        niveau: quiz.niveau || '',
-        isPublic: !!quiz.isPublic,
-        code_quiz: quiz.code_quiz,
-        statut: quiz.statut || 'Brouillon'
-      }
-      this.quizLoaded = true
     },
-    saveQuiz(publish = false) {
+
+    async saveQuiz(publish = false) {
       this.error = ''
+
       if (!this.form.titre.trim()) {
         this.error = 'Le titre du quiz est obligatoire.'
         return
       }
-      
+
       if (!this.hasQuestions) {
         this.error = 'Vous devez créer au moins une question avant d\'enregistrer le quiz.'
         return
       }
-      
-      // TODO (Laravel) : PUT /api/quizzes/{id}
-      // Enregistrer les informations du quiz ET toutes les questions
-      const storageKey = 'enseignant_quizzes'
-      let quizzes = []
+
+      this.saving = true
+
       try {
-        const saved = localStorage.getItem(storageKey)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed)) quizzes = parsed
+        const payload = {
+          titre: this.form.titre.trim(),
+          description: this.form.description.trim(),
+          categorie: this.form.categorie || null,
+          niveau: this.form.niveau || null,
+          is_public: this.form.isPublic,
+          code_quiz: this.form.code_quiz,
+          statut: publish ? 'Publié' : (this.form.statut || 'Brouillon')
         }
-      } catch {
-        quizzes = []
-      }
-      const idx = quizzes.findIndex(q => q.id === this.form.id)
-      if (idx === -1) {
+
+        await api.put(`/quizzes/${this.form.id}`, payload)
+
         this.$router.push('/enseignant')
-        return
+      } catch (e) {
+        console.error('Erreur mise à jour quiz', e.response?.data || e)
+        this.error = 'Erreur lors de la sauvegarde du quiz.'
+      } finally {
+        this.saving = false
       }
-      
-      // Mettre à jour le nombre de questions
-      const questionsKey = `enseignant_quiz_questions_${this.form.id}`
-      const questionsData = localStorage.getItem(questionsKey)
-      let nbQuestions = 0
-      if (questionsData) {
-        try {
-          const questions = JSON.parse(questionsData)
-          nbQuestions = Array.isArray(questions) ? questions.length : 0
-        } catch {
-          nbQuestions = 0
-        }
-      }
-      
-      quizzes[idx] = {
-        ...quizzes[idx],
-        titre: this.form.titre.trim(),
-        description: this.form.description.trim(),
-        categorie: this.form.categorie,
-        niveau: this.form.niveau,
-        isPublic: this.form.isPublic,
-        code_quiz: this.form.code_quiz,
-        nbQuestions: nbQuestions,
-        statut: publish ? 'Publié' : (quizzes[idx].statut || 'Brouillon')
-      }
-      localStorage.setItem(storageKey, JSON.stringify(quizzes))
-      this.$router.push('/enseignant')
     },
+
     goToQuestions() {
       this.$router.push(`/enseignant/quiz/${this.form.id}/questions`)
     },
+
     goBack() {
       this.$router.push('/enseignant')
     },
+
     copyCode() {
       if (!this.form.code_quiz) return
       navigator.clipboard?.writeText(this.form.code_quiz).catch(() => {})

@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
+use App\Models\Question;
+use App\Models\Assignment;
+use App\Models\Result;
 
 class Quiz extends Model
 {
@@ -14,7 +18,7 @@ class Quiz extends Model
     protected $fillable = [
         'titre',
         'description',
-        'category',
+        'category',   // ou 'categorie' si ta colonne s'appelle comme ça
         'is_public',
         'code_quiz',
         'owner_id',
