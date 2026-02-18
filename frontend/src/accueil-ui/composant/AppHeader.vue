@@ -3,7 +3,7 @@
     <div class="header-content">
       <a href="/" class="header-logo" aria-label="Blitzz Quiz">
         <img
-          src="/images/Black_BlitzzQuiz%202.svg"
+          src="/images/Eclaire.svg"
           alt="Blitzz Quiz"
           class="header-logo-img"
         />
