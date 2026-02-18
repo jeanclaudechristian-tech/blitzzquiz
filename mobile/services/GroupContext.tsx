@@ -47,6 +47,8 @@ export function GroupProvider({ children }: { children: ReactNode }) {
             return true;
         } catch (error: any) {
             // 处理 404 (无效代码) 或 409 (已加入)
+            console.log("Full Error Object:", error);
+            console.log("Response Data:", error.response?.data);
             const message = error.response?.data?.error || "Code invalide";
             Alert.alert("Erreur", message);
             return false;

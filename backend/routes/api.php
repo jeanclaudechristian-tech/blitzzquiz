@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('groups', GroupController::class)
         ->only(['index', 'store', 'show', 'update', 'destroy']);
 
-    Route::post('groups/{group}/join', [GroupController::class, 'join']);
+    Route::post('groups/join', [GroupController::class, 'join']);
     Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
     Route::delete('groups/{group}/leave', [GroupController::class, 'leave']);
 });

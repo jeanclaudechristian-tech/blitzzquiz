@@ -3,11 +3,14 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-nativ
 import { colors, fonts } from '../../components/blitzz/tokens';
 import { DarkButton } from '../../components/blitzz/DarkButton';
 import { useGroupDetail } from '@/services/GroupDetailContext';
-import {LoadingScreen} from "@/components/blitzz/LoadingScreen"; // ✅ 导入你的新 Context
+import {LoadingScreen} from "@/components/blitzz/LoadingScreen";
+import {DangerButton} from "@/components/blitzz/DangerButton";
+import {useGroups} from "@/services/GroupContext"; // ✅ 导入你的新 Context
 
 export default function GroupDetail({ group, onBack }: { group: any, onBack: () => void }) {
     // ✅ 召唤专属 Context 的能力
     const { fullGroup, isLoading, loadGroupDetail } = useGroupDetail();
+    const { leaveGroup } = useGroups();
 
     useEffect(() => {
         loadGroupDetail(group.id); // 只有进入这个位面才触发深度加载
@@ -60,6 +63,17 @@ export default function GroupDetail({ group, onBack }: { group: any, onBack: () 
                     ListEmptyComponent={<Text style={styles.emptyText}>Aucun membre à afficher.</Text>}
                 />
             )}
+
+            <DangerButton
+                label="Quitter le groupe"
+                confirmTitle="Quitter ce groupe?"
+                confirmMessage="Cette action est irréversible"
+                onPress={async () => {
+                    await leaveGroup(group.id);
+                    onBack();
+                }}
+                style={{ marginTop: 10 }}
+            />
             <DarkButton label="Retour" onPress={onBack} style={{ marginTop: 20 }} />
         </View>
     );

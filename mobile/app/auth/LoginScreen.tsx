@@ -27,11 +27,13 @@ export default function LoginScreen() {
 
     const [request, response, promptAsync] = Google.useAuthRequest({
         androidClientId: "532138498181-14l35enq3ifpe2log0qevjfusipklovj.apps.googleusercontent.com",
-        iosClientId: "rtushc0olk7vp3m15b8go1htdf0netre.apps.googleusercontent.com",
+        iosClientId: "532138498181-rtushc0olk7vp3m15b8go1htdf0netre.apps.googleusercontent.com",
         webClientId: "532138498181-val9blpnrt3ns8r7jimn87s7f18eupvg.apps.googleusercontent.com",
         redirectUri: makeRedirectUri({
+            scheme: 'blitzzquiz',
+            path: 'oauth2/callback',
             // @ts-ignore
-            useProxy: true,
+            useProxy: false,
         }),
     });
     // 2. 定义输入框状态

@@ -150,12 +150,12 @@ class GroupController extends Controller
     public function join(Request $request)
     {
         $validated = $request->validate([
-            'code_invitation' => 'required|string|size:6|upper'
+            'code_invitation' => 'required|string|size:6'
         ]);
 
         $group = Group::where('code_invitation', $validated['code_invitation'])->first();
 
-        if (!$group || !$group->is_public && $group->code_invitation !== $validated['code_invitation']) {
+        if (!$group) {
             return response()->json(['error' => 'Code invalide ou groupe privé'], 404);
         }
 
@@ -165,9 +165,15 @@ class GroupController extends Controller
 
         $group->members()->attach(Auth::id());
 
-        $group->load(['owner:id,name', 'members:id,name']);
-
-        return response()->json($group);
+        // 建议返回和 index 一致的结构，确保前端解析不出错
+        return response()->json([
+            'id' => $group->id,
+            'nom' => $group->nom,
+            'owner_id' => $group->owner_id,
+            'code_invitation' => $group->code_invitation,
+            'is_public' => $group->is_public,
+            'nb_membres' => $group->members()->count(), // 实时计算人数
+        ]);
     }
 
     /**
