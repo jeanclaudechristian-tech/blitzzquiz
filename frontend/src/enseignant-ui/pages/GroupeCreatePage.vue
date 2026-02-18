@@ -92,7 +92,6 @@
         </form>
       </div>
     </main>
-    <AppFooter />
   </div>
 </template>
 
@@ -104,8 +103,7 @@ import { groupService } from '../../api/groups' // AJOUT
 export default {
   name: 'GroupeCreatePage',
   components: {
-    AppHeader,
-    AppFooter,
+    AppHeader
   },
   data() {
     return {

@@ -30,20 +30,17 @@
         </div>
       </section>
     </main>
-    <AppFooter />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
 export default {
   name: 'EtudiantQuizLobbyPage',
   components: {
     AppHeader,
-    AppFooter,
     CallToActionBtn
   },
   data() {

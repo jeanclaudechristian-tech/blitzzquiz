@@ -127,7 +127,6 @@
         </form>
       </section>
     </main>
-    <AppFooter class="compact-footer" />
   </div>
 </template>
 
@@ -139,8 +138,7 @@ import api from '../../api/Axios' // même instance que pour le dashboard / ques
 export default {
   name: 'EditQuizPage',
   components: {
-    AppHeader,
-    AppFooter
+    AppHeader
   },
   data() {
     return {
