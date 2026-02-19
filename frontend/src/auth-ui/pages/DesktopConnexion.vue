@@ -39,7 +39,7 @@ import BoutonConnexion from '../components/BoutonConnexion.vue'
 import Diviseur from '../components/Diviseur.vue'
 import BoutonCreerUnCompte from '../components/BoutonCreerUnCompte.vue'
 import BoutonGoogle from '../components/BoutonGoogle.vue'
-import { authService } from '../../API/auth'
+import { authService } from '../../api/auth'
 import axios from 'axios'
 
 export default {
