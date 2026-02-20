@@ -18,15 +18,16 @@ export const authService = {
 
     const response = await api.post("/register", {
       email,
+      username,
       nickname: username,
       password,
       password_confirmation,
       role,     
       education_level: educationLevel,
-
     });
     return response.data;
   },
+
   async logout() {
     const response = await api.post("/logout");
     return response.data;

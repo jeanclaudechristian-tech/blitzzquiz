@@ -16,18 +16,28 @@ class AuthController extends Controller
     {
         Log::info('Incoming request data:', $request->all());
 
-        // Validation mise à jour avec username
+        // Accepter username OU nickname
         $request->validate([
             'email' => 'required|email|unique:users',
-            'username' => 'required|string|max:50',
+            'username' => 'nullable|string|max:50',
+            'nickname' => 'nullable|string|max:50',
             'password' => 'required|min:8|confirmed',
             'role' => 'required|in:TEACHER,STUDENT',
             'education_level' => 'nullable|string|max:100',
         ]);
 
+        // Utiliser username s'il existe, sinon nickname
+        $usernameValue = $request->username ?? $request->nickname;
+
+        if (!$usernameValue) {
+            return response()->json([
+                'errors' => ['username' => ['The username field is required.']]
+            ], 422);
+        }
+
         $user = User::create([
             'email' => $request->email,
-            'nickname' => $request->username,
+            'nickname' => $usernameValue,
             'password' => Hash::make($request->password),
             'role' => $request->input('role', 'STUDENT'),
             'education_level' => $request->education_level,
