@@ -68,10 +68,10 @@ export default {
   },
   methods: {
     async goToValidation() {
-      // AJOUT: Bloque l'exécution si déjà en cours
       if (this.isSubmitting) return
-      
-      // Validation basique
+
+      console.log('API URL =', import.meta.env.VITE_API_URL)
+
       if (
         !this.formData.email ||
         !this.formData.username ||
@@ -93,11 +93,10 @@ export default {
       }
 
       this.loading = true
-      this.isSubmitting = true // AJOUT: Active le verrou
+      this.isSubmitting = true
       this.error = null
 
       try {
-        // Sauvegarde dans le store avant l'appel API (sans rôle)
         this.registrationStore.setCredentials(
           this.formData.email,
           this.formData.username,
@@ -113,7 +112,6 @@ export default {
           username: this.formData.username,
         })
 
-        // Appel API d'inscription avec le rôle du store
         const data = await authService.register(
           this.formData.email,
           this.formData.username,
@@ -129,10 +127,8 @@ export default {
         console.log('Inscription réussie:', data.user)
 
         const userRole = this.registrationStore.role
-
         this.registrationStore.reset()
 
-        // Redirection vers le bon dashboard
         if (userRole === 'TEACHER') {
           this.$router.push('/enseignant')
         } else if (userRole === 'STUDENT') {
@@ -163,7 +159,7 @@ export default {
         alert(this.error)
       } finally {
         this.loading = false
-        this.isSubmitting = false // AJOUT: Libère le verrou
+        this.isSubmitting = false
       }
     },
   },
