@@ -12,6 +12,7 @@ return [
 
     'allowed_origins_patterns' => [
         '^https://blitzzquiz-[a-z0-9]+-testtrade404-7981s-projects\.vercel\.app$',
+        '^https://blitzzquiz.*\.vercel\.app$',
     ],
 
     'allowed_headers' => ['*'],
