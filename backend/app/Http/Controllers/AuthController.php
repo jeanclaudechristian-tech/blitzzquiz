@@ -14,6 +14,8 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        Log::info('Incoming request data:', $request->all());
+
         // Validation mise à jour avec username
         $request->validate([
             'email' => 'required|email|unique:users',
