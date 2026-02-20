@@ -13,7 +13,7 @@ Le module BlizzQuiz Frontend est l'interface utilisateur officielle, optimisée 
 * **Intégration :** Détection automatique et gestion via CasaOS
 
 ---
-
+ 
 ## 📲 Guide d'Accès Rapide (Utilisateurs)
 
 Pour accéder aux modules BlizzQuiz depuis votre appareil mobile (ex: **Le Monde**) ou un autre client, suivez ces étapes :
