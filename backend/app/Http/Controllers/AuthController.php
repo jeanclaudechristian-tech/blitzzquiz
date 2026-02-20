@@ -14,21 +14,21 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        // Validation mise à jour avec education_level
+        // Validation mise à jour avec username
         $request->validate([
             'email' => 'required|email|unique:users',
-            'nickname' => 'required|string|max:50',
+            'username' => 'required|string|max:50',
             'password' => 'required|min:8|confirmed',
             'role' => 'required|in:TEACHER,STUDENT',
-            'education_level' => 'nullable|string|max:100', // Ajouté pour le niveau d'étude
+            'education_level' => 'nullable|string|max:100',
         ]);
 
         $user = User::create([
             'email' => $request->email,
-            'nickname' => $request->nickname,
+            'nickname' => $request->username,
             'password' => Hash::make($request->password),
             'role' => $request->input('role', 'STUDENT'),
-            'education_level' => $request->education_level, // Enregistrement niveau edu.
+            'education_level' => $request->education_level,
         ]);
 
         $token = $user->createToken('quiz-token')->plainTextToken;
