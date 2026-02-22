@@ -52,7 +52,11 @@ export default {
           },
         })
 
-        if (error) throw error
+        if (error) {
+          console.error('Erreur Supabase:', error)
+          this.isLoading = false
+          throw error
+        }
 
         console.log('Redirection vers Google OAuth...')
 

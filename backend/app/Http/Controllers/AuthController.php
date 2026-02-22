@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
@@ -94,19 +95,49 @@ class AuthController extends Controller
     public function registerGoogleFinal(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|unique:users,email',
-            'username' => 'required|string|unique:users,nickname',
-            'google_id' => 'required|string',
+            'email' => 'required|email',
+            'username' => 'nullable|string',
+            'nickname' => 'nullable|string',
+            'supabase_id' => 'required|string',
             'education_level' => 'required|string',
         ]);
 
+        $usernameValue = $request->username ?? $request->nickname;
+
+        if (!$usernameValue) {
+            return response()->json([
+                'errors' => ['username' => ['The username field is required.']]
+            ], 422);
+        }
+
+        // Vérifier si l'utilisateur existe déjà
+        $existingUser = User::where('email', $request->email)->first();
+
+        if ($existingUser) {
+            // Mettre à jour l'utilisateur existant
+            $existingUser->update([
+                'nickname' => $usernameValue,
+                'education_level' => $request->education_level,
+                'supabase_id' => $request->supabase_id,
+                'avatar' => $request->avatar ?? $existingUser->avatar,
+            ]);
+
+            $token = $existingUser->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'user' => $existingUser,
+                'token' => $token
+            ], 200);
+        }
+
+        // Créer un nouvel utilisateur
         $user = User::create([
-            'nickname' => $request->username,
+            'nickname' => $usernameValue,
             'email' => $request->email,
             'password' => Hash::make(Str::random(32)),
             'role' => 'STUDENT',
             'education_level' => $request->education_level,
-            'google_id' => $request->google_id,
+            'supabase_id' => $request->supabase_id,
             'avatar' => $request->avatar ?? null,
         ]);
 
@@ -116,6 +147,61 @@ class AuthController extends Controller
             'user' => $user,
             'token' => $token
         ], 201);
+    }
+
+    public function handleGoogleCallback(Request $request)
+    {
+        try {
+            $accessToken = $request->input('access_token');
+            $refreshToken = $request->input('refresh_token');
+            $supabaseUser = $request->input('user');
+
+            if (!$accessToken || !$supabaseUser) {
+                return response()->json(['message' => 'Token ou utilisateur manquant'], 400);
+            }
+
+            // Chercher l'utilisateur par email
+            $user = User::where('email', $supabaseUser['email'])->first();
+
+            if (!$user) {
+                // Créer un utilisateur temporaire (sera complété plus tard)
+                $user = User::create([
+                    'email' => $supabaseUser['email'],
+                    'nickname' => $supabaseUser['user_metadata']['name'] ?? explode('@', $supabaseUser['email'])[0],
+                    'password' => Hash::make(Str::random(32)),
+                    'role' => 'STUDENT',
+                    'supabase_id' => $supabaseUser['id'],
+                    'avatar' => $supabaseUser['user_metadata']['avatar_url'] ?? null,
+                ]);
+
+                // Indiquer que le profil doit être complété
+                return response()->json([
+                    'success' => true,
+                    'needs_completion' => true,
+                    'user' => $user,
+                    'token' => $user->createToken('auth_token')->plainTextToken
+                ], 200);
+            } else {
+                // Mettre à jour les infos Supabase si nécessaire
+                $user->update([
+                    'supabase_id' => $supabaseUser['id'],
+                    'avatar' => $supabaseUser['user_metadata']['avatar_url'] ?? $user->avatar,
+                ]);
+
+                // Vérifier si le profil est complet
+                $needsCompletion = empty($user->education_level);
+
+                return response()->json([
+                    'success' => true,
+                    'needs_completion' => $needsCompletion,
+                    'user' => $user,
+                    'token' => $user->createToken('auth_token')->plainTextToken
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            Log::error('Erreur Google callback: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur serveur: ' . $e->getMessage()], 500);
+        }
     }
 
     public function logout(Request $request)

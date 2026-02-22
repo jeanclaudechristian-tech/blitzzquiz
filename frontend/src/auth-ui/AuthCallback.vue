@@ -1,87 +1,119 @@
-import { supabase } from '@/lib/supabaseClient' // BON
-// import supabase from '@/lib/supabaseClient' // MAUVAIS (export default manquant)
-
-
 <template>
-  <div class="callback-loading">
-    <p>Connexion en cours avec Google...</p>
-    <!-- Tu peux mettre un spinner ici -->
+  <div class="auth-callback-container">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Authentification en cours...</p>
+    </div>
   </div>
 </template>
 
 <script>
-import { supabase } from '../lib/supabaseClient'
-import { useRegistrationStore } from '../stores/registration'
-import { authService } from '../api/auth' // Assure-toi d'avoir une méthode checkGoogleUser
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { supabase } from '@/supabaseClient';
 
 export default {
   name: 'AuthCallback',
-  async mounted() {
-    const registrationStore = useRegistrationStore()
-    
-    // 1. Récupérer la session Supabase (Google)
-    const { data: { session }, error } = await supabase.auth.getSession()
+  setup() {
+    const router = useRouter();
 
-    if (error || !session) {
-      console.error("Erreur session Google", error)
-      this.$router.push('/connexion')
-      return
-    }
+    onMounted(async () => {
+      try {
+        // Récupérer les tokens du hash URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
 
-    const googleUser = session.user
+        if (accessToken) {
+          // Établir la session avec les tokens
+          const { data: { session }, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
 
-    try {
-      // 2. Vérifier si l'utilisateur existe déjà côté Laravel
-      // Il faut une route API POST /api/auth/check-google qui retourne 200 (existe) ou 404 (nouveau)
-      const response = await authService.checkGoogleUser(googleUser.email)
+          if (error) throw error;
 
-      // CAS A : IL EXISTE -> Connexion réussie
-      localStorage.setItem('token', response.token)
-      localStorage.setItem('user', JSON.stringify(response.user))
-      
-      // Redirection selon le rôle
-      if (response.user.role === 'TEACHER') this.$router.push('/enseignant')
-      else this.$router.push('/etudiant')
+          if (session) {
+            // Vérifier si l'utilisateur existe dans ta base de données backend
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+              },
+              body: JSON.stringify({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                user: session.user
+              })
+            });
 
-    } catch (apiError) {
-      
-      // CAS B : IL N'EXISTE PAS (404) -> Inscription
-      if (apiError.response && apiError.response.status === 404) {
-        
-        console.log("Nouvel utilisateur Google -> Direction Inscription")
-        
-        // On stocke les infos Google dans le store
-        registrationStore.startGoogleFlow({
-          email: googleUser.email,
-          googleId: googleUser.id,
-          name: googleUser.user_metadata.full_name,
-          avatar: googleUser.user_metadata.avatar_url
-        })
+            const data = await response.json();
 
-        // On redirige vers la Page 1 pour choisir le niveau
-        this.$router.push('/inscription')
+            if (response.ok) {
+              // Stocker le token Laravel si nécessaire
+              if (data.token) {
+                localStorage.setItem('token', data.token);
+              }
 
-      } else if (apiError.response && apiError.response.status === 403) {
-        // Cas Professeur bloqué
-        alert("Les enseignants doivent utiliser leur mot de passe.")
-        this.$router.push('/connexion')
-      } else {
-        console.error("Erreur backend", apiError)
-        alert("Erreur de connexion serveur")
+              // Vérifier si l'utilisateur doit compléter son profil
+              if (data.needs_completion || !data.user.education_level) {
+                // Rediriger vers la page de complétion de profil
+                router.push('/inscription2');
+              } else {
+                // Rediriger vers le tableau de bord
+                router.push('/dashboard');
+              }
+            } else {
+              throw new Error(data.message || 'Erreur lors de l\'authentification');
+            }
+          }
+        } else {
+          throw new Error('Aucun token d\'accès trouvé');
+        }
+      } catch (error) {
+        console.error('Erreur callback auth:', error);
+        alert('Erreur lors de l\'authentification. Veuillez réessayer.');
+        router.push('/connexion');
       }
-    }
+    });
+
+    return {};
   }
-}
+};
 </script>
 
 <style scoped>
-.callback-loading {
+.auth-callback-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f5f5f5;
-  font-size: 1.2rem;
-  color: #333;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.loading-spinner {
+  text-align: center;
+  color: white;
+}
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid white;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner p {
+  font-size: 18px;
+  font-weight: 500;
 }
 </style>

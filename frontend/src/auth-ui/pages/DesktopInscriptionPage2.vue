@@ -96,6 +96,10 @@ export default {
           alert('Veuillez remplir l\'email et le nom d\'utilisateur')
           return
         }
+        if (!this.registrationStore.niveauEtude) {
+          alert('Veuillez sélectionner un niveau d\'étude')
+          return
+        }
       } else {
         if (!this.formData.email || !this.formData.username || 
             !this.formData.password || !this.formData.confirmPassword) {
@@ -135,7 +139,7 @@ export default {
           data = await authService.registerGoogleFinal({
             email: this.formData.email,
             username: this.formData.username,
-            google_id: this.registrationStore.googleUser.googleId,
+            supabase_id: this.registrationStore.googleUser.supabaseId || this.registrationStore.googleUser.googleId,
             avatar: this.registrationStore.googleUser.avatar,
             role: this.registrationStore.role,
             education_level: this.registrationStore.niveauEtude

@@ -1,187 +1,185 @@
-/* =========================
-   Layout global (Flex)
-   ========================= */
+<template>
+  <div class="desktop-inscription-page-2">
+    <div class="background-video">
+      <video autoplay loop playsinline muted>
+        <source src="/videos/LandingPage.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <div class="espace-inscription">
+      <div class="form-content">
+        <BlackBlitzzQuiz class="logo" />
+        <div class="titre">
+          <p>Création</p>
+          <p> </p>
+          <p>du</p>
+          <p> </p>
+          <p>compte</p>
+        </div>
+        
+        <InputCourriel 
+            v-model="formData.email" 
+            placeholder="Courriel (personnel ou scolaire)"
+            :disabled="registrationStore.isGoogleFlow" 
+        />
 
-.desktop-inscription-page-2 {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  overflow: hidden; 
+        <InputNomUtilisateur v-model="formData.username" />
+
+        <InputMotDePasse 
+            v-model="formData.password" 
+            placeholder="Mot de passe"
+            :disabled="registrationStore.isGoogleFlow" 
+        />
+        
+        <InputConfirmerMotDePasse 
+            v-model="formData.confirmPassword"
+            :disabled="registrationStore.isGoogleFlow" 
+        />
+
+        <BoutonRetour class="bouton-retour-position" @click="$router.back()" />
+        <BoutonConfirmer class="bouton-confirmer-position" @click="goToValidation" :disabled="loading" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import BlackBlitzzQuiz from '../components/BlackBlitzzQuiz.vue'
+import InputCourriel from '../components/InputCourriel.vue'
+import InputNomUtilisateur from '../components/InputNomUtilisateur.vue'
+import InputMotDePasse from '../components/InputMotDePasse.vue'
+import InputConfirmerMotDePasse from '../components/InputConfirmerMotDePasse.vue'
+import BoutonRetour from '../components/BoutonRetour.vue'
+import BoutonConfirmer from '../components/BoutonConfirmer.vue'
+import { authService } from '../../api/auth'
+import { useRegistrationStore } from '../../stores/registration'
+
+export default {
+  name: 'DesktopInscriptionPage2',
+  components: {
+    BlackBlitzzQuiz,
+    InputCourriel,
+    InputNomUtilisateur,
+    InputMotDePasse,
+    InputConfirmerMotDePasse,
+    BoutonRetour,
+    BoutonConfirmer,
+  },
+  setup() {
+    const registrationStore = useRegistrationStore()
+    return { registrationStore }
+  },
+  data() {
+    return {
+      formData: {
+        email: this.registrationStore.email || '',
+        username: this.registrationStore.username || '',
+        password: this.registrationStore.isGoogleFlow 
+          ? 'GoogleAuthSecure!' 
+          : (this.registrationStore.password || ''),
+        confirmPassword: this.registrationStore.isGoogleFlow 
+          ? 'GoogleAuthSecure!' 
+          : (this.registrationStore.confirmPassword || ''),
+      },
+      loading: false,
+      error: null,
+      isSubmitting: false,
+    }
+  },
+  methods: {
+    async goToValidation() {
+      if (this.isSubmitting) return
+
+      console.log('API URL =', import.meta.env.VITE_API_URL)
+
+      if (this.registrationStore.isGoogleFlow) {
+        if (!this.formData.email || !this.formData.username) {
+          alert('Veuillez remplir l\'email et le nom d\'utilisateur')
+          return
+        }
+        if (!this.registrationStore.niveauEtude) {
+          alert('Veuillez sélectionner un niveau d\'étude')
+          return
+        }
+      } else {
+        if (!this.formData.email || !this.formData.username || 
+            !this.formData.password || !this.formData.confirmPassword) {
+          alert('Veuillez remplir tous les champs')
+          return
+        }
+        
+        if (this.formData.password !== this.formData.confirmPassword) {
+          alert('Les mots de passe ne correspondent pas')
+          return
+        }
+      }
+
+      this.loading = true
+      this.isSubmitting = true
+      this.error = null
+
+      try {
+        this.registrationStore.setCredentials(
+          this.formData.email,
+          this.formData.username,
+          this.formData.password,
+          this.formData.confirmPassword,
+          this.registrationStore.niveauEtude
+        )
+
+        console.log("Données complètes d'inscription:", {
+          role: this.registrationStore.role,
+          niveauEtude: this.registrationStore.niveauEtude,
+          email: this.formData.email,
+          username: this.formData.username,
+          isGoogleFlow: this.registrationStore.isGoogleFlow
+        })
+
+        let data
+        if (this.registrationStore.isGoogleFlow) {
+          data = await authService.registerGoogleFinal({
+            email: this.formData.email,
+            username: this.formData.username,
+            supabase_id: this.registrationStore.googleUser.supabaseId || this.registrationStore.googleUser.googleId,
+            avatar: this.registrationStore.googleUser.avatar,
+            role: this.registrationStore.role,
+            education_level: this.registrationStore.niveauEtude
+          })
+        } else {
+          data = await authService.register(
+            this.formData.email,
+            this.formData.username,
+            this.formData.password,
+            this.formData.confirmPassword,
+            this.registrationStore.role,
+            this.registrationStore.niveauEtude
+          )
+        }
+
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+
+        console.log('Inscription réussie:', data.user)
+
+        if (data.user.role === 'TEACHER') {
+          this.$router.push('/enseignant')
+        } else if (data.user.role === 'STUDENT') {
+          this.$router.push('/etudiant')
+        } else {
+          this.$router.push('/')
+        }
+
+      } catch (error) {
+        console.error("Erreur inscription:", error)
+        alert(error.response?.data?.message || "Erreur lors de l'inscription")
+      } finally {
+        this.loading = false
+        this.isSubmitting = false
+      }
+    },
+  },
 }
+</script>
 
-/* =========================
-   Colonne vidéo (gauche)
-   ========================= */
-
-.background-video {
-  flex: 1 1 auto;
-  min-width: 0;
-  position: relative;
-  overflow: hidden;
-  z-index: 0;
-}
-
-.background-video video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-  display: block;
-}
-
-/* =========================
-   Panneau inscription (droite)
-   ========================= */
-
-.espace-inscription {
-  flex: 0 0 500px;      
-  max-width: 50vw;      
-  min-height: 100vh;
-
-  background-color: #f6feff;
-  border-left: 1px solid #f6feff;
-
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-
-  /*scroll vertical si contenu dépasse */
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-
-  margin: 0;
-  padding: 80px 0 40px 0;
-}
-
-/* =========================
-   Contenu
-   ========================= */
-
-.form-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-
-  width: 100%;
-  max-width: 350px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.titre {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-style: normal;
-  line-height: 1.2;
-  width: 100%;
-  color: #24201d;
-  font-size: 42px;
-  text-align: left;
-  margin-bottom: 16px;
-}
-
-.titre p {
-  margin: 0;
-}
-
-/* tes classes spécifiques */
-.bouton-retour-position {
-  margin-top: 4px;
-}
-
-.bouton-confirmer-position {
-  width: 100%;
-  max-width: 328px;
-}
-
-/* =========================
-   Responsive
-   ========================= */
-
-@media (max-width: 1440px) {
-  .espace-inscription {
-    max-width: 50vw;
-  }
-}
-
-@media (max-width: 1024px) {
-  .espace-inscription {
-    flex-basis: 450px;
-    max-width: 60vw;
-    padding-top: 64px;
-  }
-
-  .titre {
-    font-size: 36px;
-  }
-
-  .form-content {
-    gap: 16px;
-    padding: 0 20px;
-  }
-}
-
-/* Mobile/tablette : panneau full width + vidéo en fond */
-@media (max-width: 768px) {
-  .desktop-inscription-page-2 {
-    display: block;
-    overflow: auto;
-    min-height: 100vh;
-  }
-
-  .background-video {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-  }
-
-  .background-video video {
-    width: 100%;
-    height: 100%;
-  }
-
-  /* overlay pour lisibilité */
-  .background-video::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(14, 35, 64, 0.65);
-  }
-
-  .espace-inscription {
-    position: relative;
-    z-index: 1;
-
-    width: 100%;
-    max-width: 100%;
-    min-height: 100vh;
-    flex: none;
-
-    background-color: rgba(246, 254, 255, 0.95);
-    border-left: none;
-
-    padding: 56px 0 28px 0;
-
-    /* scroll géré par la page */
-    overflow: visible;
-  }
-
-  .form-content {
-    max-width: 92%;
-    padding: 0 16px;
-    gap: 14px;
-  }
-
-  .titre {
-    font-size: 32px;
-  }
-
-  .bouton-confirmer-position {
-    max-width: 100%;
-  }
-}
+<style scoped>
+@import './DesktopInscriptionPage2.css';
+</style>
