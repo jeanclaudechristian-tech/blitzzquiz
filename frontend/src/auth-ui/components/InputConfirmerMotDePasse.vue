@@ -1,16 +1,17 @@
 <template>
-  <div class="input-confirmer-mot-de-passe">
+  <div class="input-confirmer-mot-de-passe" :class="{ 'disabled-state': disabled }">
     <div class="icon-left">
-      <img src="../../assets/checkIcon.svg" alt="Check icon" />
+      <img src="../../assets/passwordIcon.svg" alt="Password icon" />
     </div>
     <input 
       :type="showPassword ? 'text' : 'password'"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
-      :placeholder="placeholder"
+      placeholder="Confirmer mot de passe"
       class="input-field"
+      :disabled="disabled"
     />
-    <div class="icon-right" @click="togglePassword">
+    <div class="icon-right" @click="!disabled && togglePassword()">
       <img :src="showPassword ? eyeIcon : eyeOffIcon" alt="Toggle password visibility" />
     </div>
   </div>
@@ -24,9 +25,9 @@ export default {
       type: String,
       default: ''
     },
-    placeholder: {
-      type: String,
-      default: 'Confirmer mot de passe'
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['update:modelValue'],
@@ -46,5 +47,11 @@ export default {
 </script>
 
 <style scoped>
-@import './InputConfirmerMotDePasse.css';
+/* Assure-toi que ce fichier CSS existe bien, sinon remets le CSS brut que tu m'avais donné */
+@import './InputConfirmerMotDePasse.css'; 
+
+.disabled-state {
+  opacity: 0.6;
+  pointer-events: none;
+}
 </style>
