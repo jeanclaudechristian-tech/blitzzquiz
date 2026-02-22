@@ -22,7 +22,6 @@ class AuthController extends Controller
             'education_level' => 'nullable|string|max:100',
         ]);
 
-        // Utiliser username s'il existe, sinon nickname
         $usernameValue = $request->username ?? $request->nickname;
 
         if (!$usernameValue) {
@@ -70,8 +69,6 @@ class AuthController extends Controller
         ]);
     }
 
-    // --- NOUVELLES MÉTHODES GOOGLE ---
-
     public function checkGoogleUser(Request $request)
     {
         $request->validate(['email' => 'required|email']);
@@ -79,16 +76,13 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            // 404 = User n'existe pas -> Déclenche Inscription
             return response()->json(['message' => 'User not found'], 404);
         }
 
         if ($user->role === 'TEACHER') {
-            // 403 = Prof interdit -> Bloque
             return response()->json(['message' => 'Teachers must use password login'], 403);
         }
 
-        // 200 = User existe -> Connecte
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -103,15 +97,15 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users,email',
             'username' => 'required|string|unique:users,nickname',
             'google_id' => 'required|string',
-            'niveau' => 'required|string',
+            'education_level' => 'required|string',
         ]);
 
         $user = User::create([
-            'nickname' => $request->username, // On utilise le username choisi
+            'nickname' => $request->username,
             'email' => $request->email,
-            'password' => Hash::make(Str::random(32)), // Mdp aléatoire
-            'role' => 'STUDENT', // Toujours STUDENT
-            'education_level' => $request->niveau, // Champ niveau
+            'password' => Hash::make(Str::random(32)),
+            'role' => 'STUDENT',
+            'education_level' => $request->education_level,
             'google_id' => $request->google_id,
             'avatar' => $request->avatar ?? null,
         ]);
@@ -123,7 +117,6 @@ class AuthController extends Controller
             'token' => $token
         ], 201);
     }
-    // ---------------------------------
 
     public function logout(Request $request)
     {
