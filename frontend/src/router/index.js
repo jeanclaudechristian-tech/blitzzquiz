@@ -71,7 +71,7 @@ const routes = [
   {
     path: '/auth/callback',
     name: 'AuthCallback',
-    component:  () => import('@/views/AuthCallback.vue')
+    component:  () => import('@/auth-ui/AuthCallback.vue')
   },
   {
     path: '/enseignant',
