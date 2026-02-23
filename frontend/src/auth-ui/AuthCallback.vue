@@ -10,7 +10,8 @@
 <script>
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { supabase } from '@/supabaseClient';
+import { supabase } from '../lib/supabaseClient'
+
 
 export default {
   name: 'AuthCallback',
