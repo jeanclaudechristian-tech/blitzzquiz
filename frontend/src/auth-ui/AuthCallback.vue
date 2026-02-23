@@ -61,7 +61,12 @@ export default {
 
         // Redirige selon si l'user a un education_level
         if (data.needs_completion) {
-          router.push('/inscription/details')
+          registrationStore.startGoogleFlow({
+            email: data.user.email,
+            supabaseId: data.user.supabase_id,
+            avatar: data.user.avatar
+          })
+          router.push('/inscription')
         } else {
           if (data.user.role === 'TEACHER') {
             router.push('/enseignant')
