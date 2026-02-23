@@ -6,7 +6,6 @@ import DesktopInscriptionPage2 from "../auth-ui/pages/DesktopInscriptionPage2.vu
 import DesktopCourriel from "../auth-ui/pages/DesktopCourriel.vue";
 import DesktopResetMotDePasse from "../auth-ui/pages/DesktopResetMotDePasse.vue";
 import DesktopSucces from "../auth-ui/pages/DesktopSucces.vue";
-import AuthCallback from "../auth-ui/AuthCallback.vue";
 import EnseignantDashboard from "../enseignant-ui/pages/EnseignantDashboard.vue";
 import QuizCreatePage from "../enseignant-ui/pages/QuizCreatePage.vue";
 import EditQuizPage from "../enseignant-ui/pages/EditQuizPage.vue";

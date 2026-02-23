@@ -10,15 +10,16 @@
 <script>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useRegistrationStore } from '../stores/registration'
 
 export default {
   name: 'AuthCallback',
   setup() {
     const router = useRouter()
+    const registrationStore = useRegistrationStore()
 
     onMounted(async () => {
       try {
-        // Récupère le hash avec le token depuis l'URL
         const hashParams = new URLSearchParams(window.location.hash.substring(1))
         const accessToken = hashParams.get('access_token')
 
@@ -28,10 +29,8 @@ export default {
           return
         }
 
-        // Décode le JWT pour récupérer les infos user
         const payload = JSON.parse(atob(accessToken.split('.')[1]))
 
-        // Envoie les données à ton backend Laravel
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
           method: 'POST',
           headers: {
@@ -40,8 +39,8 @@ export default {
           },
           credentials: 'include',
           body: JSON.stringify({
-            access_token: accessToken,  // ✅ Ajoute le token
-            user: {                      // ✅ Wrappe dans 'user'
+            access_token: accessToken,
+            user: {
               id: payload.sub,
               email: payload.email,
               user_metadata: {
@@ -50,7 +49,6 @@ export default {
               }
             }
           })
-
         })
 
         if (!response.ok) {
@@ -59,7 +57,9 @@ export default {
 
         const data = await response.json()
 
-        // Redirige selon si l'user a un education_level
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+
         if (data.needs_completion) {
           registrationStore.startGoogleFlow({
             email: data.user.email,
