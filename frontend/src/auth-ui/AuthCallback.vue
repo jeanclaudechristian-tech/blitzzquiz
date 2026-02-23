@@ -12,7 +12,6 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../lib/supabaseClient'
 
-
 export default {
   name: 'AuthCallback',
   setup() {
@@ -60,10 +59,14 @@ export default {
               // Vérifier si l'utilisateur doit compléter son profil
               if (data.needs_completion || !data.user.education_level) {
                 // Rediriger vers la page de complétion de profil
-                router.push('/inscription2');
+                router.push('/inscription/details');
               } else {
-                // Rediriger vers le tableau de bord
-                router.push('/dashboard');
+                // Rediriger vers le tableau de bord selon le rôle
+                if (data.user.role === 'TEACHER') {
+                  router.push('/enseignant');
+                } else {
+                  router.push('/etudiant');
+                }
               }
             } else {
               throw new Error(data.message || 'Erreur lors de l\'authentification');
@@ -109,8 +112,13 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-spinner p {
