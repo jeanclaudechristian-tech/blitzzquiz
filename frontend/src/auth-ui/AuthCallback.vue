@@ -36,7 +36,7 @@ export default {
 
           if (session) {
             // Vérifier si l'utilisateur existe dans ta base de données backend
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google/callback`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
