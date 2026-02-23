@@ -10,7 +10,6 @@
 <script>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { supabase } from '../lib/supabaseClient'
 
 export default {
   name: 'AuthCallback',
@@ -22,7 +21,7 @@ export default {
         // Récupère le hash avec le token depuis l'URL
         const hashParams = new URLSearchParams(window.location.hash.substring(1))
         const accessToken = hashParams.get('access_token')
-        
+
         if (!accessToken) {
           console.error('Pas de access_token')
           router.push('/connexion')
@@ -31,7 +30,7 @@ export default {
 
         // Décode le JWT pour récupérer les infos user
         const payload = JSON.parse(atob(accessToken.split('.')[1]))
-        
+
         // Envoie les données à ton backend Laravel
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
           method: 'POST',
@@ -41,11 +40,17 @@ export default {
           },
           credentials: 'include',
           body: JSON.stringify({
-            supabase_id: payload.sub,
-            email: payload.email,
-            name: payload.user_metadata?.full_name || payload.user_metadata?.name,
-            avatar_url: payload.user_metadata?.avatar_url || payload.user_metadata?.picture
+            access_token: accessToken,  // ✅ Ajoute le token
+            user: {                      // ✅ Wrappe dans 'user'
+              id: payload.sub,
+              email: payload.email,
+              user_metadata: {
+                name: payload.user_metadata?.full_name || payload.user_metadata?.name,
+                avatar_url: payload.user_metadata?.avatar_url || payload.user_metadata?.picture
+              }
+            }
           })
+
         })
 
         if (!response.ok) {
@@ -53,13 +58,18 @@ export default {
         }
 
         const data = await response.json()
-        
+
         // Redirige selon si l'user a un education_level
-        if (data.user && data.user.education_level) {
-          router.push('/dashboard')
+        if (data.needs_completion) {
+          router.push('/inscription/details')
         } else {
-          router.push('/inscription-2')
+          if (data.user.role === 'TEACHER') {
+            router.push('/enseignant')
+          } else {
+            router.push('/etudiant')
+          }
         }
+
       } catch (error) {
         console.error('Erreur:', error)
         router.push('/connexion')
@@ -96,6 +106,8 @@ export default {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

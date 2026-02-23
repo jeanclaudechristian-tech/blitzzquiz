@@ -9,7 +9,7 @@ use App\Models\Quiz;
 
 // Routes Google existantes
 Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
-Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
+//Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
 Route::post('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
 // --- NOUVELLES ROUTES POUR LE FLUX GOOGLE ---
