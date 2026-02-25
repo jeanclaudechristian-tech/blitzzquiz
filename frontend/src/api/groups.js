@@ -1,4 +1,3 @@
-// frontend/src/api/groups.js
 import api from "./Axios";
 
 export const groupService = {

@@ -22,6 +22,7 @@ class User extends Authenticatable
         'avatar',
         'google_id',
         'apple_id',
+        'supabase_id',
     ];
 
     protected $hidden = [

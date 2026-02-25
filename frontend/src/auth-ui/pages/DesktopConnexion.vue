@@ -39,8 +39,8 @@ import BoutonConnexion from '../components/BoutonConnexion.vue'
 import Diviseur from '../components/Diviseur.vue'
 import BoutonCreerUnCompte from '../components/BoutonCreerUnCompte.vue'
 import BoutonGoogle from '../components/BoutonGoogle.vue'
-import { authService } from '../../API/auth'
-import axios from 'axios'
+import { authService } from '../../api/auth'
+import api from '../../api/Axios'
 
 export default {
   name: 'DesktopConnexion',
@@ -57,7 +57,7 @@ export default {
   data() {
     return {
       formData: {
-        username: '', // email
+        username: '',
         password: ''
       },
       loading: false,
@@ -87,10 +87,8 @@ export default {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
 
-        // config axios globale pour les prochains appels
-        axios.defaults.baseURL = 'http://localhost:8000/api'
-        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
-
+        // on n’utilise plus axios.defaults ici,
+        // c’est ton instance `api` qui gère baseURL + Authorization
         console.log('Connexion réussie:', data.user)
 
         const role = data.user.role

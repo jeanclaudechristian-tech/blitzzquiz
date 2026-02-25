@@ -3,7 +3,6 @@
     <div class="background-video">
       <video autoplay loop playsinline muted>
         <source src="/videos/LandingPage.mp4" type="video/mp4" />
-
       </video>
     </div>
     <div class="espace-inscription">
@@ -16,12 +15,28 @@
           <p> </p>
           <p>compte</p>
         </div>
-        <InputCourriel v-model="formData.email" placeholder="Courriel (personnel ou scolaire)" />
+        
+        <InputCourriel 
+            v-model="formData.email" 
+            placeholder="Courriel (personnel ou scolaire)"
+            :disabled="registrationStore.isGoogleFlow" 
+        />
+
         <InputNomUtilisateur v-model="formData.username" />
-        <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" />
-        <InputConfirmerMotDePasse v-model="formData.confirmPassword" />
+
+        <InputMotDePasse 
+            v-model="formData.password" 
+            placeholder="Mot de passe"
+            :disabled="registrationStore.isGoogleFlow" 
+        />
+        
+        <InputConfirmerMotDePasse 
+            v-model="formData.confirmPassword"
+            :disabled="registrationStore.isGoogleFlow" 
+        />
+
         <BoutonRetour class="bouton-retour-position" @click="$router.back()" />
-        <BoutonConfirmer class="bouton-confirmer-position" @click="goToValidation" />
+        <BoutonConfirmer class="bouton-confirmer-position" @click="goToValidation" :disabled="loading" />
       </div>
     </div>
   </div>
@@ -58,41 +73,51 @@ export default {
       formData: {
         email: this.registrationStore.email || '',
         username: this.registrationStore.username || '',
-        password: this.registrationStore.password || '',
-        confirmPassword: this.registrationStore.confirmPassword || '',
+        password: this.registrationStore.isGoogleFlow 
+          ? 'GoogleAuthSecure!' 
+          : (this.registrationStore.password || ''),
+        confirmPassword: this.registrationStore.isGoogleFlow 
+          ? 'GoogleAuthSecure!' 
+          : (this.registrationStore.confirmPassword || ''),
       },
       loading: false,
       error: null,
+      isSubmitting: false,
     }
   },
   methods: {
     async goToValidation() {
-      // Validation basique
-      if (
-        !this.formData.email ||
-        !this.formData.username ||
-        !this.formData.password ||
-        !this.formData.confirmPassword
-      ) {
-        alert('Veuillez remplir tous les champs')
-        return
-      }
+      if (this.isSubmitting) return
 
-      if (this.formData.password !== this.formData.confirmPassword) {
-        alert('Les mots de passe ne correspondent pas')
-        return
-      }
+      console.log('API URL =', import.meta.env.VITE_API_URL)
 
-      if (this.formData.password.length < 8) {
-        alert('Le mot de passe doit contenir au moins 8 caractères')
-        return
+      if (this.registrationStore.isGoogleFlow) {
+        if (!this.formData.email || !this.formData.username) {
+          alert('Veuillez remplir l\'email et le nom d\'utilisateur')
+          return
+        }
+        if (!this.registrationStore.niveauEtude) {
+          alert('Veuillez sélectionner un niveau d\'étude')
+          return
+        }
+      } else {
+        if (!this.formData.email || !this.formData.username || 
+            !this.formData.password || !this.formData.confirmPassword) {
+          alert('Veuillez remplir tous les champs')
+          return
+        }
+        
+        if (this.formData.password !== this.formData.confirmPassword) {
+          alert('Les mots de passe ne correspondent pas')
+          return
+        }
       }
 
       this.loading = true
+      this.isSubmitting = true
       this.error = null
 
       try {
-        // Sauvegarde dans le store avant l'appel API (sans rôle)
         this.registrationStore.setCredentials(
           this.formData.email,
           this.formData.username,
@@ -106,65 +131,54 @@ export default {
           niveauEtude: this.registrationStore.niveauEtude,
           email: this.formData.email,
           username: this.formData.username,
+          isGoogleFlow: this.registrationStore.isGoogleFlow
         })
 
-        // Appel API d'inscription avec le rôle du store
-        const data = await authService.register(
-          this.formData.email,
-          this.formData.username,
-          this.formData.password,
-          this.formData.confirmPassword,
-          this.registrationStore.role,
-          this.registrationStore.niveauEtude
-        )
+        let data
+        if (this.registrationStore.isGoogleFlow) {
+          data = await authService.registerGoogleFinal({
+            email: this.formData.email,
+            username: this.formData.username,
+            supabase_id: this.registrationStore.googleUser.supabaseId || this.registrationStore.googleUser.googleId,
+            avatar: this.registrationStore.googleUser.avatar,
+            role: this.registrationStore.role,
+            education_level: this.registrationStore.niveauEtude
+          })
+        } else {
+          data = await authService.register(
+            this.formData.email,
+            this.formData.username,
+            this.formData.password,
+            this.formData.confirmPassword,
+            this.registrationStore.role,
+            this.registrationStore.niveauEtude
+          )
+        }
 
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
 
         console.log('Inscription réussie:', data.user)
 
-        const userRole = this.registrationStore.role
-
-        this.registrationStore.reset()
-
-        // Redirection vers le bon dashboard
-        if (userRole === 'TEACHER') {
+        if (data.user.role === 'TEACHER') {
           this.$router.push('/enseignant')
-        } else if (userRole === 'STUDENT') {
+        } else if (data.user.role === 'STUDENT') {
           this.$router.push('/etudiant')
         } else {
           this.$router.push('/')
         }
+
       } catch (error) {
-        console.error("Erreur d'inscription brute:", error)
-
-        if (error && error.response && error.response.status === 422) {
-          const errors = error.response.data.errors
-          console.log('Validation errors:', errors)
-
-          if (errors.email) {
-            this.error = 'Cet email est déjà utilisé'
-          } else if (errors.password) {
-            this.error = 'Le mot de passe ne respecte pas les critères'
-          } else if (errors.role) {
-            this.error = 'Le type de compte (rôle) est invalide ou manquant'
-          } else {
-            this.error = 'Erreur de validation. Vérifiez vos informations.'
-          }
-        } else {
-          this.error = "Erreur d'inscription. Réessayez plus tard."
-        }
-
-        alert(this.error)
+        console.error("Erreur inscription:", error)
+        alert(error.response?.data?.message || "Erreur lors de l'inscription")
       } finally {
         this.loading = false
+        this.isSubmitting = false
       }
     },
   },
 }
 </script>
-
-
 
 <style scoped>
 @import './DesktopInscriptionPage2.css';
