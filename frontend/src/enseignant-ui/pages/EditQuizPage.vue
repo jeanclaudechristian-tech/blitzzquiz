@@ -4,35 +4,37 @@
     <main class="edit-main">
       <section v-if="quizLoaded" class="edit-card">
         <header class="edit-card-header">
-          <h1>Éditer le quiz</h1>
-          <p>Modifie les informations de base de ton quiz.</p>
+          <h1>✏️ Éditer le quiz</h1>
+          <p class="subtitle">Modifiez les informations de base de votre quiz</p>
         </header>
 
-        <div class="edit-layout">
-          <form class="edit-form" @submit.prevent="saveQuiz()">
-            <div class="field-group">
-              <label for="titre">Titre du quiz *</label>
-              <input
-                id="titre"
-                v-model="form.titre"
-                type="text"
-                required
-              />
-            </div>
+        <form class="edit-form" @submit.prevent="saveQuiz(false)">
+          <div class="field-group">
+            <label for="titre">Titre du quiz *</label>
+            <input
+              id="titre"
+              v-model="form.titre"
+              type="text"
+              placeholder="Titre de votre quiz"
+              required
+            />
+          </div>
 
-            <div class="field-group">
-              <label for="description">Description</label>
-              <textarea
-                id="description"
-                v-model="form.description"
-                rows="3"
-              ></textarea>
-            </div>
+          <div class="field-group">
+            <label for="description">Description</label>
+            <textarea
+              id="description"
+              v-model="form.description"
+              rows="3"
+              placeholder="Ajoutez des consignes ou un contexte (optionnel)"
+            ></textarea>
+          </div>
 
+          <div class="field-row">
             <div class="field-group">
               <label for="categorie">Catégorie</label>
               <select id="categorie" v-model="form.categorie">
-                <option value="">Choisir</option>
+                <option value="">Choisir une catégorie</option>
                 <option value="Math">Math</option>
                 <option value="Français">Français</option>
                 <option value="Sciences">Sciences</option>
@@ -40,38 +42,33 @@
               </select>
             </div>
 
-            <p v-if="error" class="form-error">{{ error }}</p>
+            <div class="field-group">
+              <label for="niveau">Niveau d'étude</label>
+              <select id="niveau" v-model="form.niveau">
+                <option value="">Choisir un niveau</option>
+                <option value="Primaire">Primaire</option>
+                <option value="Secondaire">Secondaire</option>
+                <option value="Collégiale">Collégiale</option>
+                <option value="Universitaire">Universitaire</option>
+              </select>
+            </div>
+          </div>
 
-            <div class="edit-actions">
-              <CallToActionBtn
-                text="Enregistrer"
-                variant="dark"
-                @click="saveQuiz(false)"
-              />
-              <CallToActionBtn
-                text="Publier"
-                variant="blue"
-                @click="saveQuiz(true)"
-              />
-              <button type="button" class="link-button" @click="goBack">
-                Retour à Mes quiz
+          <div class="visibility-section">
+            <div class="field-group visibility-group">
+              <span class="field-label">Visibilité</span>
+              <button
+                type="button"
+                class="toggle"
+                :class="{ active: form.isPublic }"
+                @click="form.isPublic = !form.isPublic"
+              >
+                <span class="toggle-thumb"></span>
+                <span class="toggle-label">
+                  {{ form.isPublic ? 'Public' : 'Privé' }}
+                </span>
               </button>
             </div>
-          </form>
-
-          <aside class="visibility-card">
-            <h2>Visibilité</h2>
-            <button
-              type="button"
-              class="toggle"
-              :class="{ active: form.isPublic }"
-              @click="form.isPublic = !form.isPublic"
-            >
-              <span class="toggle-thumb"></span>
-              <span class="toggle-label">
-                {{ form.isPublic ? 'Public' : 'Privé' }}
-              </span>
-            </button>
 
             <div v-if="!form.isPublic" class="code-block">
               <p class="code-label">Code du quiz</p>
@@ -81,30 +78,69 @@
                   type="button"
                   class="copy-btn"
                   @click="copyCode"
+                  title="Copier le code"
                 >
-                  Copier
+                  📋 Copier
                 </button>
               </div>
             </div>
-          </aside>
-        </div>
+          </div>
+
+          <p v-if="error" class="form-error">{{ error }}</p>
+
+          <p v-if="!hasQuestions" class="form-warning">
+            ⚠️ Vous devez créer au moins une question avant d'enregistrer le quiz.
+          </p>
+
+          <div class="actions">
+            <div class="primary-actions">
+              <button
+                type="button"
+                class="btn-primary"
+                @click="saveQuiz(false)"
+                :disabled="!hasQuestions || saving"
+                :title="!hasQuestions ? 'Ajoutez des questions avant d\'enregistrer' : ''"
+              >
+                💾 Enregistrer le quiz
+              </button>
+              <button
+                type="button"
+                class="btn-publish"
+                @click="saveQuiz(true)"
+                :disabled="!hasQuestions || saving"
+                :title="!hasQuestions ? 'Ajoutez des questions avant de publier' : ''"
+              >
+                📢 Publier
+              </button>
+              <button
+                type="button"
+                class="btn-secondary"
+                @click="goToQuestions"
+              >
+                ➕ Gérer les questions
+              </button>
+            </div>
+            <button type="button" class="btn-cancel" @click="goBack">
+              Retour à Mes quiz
+            </button>
+          </div>
+        </form>
       </section>
     </main>
-    <AppFooter />
+    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
-import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
+import api from '../../api/Axios' // même instance que pour le dashboard / questions
 
 export default {
   name: 'EditQuizPage',
   components: {
     AppHeader,
-    AppFooter,
-    CallToActionBtn
+    AppFooter
   },
   data() {
     return {
@@ -114,97 +150,100 @@ export default {
         titre: '',
         description: '',
         categorie: '',
+        niveau: '',
         isPublic: false,
         code_quiz: '',
         statut: 'Brouillon'
       },
-      error: ''
+      questionsCount: 0,
+      error: '',
+      saving: false
+    }
+  },
+  computed: {
+    hasQuestions() {
+      return this.questionsCount > 0
     }
   },
   methods: {
     generateCode() {
       return Math.random().toString(36).substring(2, 8).toUpperCase()
     },
-    loadQuiz() {
-      // TODO (Laravel) : remplacer cette lecture localStorage
-      // par GET /api/quizzes/{id}.
-      const storageKey = 'enseignant_quizzes'
-      const id = Number(this.$route.params.id)
-      const saved = localStorage.getItem(storageKey)
-      if (!saved) {
-        this.$router.push('/enseignant')
-        return
-      }
-      let quizzes = []
+
+    async loadQuiz() {
+      const id = this.$route.params.id
+
       try {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) quizzes = parsed
-      } catch {
+        // 1) charger les infos du quiz
+        const { data: quiz } = await api.get(`/quizzes/${id}`)
+
+        this.form = {
+          id: quiz.id,
+          titre: quiz.titre || '',
+          description: quiz.description || '',
+          categorie: quiz.categorie || '',
+          niveau: quiz.niveau || '',
+          isPublic: !!quiz.is_public,
+          code_quiz: quiz.code_quiz || this.generateCode(),
+          statut: quiz.statut || 'Brouillon'
+        }
+
+        // 2) charger le nombre de questions depuis l'API
+        const { data: questions } = await api.get(`/quizzes/${id}/questions`)
+        this.questionsCount = Array.isArray(questions) ? questions.length : 0
+
+        this.quizLoaded = true
+      } catch (e) {
+        console.error('Erreur chargement quiz', e.response?.data || e)
         this.$router.push('/enseignant')
-        return
       }
-      const quiz = quizzes.find(q => q.id === id)
-      if (!quiz) {
-        this.$router.push('/enseignant')
-        return
-      }
-      if (!quiz.code_quiz) {
-        quiz.code_quiz = this.generateCode()
-        localStorage.setItem(storageKey, JSON.stringify(quizzes))
-      }
-      this.form = {
-        id: quiz.id,
-        titre: quiz.titre,
-        description: quiz.description || '',
-        categorie: quiz.categorie || '',
-        isPublic: !!quiz.isPublic,
-        code_quiz: quiz.code_quiz,
-        statut: quiz.statut || 'Brouillon'
-      }
-      this.quizLoaded = true
     },
-    saveQuiz(publish = false) {
+
+    async saveQuiz(publish = false) {
       this.error = ''
+
       if (!this.form.titre.trim()) {
         this.error = 'Le titre du quiz est obligatoire.'
         return
       }
-      // TODO (Laravel) : remplacer tout ce bloc par
-      // PATCH/PUT /api/quizzes/{id} avec les champs du formulaire.
-      const storageKey = 'enseignant_quizzes'
-      let quizzes = []
-      try {
-        const saved = localStorage.getItem(storageKey)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed)) quizzes = parsed
-        }
-      } catch {
-        quizzes = []
-      }
-      const idx = quizzes.findIndex(q => q.id === this.form.id)
-      if (idx === -1) {
-        this.$router.push('/enseignant')
+
+      if (!this.hasQuestions) {
+        this.error = 'Vous devez créer au moins une question avant d\'enregistrer le quiz.'
         return
       }
-      quizzes[idx] = {
-        ...quizzes[idx],
-        titre: this.form.titre.trim(),
-        description: this.form.description.trim(),
-        categorie: this.form.categorie,
-        isPublic: this.form.isPublic,
-        code_quiz: this.form.code_quiz,
-        statut: publish ? 'Publié' : (quizzes[idx].statut || 'Brouillon')
+
+      this.saving = true
+
+      try {
+        const payload = {
+          titre: this.form.titre.trim(),
+          description: this.form.description.trim(),
+          categorie: this.form.categorie || null,
+          niveau: this.form.niveau || null,
+          is_public: this.form.isPublic,
+          code_quiz: this.form.code_quiz,
+          statut: publish ? 'Publié' : (this.form.statut || 'Brouillon')
+        }
+
+        await api.put(`/quizzes/${this.form.id}`, payload)
+
+        this.$router.push('/enseignant')
+      } catch (e) {
+        console.error('Erreur mise à jour quiz', e.response?.data || e)
+        this.error = 'Erreur lors de la sauvegarde du quiz.'
+      } finally {
+        this.saving = false
       }
-      localStorage.setItem(storageKey, JSON.stringify(quizzes))
-      if (publish) {
-        console.log('Quiz publié')
-      }
-      this.$router.push('/enseignant')
     },
+
+    goToQuestions() {
+      this.$router.push(`/enseignant/quiz/${this.form.id}/questions`)
+    },
+
     goBack() {
       this.$router.push('/enseignant')
     },
+
     copyCode() {
       if (!this.form.code_quiz) return
       navigator.clipboard?.writeText(this.form.code_quiz).catch(() => {})
@@ -219,4 +258,3 @@ export default {
 <style scoped>
 @import './EditQuizPage.css';
 </style>
-

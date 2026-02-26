@@ -12,9 +12,6 @@ use Illuminate\Validation\Rule;
 
 class GroupController extends Controller
 {
-
-
-
     public function index()
     {
         $user = Auth::user();
@@ -41,7 +38,7 @@ class GroupController extends Controller
     }
 
     /**
-     * Liste des groupes (utilisateur connecté : owned + membre).
+     * Détails groupe (vérif membre ou owner).
      */
     public function show(Group $group)
     {
@@ -69,8 +66,6 @@ class GroupController extends Controller
         ]);
     }
 
-
-
     /**
      * Créer groupe (enseignant/owner).
      */
@@ -85,7 +80,7 @@ class GroupController extends Controller
 
         $group = Group::create([
             'nom' => $validated['nom'],
-            'code_invitation' => Str::upper(Str::random(6)), // toujours un code
+            'code_invitation' => Str::upper(Str::random(6)), // 3 lettres + 3 chiffres possible plus tard
             'is_public' => $isPublic,
             'owner_id' => Auth::id(),
         ]);
@@ -94,7 +89,6 @@ class GroupController extends Controller
 
         return response()->json($group, 201);
     }
-
 
     /**
      * Mettre à jour groupe (seul owner).
@@ -112,10 +106,6 @@ class GroupController extends Controller
 
         if (array_key_exists('is_public', $validated)) {
             $group->is_public = $validated['is_public'];
-            // si tu veux régénérer un code seulement quand on passe en privé :
-            // if (!$group->is_public) {
-            //     $group->code_invitation = Str::upper(Str::random(6));
-            // }
         }
 
         if (array_key_exists('nom', $validated)) {
@@ -128,7 +118,6 @@ class GroupController extends Controller
 
         return response()->json($group);
     }
-
 
     /**
      * Supprimer groupe (seul owner).
@@ -146,25 +135,27 @@ class GroupController extends Controller
     }
 
     /**
-     * Rejoindre via code (public ou code).
+     * Rejoindre via code (élève).
      */
     public function join(Request $request)
     {
+        $userId = Auth::id();
         $validated = $request->validate([
             'code_invitation' => 'required|string|size:6'
         ]);
 
-        $group = Group::where('code_invitation', $validated['code_invitation'])->first();
+        $code = strtoupper($validated['code_invitation']);
 
         if (!$group) {
             return response()->json(['error' => 'Code invalide ou groupe privé'], 404);
         }
 
-        if ($group->members()->where('user_id', Auth::id())->exists()) {
+        if ($group->members()->where('user_id', $userId)->exists()) {
             return response()->json(['error' => 'Déjà membre'], 409);
         }
 
-        $group->members()->attach(Auth::id());
+        // user_groups (user_id, group_id)
+        $group->members()->attach($userId);
 
         // 建议返回和 index 一致的结构，确保前端解析不出错
         return response()->json([

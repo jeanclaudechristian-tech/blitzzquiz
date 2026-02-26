@@ -16,14 +16,29 @@
         </div>
 
         <div class="role-buttons">
-          <button type="button" class="role-card enseignant" @click="selectRole('TEACHER')">
+          <!-- BOUTON ENSEIGNANT -->
+          <!-- Si Google : on ne désactive pas le clic, on intercepte le clic pour afficher le message -->
+          <button 
+            type="button" 
+            class="role-card enseignant" 
+            :class="{ 'disabled-look': registrationStore.isGoogleFlow }"
+            @click="handleTeacherClick"
+          >
             <span class="role-label">Enseignant</span>
           </button>
 
+          <!-- BOUTON ÉTUDIANT -->
           <button type="button" class="role-card etudiant" @click="selectRole('STUDENT')">
             <span class="role-label">Étudiant</span>
           </button>
         </div>
+
+        <!-- MESSAGE D'ERREUR ROUGE (Apparaît au clic) -->
+        <transition name="fade">
+          <div v-if="showTeacherWarning" class="teacher-warning-text">
+            Les enseignants doivent créer leur compte manuellement avec l'adresse courriel de leur établissement scolaire.
+          </div>
+        </transition>
 
         <transition name="fade-up">
           <div v-if="role === 'STUDENT'" class="niveau-block">
@@ -64,19 +79,29 @@ export default {
   data() {
     return {
       niveauEtude: this.registrationStore.niveauEtude || '',
-      role: '',
+      role: this.registrationStore.isGoogleFlow ? 'STUDENT' : '',
+      showTeacherWarning: false // Contrôle l'affichage du message
     }
   },
   methods: {
-    selectRole(role) {
-      console.log('selectRole called with', role)
-      console.log('registrationStore methods:', this.registrationStore)
+    handleTeacherClick() {
+      // Si on vient de Google, on affiche le message d'erreur
+      if (this.registrationStore.isGoogleFlow) {
+        this.showTeacherWarning = true
+        // On le cache après 5 secondes si tu veux, ou on le laisse
+        setTimeout(() => { this.showTeacherWarning = false }, 5000)
+      } else {
+        // Sinon comportement normal
+        this.selectRole('TEACHER')
+      }
+    },
 
+    selectRole(role) {
       this.role = role
       this.registrationStore.setRole(role)
+      this.showTeacherWarning = false // On cache le warning si on clique ailleurs
 
       if (role === 'TEACHER') {
-        console.log('redirect to /inscription/details')
         this.$router.push({
           path: '/inscription/details',
           query: { role: 'TEACHER' },
@@ -101,13 +126,41 @@ export default {
     },
 
     goToConnexion() {
+      this.registrationStore.reset()
       this.$router.push('/connexion')
     },
   },
 }
 </script>
 
-
 <style scoped>
 @import './DesktopInscriptionPage1.css';
+
+/* Juste l'aspect visuel grisé/interdit */
+.disabled-look {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+/* Le style exact demandé pour le texte */
+.teacher-warning-text {
+  margin-top: 16px;
+  color: #FF0000; /* Rouge pur ou #D32F2F pour plus doux */
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500; /* Un peu de gras pour la lisibilité */
+  text-align: center;
+  max-width: 300px; /* Pour éviter que ça s'étale trop */
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.4;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 </style>

@@ -48,7 +48,6 @@
   flex-direction: column;
   justify-content: flex-start;
 
-  /*scroll vertical si contenu dépasse */
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -89,7 +88,6 @@
   margin: 0;
 }
 
-/* tes classes spécifiques */
 .bouton-retour-position {
   margin-top: 4px;
 }
@@ -126,7 +124,6 @@
   }
 }
 
-/* Mobile/tablette : panneau full width + vidéo en fond */
 @media (max-width: 768px) {
   .desktop-inscription-page-2 {
     display: block;
@@ -145,7 +142,6 @@
     height: 100%;
   }
 
-  /* overlay pour lisibilité */
   .background-video::after {
     content: "";
     position: absolute;
@@ -167,7 +163,6 @@
 
     padding: 56px 0 28px 0;
 
-    /* scroll géré par la page */
     overflow: visible;
   }
 

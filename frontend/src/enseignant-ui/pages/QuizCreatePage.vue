@@ -4,8 +4,8 @@
     <main class="quiz-main">
       <section class="quiz-card">
         <header class="quiz-card-header">
-          <h1>Créer un quiz</h1>
-          <p>Renseigne les informations de base de ton quiz.</p>
+          <h1>📝 Créer un quiz</h1>
+          <p class="subtitle">Renseignez les informations de base de votre quiz</p>
         </header>
 
         <form class="quiz-form" @submit.prevent="handleSubmit">
@@ -15,7 +15,7 @@
               id="titre"
               v-model="form.titre"
               type="text"
-              placeholder="Ex. Quiz de révision en mathématiques"
+              placeholder="Ex: Quiz de révision en mathématiques"
               required
             />
           </div>
@@ -26,7 +26,7 @@
               id="description"
               v-model="form.description"
               rows="3"
-              placeholder="Ajoute des consignes ou un contexte (optionnel)"
+              placeholder="Ajoutez des consignes ou un contexte (optionnel)"
             ></textarea>
           </div>
 
@@ -34,7 +34,7 @@
             <div class="field-group">
               <label for="categorie">Catégorie</label>
               <select id="categorie" v-model="form.categorie">
-                <option value="">Choisir</option>
+                <option value="">Choisir une catégorie</option>
                 <option value="Math">Math</option>
                 <option value="Français">Français</option>
                 <option value="Sciences">Sciences</option>
@@ -42,6 +42,20 @@
               </select>
             </div>
 
+            <div class="field-group">
+              <label for="niveau">Niveau d'étude</label>
+              <select id="niveau" v-model="form.niveau">
+                <option value="">Choisir un niveau</option>
+                <option value="Primaire">Primaire</option>
+                <option value="Secondaire">Secondaire</option>
+                <option value="Collégiale">Collégiale</option>
+                <option value="Universitaire">Universitaire</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Ligne avec Visibilité et Bouton Créer des questions -->
+          <div class="visibility-row">
             <div class="field-group visibility-group">
               <span class="field-label">Visibilité</span>
               <button
@@ -56,38 +70,48 @@
                 </span>
               </button>
             </div>
+
+            <button
+              type="button"
+              class="btn-create-questions"
+              @click="saveAndAddQuestions"
+              :disabled="saving"
+            >
+              ➕ Créer des questions
+            </button>
           </div>
 
           <p v-if="error" class="form-error">{{ error }}</p>
 
           <div class="actions">
-            <CallToActionBtn
-              text="Enregistrer le quiz"
-              variant="dark"
-              @click="handleSubmit"
-            />
-            <button type="button" class="link-button" @click="goBack">
-              Annuler et revenir à l’espace enseignant
+            <button
+              type="submit"
+              class="btn-primary"
+              :disabled="saving"
+            >
+              Enregistrer le quiz
+            </button>
+            <button type="button" class="btn-cancel" @click="goBack">
+              Annuler et retourner
             </button>
           </div>
         </form>
       </section>
     </main>
-    <AppFooter />
+    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
-import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
 export default {
   name: 'QuizCreatePage',
   components: {
     AppHeader,
-    AppFooter,
-    CallToActionBtn
+    AppFooter
   },
   data() {
     return {
@@ -95,49 +119,62 @@ export default {
         titre: '',
         description: '',
         categorie: '',
+        niveau: '',
         isPublic: false
       },
-      error: ''
+      error: '',
+      saving: false
     }
   },
   methods: {
-    handleSubmit() {
+    async createQuizOnApi() {
       this.error = ''
-
       if (!this.form.titre.trim()) {
         this.error = 'Le titre du quiz est obligatoire.'
-        return
+        throw new Error('invalid')
       }
 
-      const storageKey = 'enseignant_quizzes'
-      let existing = []
-      try {
-        const saved = localStorage.getItem(storageKey)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed)) existing = parsed
-        }
-      } catch {
-        existing = []
-      }
+      this.saving = true
 
-      const newQuiz = {
-        // TODO (Laravel) : remplacer Date.now() par l'id renvoyé
-        // par l'API (par ex. POST /api/quizzes) et enlever ce stockage local.
-        id: Date.now(),
+      const payload = {
         titre: this.form.titre.trim(),
         description: this.form.description.trim(),
-        categorie: this.form.categorie,
-        isPublic: this.form.isPublic,
-        statut: 'Brouillon',
-        nbQuestions: 0
+        categorie: this.form.categorie || null,
+        niveau: this.form.niveau || null,
+        is_public: this.form.isPublic
       }
 
-      existing.push(newQuiz)
-      localStorage.setItem(storageKey, JSON.stringify(existing))
-
-      this.$router.push('/enseignant')
+      const { data } = await api.post('/quizzes', payload)
+      // data doit contenir au moins { id, ... }
+      this.saving = false
+      return data
     },
+
+    async handleSubmit() {
+      try {
+        const quiz = await this.createQuizOnApi()
+        // juste retour au dashboard après création
+        this.$router.push('/enseignant')
+      } catch (e) {
+        if (e.message === 'invalid') return
+        console.error('Erreur création quiz', e.response?.data || e)
+        this.error = "Erreur lors de la création du quiz."
+        this.saving = false
+      }
+    },
+
+    async saveAndAddQuestions() {
+      try {
+        const quiz = await this.createQuizOnApi()
+        this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
+      } catch (e) {
+        if (e.message === 'invalid') return
+        console.error('Erreur création quiz + questions', e.response?.data || e)
+        this.error = "Erreur lors de la création du quiz."
+        this.saving = false
+      }
+    },
+
     goBack() {
       this.$router.push('/enseignant')
     }
@@ -148,4 +185,3 @@ export default {
 <style scoped>
 @import './QuizCreatePage.css';
 </style>
-

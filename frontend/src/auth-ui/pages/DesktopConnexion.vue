@@ -16,9 +16,12 @@
           <p>compte</p>
         </div>
         <InputNomUtilisateur v-model="formData.username" />
-        <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" />
+        <InputMotDePasse
+          v-model="formData.password"
+          placeholder="Mot de passe"
+        />
         <BoutonMdpOublie />
-        <BoutonConnexion @click="handleConnexion" />
+        <BoutonConnexion :disabled="loading" @click="handleConnexion" />
         <Diviseur />
         <BoutonCreerUnCompte />
         <BoutonGoogle />
@@ -37,6 +40,7 @@ import Diviseur from '../components/Diviseur.vue'
 import BoutonCreerUnCompte from '../components/BoutonCreerUnCompte.vue'
 import BoutonGoogle from '../components/BoutonGoogle.vue'
 import { authService } from '../../api/auth'
+import api from '../../api/Axios'
 
 export default {
   name: 'DesktopConnexion',
@@ -53,9 +57,8 @@ export default {
   data() {
     return {
       formData: {
-        username: '', // Sera utilisé comme email
-        password: '',
-        role: ''
+        username: '',
+        password: ''
       },
       loading: false,
       error: null
@@ -63,50 +66,46 @@ export default {
   },
   methods: {
     async handleConnexion() {
-      // Validation basique
-      if (!this.formData.username || !this.formData.password) {
-        alert('Veuillez remplir tous les champs')
-        return
-      }
-
+      if (this.loading) return
       this.loading = true
       this.error = null
 
+      if (!this.formData.username || !this.formData.password) {
+        this.error = 'Veuillez remplir votre email et votre mot de passe.'
+        alert(this.error)
+        this.loading = false
+        return
+      }
+
       try {
-        // Appel API de connexion
         const data = await authService.login(
-          this.formData.username, // email
-          this.formData.password,
-          this.formData.role
+          this.formData.username,
+          this.formData.password
         )
 
-        // Sauvegarde le token et l'utilisateur
+        // sauvegarde token + user
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
 
+        // on n’utilise plus axios.defaults ici,
+        // c’est ton instance `api` qui gère baseURL + Authorization
         console.log('Connexion réussie:', data.user)
 
         const role = data.user.role
-        
         if (role === 'TEACHER') {
           this.$router.push('/enseignant')
         } else if (role === 'STUDENT') {
           this.$router.push('/etudiant')
         } else {
-          // fallback si jamais
           this.$router.push('/')
         }
-
-
       } catch (error) {
         console.error('Erreur de connexion:', error)
-
         if (error.response?.status === 422) {
           this.error = 'Email ou mot de passe incorrect'
         } else {
           this.error = 'Erreur de connexion. Réessayez plus tard.'
         }
-
         alert(this.error)
       } finally {
         this.loading = false
@@ -115,7 +114,6 @@ export default {
   }
 }
 </script>
-
 
 <style scoped>
 @import './DesktopConnexion.css';

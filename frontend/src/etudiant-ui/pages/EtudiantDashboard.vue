@@ -73,8 +73,8 @@
     <AppFooter />
   </div>
 </template>
-
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
@@ -89,13 +89,13 @@ export default {
   data() {
     return {
       categories: ['Math', 'Français', 'Sciences', 'Histoire'],
-      publicQuizzes: [],      // utilisés dans le template
+      publicQuizzes: [],
       loadingQuizzes: false,
       errorQuizzes: ''
     }
   },
-  mounted() {
-    this.loadPublicQuizzes()
+  async mounted() {
+    await this.loadPublicQuizzes()
   },
   methods: {
     goToCatalogue() {
@@ -108,36 +108,40 @@ export default {
       this.$router.push({ path: '/etudiant/catalogue', query: { categorie: cat } })
     },
 
-    loadPublicQuizzes() {
+    async loadPublicQuizzes() {
       this.loadingQuizzes = true
       this.errorQuizzes = ''
-      const storageKey = 'enseignant_quizzes'
-
       try {
-        const saved = localStorage.getItem(storageKey)
-        if (!saved) {
-          this.publicQuizzes = []
-          return
-        }
+        const { data } = await api.get('/quizzes')
+        console.log('Dashboard /quizzes =>', data)
 
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          // mêmes données que dans la page catalogue : garder les publics
-          this.publicQuizzes = parsed.filter((q) => q.isPublic)
-        } else {
-          this.publicQuizzes = []
-        }
+        this.publicQuizzes = data
+          .filter(q => q.is_public == true || q.is_public == 1)
+          .map(q => ({
+            id: q.id,
+            titre: q.titre,
+            categorie: q.category,
+            nbQuestions: q.questions_count ?? 0,
+            isPublic: q.is_public ? true : false,
+            code: q.code_quiz
+          }))
       } catch (e) {
-        console.error('Erreur lecture localStorage', e)
-        this.publicQuizzes = []
+        console.error('Erreur /quizzes dashboard', e.response?.data || e)
         this.errorQuizzes = 'Impossible de charger les quiz publics.'
       } finally {
         this.loadingQuizzes = false
       }
     },
 
-    openQuizFromDashboard(quiz) {
-      this.$router.push(`/etudiant/quiz/${quiz.id}`)
+    async openQuizFromDashboard(quiz) {
+      try {
+        // on rejoint le quiz AVANT d’ouvrir la page
+        await api.post(`/quizzes/${quiz.id}/join`) // ou quiz.code si tu as binding par code_quiz
+        this.$router.push(`/etudiant/quiz/${quiz.id}`)
+      } catch (e) {
+        console.error('Erreur join quiz', e.response?.data || e)
+        alert('Impossible de rejoindre ce quiz.')
+      }
     }
   }
 }

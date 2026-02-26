@@ -72,14 +72,29 @@
             </span>
             <span>{{ quiz.nbQuestions }}</span>
             <span class="quiz-actions">
-              <button type="button" class="action-link" @click="editQuiz(quiz)">
-                Éditer
+              <button
+                type="button"
+                class="action-btn action-btn--edit"
+                @click="editQuiz(quiz)"
+                title="Éditer le quiz"
+              >
+                ✏️ Éditer
               </button>
-              <button type="button" class="action-link" @click="previewQuiz(quiz)">
-                Prévisualiser
+              <button
+                type="button"
+                class="action-btn action-btn--preview"
+                @click="previewQuiz(quiz)"
+                title="Prévisualiser et modifier les questions"
+              >
+                👁️ Prévisualiser
               </button>
-              <button type="button" class="action-link danger" @click="requestDelete(quiz)">
-                Supprimer
+              <button
+                type="button"
+                class="action-btn action-btn--delete"
+                @click="requestDelete(quiz)"
+                title="Supprimer le quiz"
+              >
+                🗑️ Supprimer
               </button>
             </span>
           </div>
@@ -89,6 +104,7 @@
           Vous n'avez pas encore de quiz. Cliquez sur « Créer un quiz » pour commencer.
         </p>
       </section>
+
       <transition name="fade-up">
         <div v-if="showDeleteModal" class="modal-backdrop">
           <div class="modal">
@@ -113,6 +129,7 @@
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
@@ -128,7 +145,9 @@ export default {
     return {
       quizzes: [],
       showDeleteModal: false,
-      quizToDelete: null
+      quizToDelete: null,
+      loadingQuizzes: false,
+      errorQuizzes: ''
     }
   },
   computed: {
@@ -147,7 +166,7 @@ export default {
       }
     },
     goToGroups() {
-      this.$router.push('/enseignant/groupes')
+      console.log('Navigation vers Groupes (à implémenter)')
     },
     editQuiz(quiz) {
       this.$router.push(`/enseignant/quiz/${quiz.id}/editer`)
@@ -155,46 +174,56 @@ export default {
     previewQuiz(quiz) {
       this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
     },
+
     requestDelete(quiz) {
       this.quizToDelete = quiz
       this.showDeleteModal = true
     },
-    confirmDelete() {
+    async confirmDelete() {
       if (!this.quizToDelete) {
         this.showDeleteModal = false
         return
       }
-      // TODO (Laravel) : à terme, appeler DELETE /api/quizzes/{id}
-      // et supprimer cette logique localStorage.
-      const storageKey = 'enseignant_quizzes'
-      this.quizzes = this.quizzes.filter(q => q.id !== this.quizToDelete.id)
-      localStorage.setItem(storageKey, JSON.stringify(this.quizzes))
-      // Supprimer également les questions liées à ce quiz côté front-only.
-      const questionsKey = `enseignant_quiz_questions_${this.quizToDelete.id}`
-      localStorage.removeItem(questionsKey)
-      this.quizToDelete = null
-      this.showDeleteModal = false
+
+      try {
+        await api.delete(`/quizzes/${this.quizToDelete.id}`)
+        this.quizzes = this.quizzes.filter(q => q.id !== this.quizToDelete.id)
+      } catch (e) {
+        console.error('Erreur suppression quiz', e.response?.data || e)
+        alert('Impossible de supprimer le quiz.')
+      } finally {
+        this.quizToDelete = null
+        this.showDeleteModal = false
+      }
     },
     cancelDelete() {
       this.quizToDelete = null
       this.showDeleteModal = false
+    },
+
+    async loadTeacherQuizzes() {
+      this.loadingQuizzes = true
+      this.errorQuizzes = ''
+      try {
+        const { data } = await api.get('/quizzes')
+        console.log('Enseignant /quizzes =>', data)
+        this.quizzes = data.map(q => ({
+          id: q.id,
+          titre: q.titre,
+          statut: 'Publié',                 // ou q.status si tu as une colonne
+          isPublic: !!q.is_public,
+          nbQuestions: q.questions_count ?? 0
+        }))
+      } catch (e) {
+        console.error('Erreur /quizzes enseignant', e.response?.data || e)
+        this.errorQuizzes = 'Impossible de charger vos quiz.'
+      } finally {
+        this.loadingQuizzes = false
+      }
     }
   },
-  mounted() {
-    // TODO (Laravel) : remplacer cette lecture localStorage
-    // par un appel GET /api/quizzes (filtré par enseignant connecté).
-    const storageKey = 'enseignant_quizzes'
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          this.quizzes = parsed
-        }
-      }
-    } catch {
-      this.quizzes = []
-    }
+  async mounted() {
+    await this.loadTeacherQuizzes()
   }
 }
 </script>
@@ -202,4 +231,3 @@ export default {
 <style scoped>
 @import './EnseignantDashboard.css';
 </style>
-

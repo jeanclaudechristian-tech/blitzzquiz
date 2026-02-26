@@ -5,31 +5,54 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\ProfileController;
 use App\Models\Quiz;
 
+// Routes Google existantes
 Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
-Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
+//Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
+Route::post('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+
+// --- NOUVELLES ROUTES POUR LE FLUX GOOGLE ---
+Route::post('auth/check-google', [AuthController::class, 'checkGoogleUser']);
+Route::post('auth/google-register', [AuthController::class, 'registerGoogleFinal']);
+// -------------------------------------------
 
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Auth
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
 
-    // Only TEACHER/ADMIN can create quiz
-    Route::post('quizzes', [QuizController::class, 'store'])
-        ->middleware('can:create,' . Quiz::class);
+    // =========================
+    // Profile (Profil)
+    // =========================
 
-    Route::apiResource('quizzes', QuizController::class);
-    Route::post('quizzes/{quiz}/join', [QuizController::class, 'join']);
+    Route::get('/me', [ProfileController::class, 'me']);
 
-    // ROUTES FOR THE GROUPS
-    Route::apiResource('groups', GroupController::class)
-        ->only(['index', 'store', 'show', 'update', 'destroy']);
+    //  email / username / niveau d'études
+    Route::patch('/me', [ProfileController::class, 'update']);
+
+    // password
+    Route::patch('/me/password', [ProfileController::class, 'password']);
+
+
+Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::post('/quizzes', [QuizController::class, 'store']);
+    Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
+    Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
+    Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
 
     Route::post('groups/join', [GroupController::class, 'join']);
     Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
     Route::delete('groups/{group}/leave', [GroupController::class, 'leave']);
     Route::delete('groups/{group}/destroy', [GroupController::class, 'destroy']);
+    Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
+    Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
+    Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
+    Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
 });
+

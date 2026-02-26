@@ -8,7 +8,15 @@ export const useRegistrationStore = defineStore('registration', {
     password: '',
     confirmPassword: '',
     role: '',        // TEACHER ou STUDENT
+    
+    // NOUVEAU: Stocke les infos Google temporairement
+    googleUser: null 
   }),
+
+  getters: {
+    // Helper pour savoir si on est dans le flux Google
+    isGoogleFlow: (state) => !!state.googleUser
+  },
 
   actions: {
     setNiveauEtude(niveau) {
@@ -22,8 +30,15 @@ export const useRegistrationStore = defineStore('registration', {
       this.confirmPassword = confirmPassword
     },
 
-    setRole(role) {         
+    setRole(role) {        
       this.role = role
+    },
+
+    // NOUVEAU: Initialise le flux Google
+    startGoogleFlow(googleData) {
+      this.googleUser = googleData
+      this.email = googleData.email
+      this.role = 'STUDENT' // On force le rôle étudiant pour Google
     },
 
     reset() {
@@ -33,6 +48,7 @@ export const useRegistrationStore = defineStore('registration', {
       this.password = ''
       this.confirmPassword = ''
       this.role = ''
+      this.googleUser = null
     },
   },
 })

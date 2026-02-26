@@ -1,5 +1,5 @@
 <template>
-  <div class="input-mot-de-passe">
+  <div class="input-mot-de-passe" :class="{ 'disabled-state': disabled }">
     <div class="icon-left">
       <img src="../../assets/passwordIcon.svg" alt="Password icon" />
     </div>
@@ -9,8 +9,9 @@
       @input="$emit('update:modelValue', $event.target.value)"
       :placeholder="placeholder"
       class="input-field"
+      :disabled="disabled"
     />
-    <div class="icon-right" @click="togglePassword">
+    <div class="icon-right" @click="!disabled && togglePassword()">
       <img :src="showPassword ? eyeIcon : eyeOffIcon" alt="Toggle password visibility" />
     </div>
   </div>
@@ -27,6 +28,10 @@ export default {
     placeholder: {
       type: String,
       default: 'Mot de passe'
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['update:modelValue'],
@@ -47,4 +52,9 @@ export default {
 
 <style scoped>
 @import './InputMotDePasse.css';
+
+.disabled-state {
+  opacity: 0.6;
+  pointer-events: none;
+}
 </style>

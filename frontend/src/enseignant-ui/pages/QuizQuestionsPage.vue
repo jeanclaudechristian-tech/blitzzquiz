@@ -14,6 +14,7 @@
           <div class="questions-list-header">
             <h2>Questions</h2>
           </div>
+
           <div
             v-for="(q, index) in questions"
             :key="q.id"
@@ -29,6 +30,7 @@
               Supprimer
             </button>
           </div>
+
           <button type="button" class="add-question-btn" @click="newQuestion">
             + Nouvelle question
           </button>
@@ -132,6 +134,7 @@
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
+import api from '../../api/Axios' // adapte le chemin si besoin [web:383]
 
 export default {
   name: 'QuizQuestionsPage',
@@ -159,50 +162,30 @@ export default {
       showPreview: false
     }
   },
-  computed: {
-    storageKey() {
-      const id = this.$route.params.id
-      return `enseignant_quiz_questions_${id}`
-    }
-  },
   methods: {
-    loadQuizMeta() {
-      // TODO (Laravel) : remplacer cette lecture localStorage
-      // par GET /api/quizzes/{id} pour récupérer le titre et les métadonnées.
-      const quizzesKey = 'enseignant_quizzes'
-      const id = Number(this.$route.params.id)
+    async loadQuizMeta() {
+      const id = this.$route.params.id
       try {
-        const saved = localStorage.getItem(quizzesKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          const quiz = parsed.find(q => q.id === id)
-          if (quiz) {
-            this.quizTitle = quiz.titre
-            this.quizLoaded = true
-          }
-        }
-      } catch {
-        // ignore
-      }
-      if (!this.quizLoaded) {
+        const { data } = await api.get(`/quizzes/${id}`)
+        this.quizTitle = data.titre
+        this.quizLoaded = true
+      } catch (e) {
+        console.error('Erreur chargement quiz', e.response?.data || e)
         this.$router.push('/enseignant')
       }
     },
-    loadQuestions() {
+
+    async loadQuestions() {
+      const id = this.$route.params.id
       try {
-        const saved = localStorage.getItem(this.storageKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) this.questions = parsed
-      } catch {
+        const { data } = await api.get(`/quizzes/${id}/questions`)
+        this.questions = data
+      } catch (e) {
+        console.error('Erreur chargement questions', e.response?.data || e)
         this.questions = []
       }
     },
-    saveQuestions() {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.questions))
-      this.updateQuizQuestionCount()
-    },
+
     resetForm() {
       this.form = {
         texte: '',
@@ -216,6 +199,7 @@ export default {
       this.currentIndex = null
       this.error = ''
     },
+
     loadQuestion(index) {
       const q = this.questions[index]
       if (!q) return
@@ -230,69 +214,88 @@ export default {
         explication: q.explication || ''
       }
     },
+
     newQuestion() {
       this.resetForm()
     },
-    addOrUpdateQuestion() {
+
+    async addOrUpdateQuestion() {
       this.error = ''
-      const { texte, choixA, choixB, choixC, choixD, bonneReponse } = this.form
+      const { texte, choixA, choixB, choixC, choixD, bonneReponse, explication } = this.form
+
       if (!texte.trim() || !choixA.trim() || !choixB.trim() || !choixC.trim() || !choixD.trim()) {
         this.error = 'Veuillez remplir le texte de la question et les 4 choix.'
         return
       }
-      const question = {
-        // TODO (Laravel) : dans une vraie API, l'id de question
-        // viendra de la réponse POST /api/quizzes/{id}/questions.
-        id: this.currentIndex != null && this.questions[this.currentIndex]
-          ? this.questions[this.currentIndex].id
-          : Date.now(),
-        ...this.form
+
+      const payload = {
+        texte: texte.trim(),
+        choixA: choixA.trim(),
+        choixB: choixB.trim(),
+        choixC: choixC.trim(),
+        choixD: choixD.trim(),
+        bonneReponse,
+        explication: explication?.trim() ?? ''
       }
-      if (this.currentIndex == null) {
-        this.questions.push(question)
-        this.currentIndex = this.questions.length - 1
-      } else {
-        this.questions.splice(this.currentIndex, 1, question)
-      }
-      this.saveQuestions()
-      this.showPreview = true
-    },
-    deleteQuestion(index) {
-      if (index < 0 || index >= this.questions.length) return
-      this.questions.splice(index, 1)
-      if (this.currentIndex === index) {
-        this.resetForm()
-      } else if (this.currentIndex > index) {
-        this.currentIndex -= 1
-      }
-      this.saveQuestions()
-    },
-    updateQuizQuestionCount() {
-      const quizzesKey = 'enseignant_quizzes'
-      const id = Number(this.$route.params.id)
+
+      const quizId = this.$route.params.id
+
       try {
-        const saved = localStorage.getItem(quizzesKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (!Array.isArray(parsed)) return
-        const idx = parsed.findIndex(q => q.id === id)
-        if (idx === -1) return
-        // TODO (Laravel) : à terme, ce compteur viendra
-        // du backend (par ex. GET /api/quizzes/{id})
-        // après enregistrement des questions.
-        parsed[idx].nbQuestions = this.questions.length
-        localStorage.setItem(quizzesKey, JSON.stringify(parsed))
-      } catch {
-        // ignore
+        if (this.currentIndex == null || !this.questions[this.currentIndex]?.id) {
+          // création
+          const { data } = await api.post(`/quizzes/${quizId}/questions`, payload)
+          this.questions.push(data)
+          this.currentIndex = this.questions.length - 1
+        } else {
+          // mise à jour
+          const qId = this.questions[this.currentIndex].id
+          const { data } = await api.put(`/questions/${qId}`, payload)
+          this.questions.splice(this.currentIndex, 1, data)
+        }
+
+        this.showPreview = true
+      } catch (e) {
+        console.error('Erreur enregistrement question', e.response?.data || e)
+        this.error = "Erreur lors de l'enregistrement de la question."
       }
     },
+
+    async deleteQuestion(index) {
+      if (index < 0 || index >= this.questions.length) return
+
+      const question = this.questions[index]
+      if (!question?.id) {
+        this.questions.splice(index, 1)
+        if (this.currentIndex === index) this.resetForm()
+        else if (this.currentIndex > index) this.currentIndex -= 1
+        return
+      }
+
+      if (!confirm('Supprimer cette question ?')) return
+
+      try {
+        await api.delete(`/questions/${question.id}`)
+        this.questions.splice(index, 1)
+        if (this.currentIndex === index) {
+          this.resetForm()
+        } else if (this.currentIndex > index) {
+          this.currentIndex -= 1
+        }
+      } catch (e) {
+        console.error('Erreur suppression question', e.response?.data || e)
+        alert("Impossible de supprimer la question.")
+      }
+    },
+
     saveAll() {
-      this.saveQuestions()
+      // tout est déjà sauvegardé question par question
       this.$router.push('/enseignant')
     },
+
     preview() {
       this.showPreview = true
     },
+
     goBack() {
       this.$router.push('/enseignant')
     }
@@ -307,4 +310,3 @@ export default {
 <style scoped>
 @import './QuizQuestionsPage.css';
 </style>
-
