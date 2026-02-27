@@ -3,6 +3,9 @@
     <AppHeader />
     <main class="groupes-main">
       <header class="groupes-header">
+        <button type="button" class="back-button" @click="goToDashboard">
+          ← Retour au dashboard
+        </button>
         <h1>Mes Groupes</h1>
         <CallToActionBtn text="Créer un groupe" variant="dark" @click="goToCreateGroupe" />
       </header>
@@ -97,6 +100,9 @@ export default {
     },
     openGroupe(groupe) {
       this.$router.push(`/enseignant/groupes/${groupe.id}`)
+    },
+    goToDashboard() {
+      this.$router.push('/enseignant')
     },
   },
   mounted() {

@@ -5,9 +5,6 @@
       <div class="create-card">
         <header class="create-header">
           <h1>Créer un groupe</h1>
-          <button type="button" class="back-button" @click="goBack">
-            ← Retour
-          </button>
         </header>
 
         <form class="create-form" @submit.prevent="handleSubmit">
@@ -162,7 +159,7 @@ export default {
       }
     },
     goBack() {
-      this.$router.push('/enseignant/groupes')
+      this.$router.push('/enseignant')
     },
   },
   mounted() {

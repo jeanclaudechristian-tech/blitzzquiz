@@ -37,6 +37,28 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  position: relative;
+}
+
+.back-button {
+  padding: 10px 20px;
+  background: #ffffff;
+  color: #269aff;
+  border: 2px solid #269aff;
+  border-radius: 8px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(38, 154, 255, 0.15);
+}
+
+.back-button:hover {
+  background: #269aff;
+  color: #ffffff;
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(38, 154, 255, 0.3);
 }
 
 .groupes-header h1 {
@@ -254,4 +276,14 @@
 @media (max-width: 768px) {
   .groupes-main { padding: 20px 14px; }
   .groupes-grid { grid-template-columns: 1fr; }
+  
+  .groupes-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .back-button {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
 }
