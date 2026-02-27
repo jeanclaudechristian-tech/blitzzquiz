@@ -71,7 +71,7 @@ class ProfileController extends Controller
         }
 
         //upated password
-        $user->password = $validated['new_password'];
+        $user->password = Hash::make($validated['new_password']);
         $user->save();
 
         return response()->json([

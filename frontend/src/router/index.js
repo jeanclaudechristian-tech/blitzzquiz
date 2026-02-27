@@ -26,7 +26,7 @@ import SuperAdminView from "../admin-ui/pages/SuperAdminView.vue";
 import GroupesListPage from "../enseignant-ui/pages/GroupesListPage.vue";
 import GroupeCreatePage from "../enseignant-ui/pages/GroupeCreatePage.vue";
 import GroupeDetailsPage from "../enseignant-ui/pages/GroupeDetailsPage.vue";
-
+import EtudiantProfil from "../etudiant-ui/pages/EtudiantProfil.vue";
 const routes = [
   {
     path: "/",
@@ -172,6 +172,11 @@ const routes = [
     path: "/admin/super",
     name: "SuperAdmin",
     component: SuperAdminView,
+  },
+  {
+    path: "/etudiant/profil",
+    name: "etudiant-profil",
+    component: EtudiantProfil,
   },
 ];
 

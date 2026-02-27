@@ -2,48 +2,33 @@
   <header class="app-header">
     <div class="header-content">
       <a href="/" class="header-logo" aria-label="Blitzz Quiz">
-        <img
-          src="/images/Eclaire.svg"
-          alt="Blitzz Quiz"
-          class="header-logo-img"
-        />
+        <img src="/images/Eclaire.svg" alt="Blitzz Quiz" class="header-logo-img" />
       </a>
       <nav class="navigation">
-        <NavLink
-          text="Jouer"
-          :active="activeSection === 'section-jouer'"
-          @click="scrollToSection('section-jouer')"
-        />
-        <NavLink
-          text="Community"
-          :active="activeSection === 'section-community'"
-          @click="scrollToSection('section-community')"
-        />
-        <NavLink
-          text="Resources"
-          :active="activeSection === 'section-resources'"
-          @click="scrollToSection('section-resources')"
-        />
-        <NavLink
-          text="Contact"
-          :active="activeSection === 'section-contact'"
-          @click="scrollToSection('section-contact')"
-        />
+        <NavLink text="Jouer" :active="activeSection === 'section-jouer'" @click="scrollToSection('section-jouer')" />
+        <NavLink text="Community" :active="activeSection === 'section-community'"
+          @click="scrollToSection('section-community')" />
+        <NavLink text="Resources" :active="activeSection === 'section-resources'"
+          @click="scrollToSection('section-resources')" />
+        <NavLink text="Contact" :active="activeSection === 'section-contact'"
+          @click="scrollToSection('section-contact')" />
       </nav>
       <!-- Connecté : avatar avec menu déroulant -->
       <div v-if="showUserAvatar" class="header-user-menu">
-        <div 
-          class="header-user-avatar" 
-          aria-label="Menu utilisateur"
-          @click.stop="toggleUserMenu"
-        >
-          <svg class="header-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <div class="header-user-avatar" aria-label="Menu utilisateur" @click.stop="toggleUserMenu">
+          <svg class="header-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            aria-hidden="true">
             <circle cx="12" cy="8" r="3" />
             <path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
           </svg>
         </div>
         <!-- Dropdown menu -->
         <div v-if="showUserDropdown" class="user-dropdown" @click.stop>
+
+          <button type="button" class="logout-button" @click="goToProfile">
+            Mon profil
+          </button>
+
           <button type="button" class="logout-button" @click="handleLogout">
             Se déconnecter
           </button>
@@ -81,7 +66,7 @@ export default {
   mounted() {
     // Vérifier si un token existe au démarrage du composant
     this.isLoggedIn = !!localStorage.getItem('token')
-    
+
     window.addEventListener('scroll', this.onScroll)
     window.addEventListener('click', this.closeUserMenu)
   },
@@ -123,17 +108,22 @@ export default {
     closeUserMenu() {
       this.showUserDropdown = false
     },
+    goToProfile() {
+      this.$router.push('/etudiant/profil')
+      this.showUserDropdown = false
+    },
+
     handleLogout() {
       // Supprimer le token et les données utilisateur du localStorage
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      
+
       // Mettre à jour l'état de connexion
       this.isLoggedIn = false
       this.showUserDropdown = false
-      
+
       // TODO (Laravel) : appeler POST /api/logout pour invalider le token côté serveur
-      
+
       // Rediriger vers la page d'accueil
       this.$router.push('/')
     }
