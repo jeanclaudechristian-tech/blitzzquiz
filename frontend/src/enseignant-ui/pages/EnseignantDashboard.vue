@@ -154,13 +154,13 @@ export default {
       }
     },
     goToGroups() {
-      console.log('Navigation vers Groupes (à implémenter)')
+      this.$router.push('/enseignant/groupes/nouveau')
     },
     editQuiz(quiz) {
-      this.$router.push(`/enseignant/quiz/${quiz.id}/editer`)
+      this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
     },
     previewQuiz(quiz) {
-      this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
+      this.$router.push(`/enseignant/quiz/${quiz.id}/previsualiser`)
     },
     requestDelete(quiz) {
       this.quizToDelete = quiz

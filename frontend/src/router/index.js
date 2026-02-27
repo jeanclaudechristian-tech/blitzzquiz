@@ -10,6 +10,7 @@ import EnseignantDashboard from "../enseignant-ui/pages/EnseignantDashboard.vue"
 import QuizCreatePage from "../enseignant-ui/pages/QuizCreatePage.vue";
 import EditQuizPage from "../enseignant-ui/pages/EditQuizPage.vue";
 import QuizQuestionsPage from "../enseignant-ui/pages/QuizQuestionsPage.vue";
+import PrevisualiserQuestions from "../enseignant-ui/pages/PrevisualiserQuestions.vue";
 import EtudiantDashboard from "../etudiant-ui/pages/EtudiantDashboard.vue";
 import QuizCataloguePage from "../etudiant-ui/pages/QuizCataloguePage.vue";
 import EnterQuizCodePage from "../etudiant-ui/pages/EnterQuizCodePage.vue";
@@ -91,6 +92,11 @@ const routes = [
     path: "/enseignant/quiz/:id/questions",
     name: "QuizQuestions",
     component: QuizQuestionsPage,
+  },
+  {
+    path: "/enseignant/quiz/:id/previsualiser",
+    name: "PrevisualiserQuestions",
+    component: PrevisualiserQuestions,
   },
   {
     path: "/enseignant/groupes",
