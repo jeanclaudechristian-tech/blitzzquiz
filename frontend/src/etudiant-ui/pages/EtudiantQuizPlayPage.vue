@@ -22,20 +22,14 @@
           <h1 class="question-text">{{ currentQuestion.texte }}</h1>
 
           <div class="choices-grid">
-            <button
-              v-for="opt in ['A','B','C','D']"
-              :key="opt"
-              type="button"
-              :class="[
-                'choice-btn',
-                {
-                  selected: selectedChoice === opt,
-                  correct: showFeedback && opt === currentQuestion.bonneReponse,
-                  wrong: showFeedback && selectedChoice === opt && opt !== currentQuestion.bonneReponse
+            <button v-for="opt in ['A', 'B', 'C', 'D']" :key="opt" type="button" :class="[
+              'choice-btn',
+              {
+                selected: selectedChoice === opt,
+                correct: showFeedback && opt === (currentQuestion.metadata?.bonneReponse || currentQuestion.bonneReponse),
+              wrong: showFeedback && selectedChoice === opt && opt !== (currentQuestion.metadata?.bonneReponse || currentQuestion.bonneReponse)
                 }
-              ]"
-              @click="selectChoice(opt)"
-            >
+            ]" @click="selectChoice(opt)">
               <span class="choice-label">{{ opt }}</span>
               <span class="choice-text">{{ choiceText(opt) }}</span>
             </button>
@@ -43,12 +37,7 @@
         </section>
 
         <footer class="play-footer">
-          <CallToActionBtn
-            text="Suivant"
-            variant="blue"
-            :class="{ disabled: !selectedChoice }"
-            @click="nextQuestion"
-          />
+          <CallToActionBtn text="Suivant" variant="blue" :class="{ disabled: !selectedChoice }" @click="nextQuestion" />
         </footer>
       </section>
     </main>
@@ -141,7 +130,8 @@ export default {
     },
     choiceText(opt) {
       const q = this.currentQuestion
-      return q[`choix${opt}`] || ''
+      const meta = q.meta.date || {}
+      return meta[`choix${opt}`] || q[`choix${opt}`] || ''
     },
     selectChoice(opt) {
       this.selectedChoice = opt

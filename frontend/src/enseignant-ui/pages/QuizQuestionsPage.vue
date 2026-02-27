@@ -18,18 +18,10 @@
             <h2>Questions ({{ questions.length }})</h2>
           </div>
 
-          <div
-            v-for="(q, index) in questions"
-            :key="q.id"
-            :class="['question-item', { active: index === currentIndex }]"
-            @click="loadQuestion(index)"
-          >
+          <div v-for="(q, index) in questions" :key="q.id"
+            :class="['question-item', { active: index === currentIndex }]" @click="loadQuestion(index)">
             <span>Q{{ index + 1 }}</span>
-            <button
-              type="button"
-              class="question-delete"
-              @click.stop="deleteQuestion(index)"
-            >
+            <button type="button" class="question-delete" @click.stop="deleteQuestion(index)">
               Supprimer
             </button>
           </div>
@@ -45,7 +37,8 @@
 
             <div class="field-group">
               <label for="texte">Texte de la question *</label>
-              <textarea id="texte" v-model="form.texte" rows="3" placeholder="Ex: Quelle est la capitale de la France ?" />
+              <textarea id="texte" v-model="form.texte" rows="3"
+                placeholder="Ex: Quelle est la capitale de la France ?" />
             </div>
 
             <div class="field-group">
@@ -73,7 +66,7 @@
             <div class="field-group">
               <label>Bonne réponse *</label>
               <div class="answer-radios">
-                <label v-for="opt in ['A','B','C','D']" :key="opt">
+                <label v-for="opt in ['A', 'B', 'C', 'D']" :key="opt">
                   <input type="radio" :value="opt" v-model="form.bonneReponse" />
                   <span>{{ opt }}</span>
                 </label>
@@ -82,22 +75,15 @@
 
             <div class="field-group">
               <label for="explication">Explication (optionnel)</label>
-              <textarea id="explication" v-model="form.explication" rows="2" placeholder="Expliquez pourquoi cette réponse est correcte…" />
+              <textarea id="explication" v-model="form.explication" rows="2"
+                placeholder="Expliquez pourquoi cette réponse est correcte…" />
             </div>
 
             <p v-if="error" class="form-error">{{ error }}</p>
 
             <div class="builder-actions">
-              <CallToActionBtn
-                text="Ajouter la question"
-                variant="dark"
-                type="submit"
-              />
-              <CallToActionBtn
-                text="Enregistrer"
-                variant="blue"
-                @click="saveAll"
-              />
+              <CallToActionBtn text="Ajouter la question" variant="dark" type="submit" />
+              <CallToActionBtn text="Enregistrer" variant="blue" @click="saveAll" />
               <button type="button" class="link-button" @click="preview">
                 Prévisualiser
               </button>
@@ -183,14 +169,16 @@ export default {
     loadQuestion(index) {
       const q = this.questions[index]
       if (!q) return
+      const meta = q.metadata || {}
+
       this.currentIndex = index
       this.form = {
-        texte: q.texte || '',
-        choixA: q.choixA || '',
-        choixB: q.choixB || '',
-        choixC: q.choixC || '',
-        choixD: q.choixD || '',
-        bonneReponse: q.bonneReponse || 'A',
+        texte: meta.text || q.texte || '',
+        choixA: meta.choixA || q.choixA || '',
+        choixB: meta.choixB || q.choixB || '',
+        choixC: meta.choixC || q.choixC || '',
+        choixD: meta.choixD || q.choixD || '',
+        bonneReponse: meta.bonneReponse || q.bonneReponse || 'A',
         explication: q.explication || ''
       }
     },
