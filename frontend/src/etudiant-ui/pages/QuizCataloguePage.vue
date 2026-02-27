@@ -3,6 +3,9 @@
     <AppHeader />
     <main class="catalogue-main">
       <header class="catalogue-header">
+        <button type="button" class="back-button" @click="goBack">
+          ← Retour au dashboard
+        </button>
         <div class="catalogue-search">
           <input
             v-model="search"
@@ -17,9 +20,6 @@
               {{ cat }}
             </option>
           </select>
-          <button type="button" class="link-button" @click="goToEnterCode">
-            Entrer un code
-          </button>
         </div>
       </header>
 
@@ -87,8 +87,8 @@ export default {
     }
   },
   methods: {
-    goToEnterCode() {
-      this.$router.push('/etudiant/code')
+    goBack() {
+      this.$router.push('/etudiant')
     },
     async loadPublicQuizzes() {
       this.loading = true

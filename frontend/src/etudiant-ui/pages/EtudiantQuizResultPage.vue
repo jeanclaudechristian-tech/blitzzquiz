@@ -3,35 +3,28 @@
     <AppHeader />
     <main class="result-main">
       <section class="result-card" v-if="result">
-        <div class="result-icon">🎉</div>
-        <h1>Résultat du quiz</h1>
-        <p class="score-main">{{ result.correct }} / {{ result.total }}</p>
-        <p class="score-percent">{{ result.percent }} % de réussite</p>
+        <button type="button" class="back-button" @click="goHome">
+          ← Retour au dashboard
+        </button>
 
-        <p class="ranking-text">
-          Classement estimé : top {{ rankingPercent }} %
-        </p>
+        <div class="result-content">
+          <h1>Résultat du quiz</h1>
+          <p class="score-main">{{ result.correct }} / {{ result.total }}</p>
+          <p class="score-percent">{{ result.percent }} % de réussite</p>
 
-        <div class="result-actions">
-          <CallToActionBtn
-            text="Rejouer"
-            variant="dark"
-            @click="replay"
-          />
-          <CallToActionBtn
-            text="Retour accueil"
-            variant="blue"
-            @click="goHome"
-          />
-          
-          <div class="secondary-actions">
-            <button type="button" class="secondary-btn" @click="seeHistory">
-              <span class="btn-icon">📜</span>
-              <span class="btn-text">Historique</span>
+          <p class="ranking-text">
+            Classement estimé : top {{ rankingPercent }} %
+          </p>
+
+          <div class="bottom-actions">
+            <button type="button" class="action-btn action-btn--primary" @click="replay">
+              Rejouer
             </button>
-            <button type="button" class="secondary-btn" @click="seeLeaderboard">
-              <span class="btn-icon">🏆</span>
-              <span class="btn-text">Classement</span>
+            <button type="button" class="action-btn" @click="seeHistory">
+              Historique
+            </button>
+            <button type="button" class="action-btn" @click="seeLeaderboard">
+              Classement
             </button>
           </div>
         </div>

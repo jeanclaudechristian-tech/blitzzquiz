@@ -3,6 +3,9 @@
     <AppHeader />
     <main class="play-main" v-if="quizLoaded && questions.length">
       <section class="play-card">
+        <button type="button" class="back-button" @click="goBack">
+          ← Abandonner
+        </button>
         <header class="play-header">
           <div class="progress-info">
             <span>Question {{ currentIndex + 1 }} / {{ questions.length }}</span>

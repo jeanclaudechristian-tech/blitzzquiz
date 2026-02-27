@@ -14,16 +14,12 @@
               variant="dark"
               @click="goToCatalogue"
             />
-            <button type="button" class="link-button" @click="goToEnterCode">
-              Entrer un code
-            </button>
+            <CallToActionBtn
+              text="Rejoindre un groupe"
+              variant="dark"
+              @click="goToJoinGroup"
+            />
           </div>
-        </div>
-        <div class="etudiant-hero-right">
-          <div class="student-avatar">
-            <span class="avatar-initials">ET</span>
-          </div>
-          <p class="avatar-label">Mon profil</p>
         </div>
       </section>
 
@@ -98,7 +94,7 @@ export default {
     goToCatalogue() {
       this.$router.push('/etudiant/catalogue')
     },
-    goToEnterCode() {
+    goToJoinGroup() {
       this.$router.push('/etudiant/code')
     },
     goToCatalogueWithFilter(cat) {

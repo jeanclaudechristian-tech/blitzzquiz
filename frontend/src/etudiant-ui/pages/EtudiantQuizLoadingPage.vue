@@ -3,6 +3,9 @@
     <AppHeader />
     <main class="loading-main">
       <section class="loading-card">
+        <button type="button" class="back-button" @click="goBack">
+          ← Retour
+        </button>
         <div class="spinner"></div>
         <p>Calcul du score…</p>
       </section>
@@ -17,6 +20,11 @@ export default {
   name: 'EtudiantQuizLoadingPage',
   components: {
     AppHeader
+  },
+  methods: {
+    goBack() {
+      this.$router.push('/etudiant')
+    }
   },
   mounted() {
     // Simule un calcul de score avant d'afficher le résultat.

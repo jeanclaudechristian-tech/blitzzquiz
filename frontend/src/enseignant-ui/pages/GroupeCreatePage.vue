@@ -94,8 +94,7 @@
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
-import { groupService } from '../../api/groups' // AJOUT
+import { groupService } from '../../api/groups'
 
 export default {
   name: 'GroupeCreatePage',

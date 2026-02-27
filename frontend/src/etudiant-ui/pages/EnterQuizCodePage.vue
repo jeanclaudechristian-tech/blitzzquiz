@@ -3,7 +3,10 @@
     <AppHeader />
     <main class="enter-code-main">
       <section class="enter-code-card">
-        <h1>Entrer un code de quiz</h1>
+        <button type="button" class="back-button" @click="goBack">
+          ← Retour au dashboard
+        </button>
+        <h1>Rejoindre un groupe</h1>
         <p>Indique le code à 6 caractères partagé par ton enseignant.</p>
 
         <form class="code-form" @submit.prevent="handleSubmit">
@@ -17,7 +20,7 @@
           />
           <p v-if="error" class="error-msg">{{ error }}</p>
           <CallToActionBtn
-            text="Rejoindre"
+            text="Rejoindre le groupe"
             variant="dark"
             @click="handleSubmit"
           />
@@ -77,6 +80,9 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    goBack() {
+      this.$router.push('/etudiant')
     }
   }
 }

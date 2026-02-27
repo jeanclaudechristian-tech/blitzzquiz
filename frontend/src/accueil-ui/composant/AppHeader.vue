@@ -4,7 +4,7 @@
       <a href="/" class="header-logo" aria-label="Blitzz Quiz">
         <img src="/images/Eclaire.svg" alt="Blitzz Quiz" class="header-logo-img" />
       </a>
-      <nav class="navigation">
+      <nav v-if="!isLoggedIn" class="navigation">
         <NavLink text="Jouer" :active="activeSection === 'section-jouer'" @click="scrollToSection('section-jouer')" />
         <NavLink text="Community" :active="activeSection === 'section-community'"
           @click="scrollToSection('section-community')" />

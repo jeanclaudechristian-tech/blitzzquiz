@@ -5,6 +5,9 @@
     <!-- Quand le quiz est chargé -->
     <main class="lobby-main" v-if="quiz">
       <section class="lobby-card">
+        <button type="button" class="back-button" @click="goBack">
+          ← Retour
+        </button>
         <h1>{{ quiz.titre }}</h1>
         <p class="lobby-description">
           {{ quiz.description || 'Aucune description fournie.' }}
@@ -103,6 +106,9 @@ export default {
 },
 startQuiz() {
   this.$router.push(`/etudiant/quiz/${this.$route.params.id}/jouer`)
+},
+goBack() {
+  this.$router.push('/etudiant/catalogue')
 }
 
   },
