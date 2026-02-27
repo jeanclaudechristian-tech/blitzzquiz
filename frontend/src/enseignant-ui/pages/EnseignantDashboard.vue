@@ -41,6 +41,7 @@
             <span>Titre</span>
             <span>Visibilité</span>
             <span>Questions</span>
+            <span>Code</span>
             <span>Actions</span>
           </div>
           <div
@@ -55,6 +56,7 @@
               </span>
             </span>
             <span>{{ quiz.nbQuestions }}</span>
+            <span>{{ quiz.code }}</span>
             <span class="quiz-actions">
               <button
                 type="button"
@@ -144,10 +146,9 @@ export default {
       const el = document.getElementById('mes-quiz-section')
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        // Déclenche l'animation après que le scroll soit terminé
         setTimeout(() => {
           el.classList.remove('section-highlight')
-          void el.offsetWidth // force reflow pour reset l'animation
+          void el.offsetWidth
           el.classList.add('section-highlight')
           setTimeout(() => el.classList.remove('section-highlight'), 800)
         }, 400)
@@ -186,25 +187,30 @@ export default {
       this.quizToDelete = null
       this.showDeleteModal = false
     },
-    async loadTeacherQuizzes() {
-      this.loadingQuizzes = true
-      this.errorQuizzes = ''
-      try {
-        const { data } = await api.get('/quizzes')
-        this.quizzes = data.map(q => ({
-          id: q.id,
-          titre: q.titre,
-          statut: 'Publié',
-          isPublic: !!q.is_public,
-          nbQuestions: q.questions_count ?? 0
-        }))
-      } catch (e) {
-        console.error('Erreur /quizzes enseignant', e.response?.data || e)
-        this.errorQuizzes = 'Impossible de charger vos quiz.'
-      } finally {
-        this.loadingQuizzes = false
-      }
-    }
+   async loadTeacherQuizzes() {
+  this.loadingQuizzes = true
+  this.errorQuizzes = ''
+  try {
+    const { data } = await api.get('/quizzes')
+    this.quizzes = data.map(q => ({
+      id: q.id,
+      titre: q.titre,
+      statut: 'Publié',
+      isPublic:
+        q.is_public === true ||
+        q.is_public === 1 ||
+        q.is_public === '1',
+      nbQuestions: q.questions_count ?? 0,
+      code: q.code_quiz,
+    }))
+  } catch (e) {
+    console.error('Erreur /quizzes enseignant', e.response?.data || e)
+    this.errorQuizzes = 'Impossible de charger vos quiz.'
+  } finally {
+    this.loadingQuizzes = false
+  }
+}
+
   },
   async mounted() {
     await this.loadTeacherQuizzes()

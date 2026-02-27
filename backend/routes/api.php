@@ -39,4 +39,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
     Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
     Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
+    Route::get('/quizzes/code/{code}', [QuizController::class, 'findByCode']);
+
 });

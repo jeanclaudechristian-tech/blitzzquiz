@@ -16,7 +16,11 @@
             @input="onInput"
           />
           <p v-if="error" class="error-msg">{{ error }}</p>
-          <CallToActionBtn text="Rejoindre" variant="dark" @click="handleSubmit" />
+          <CallToActionBtn
+            text="Rejoindre"
+            variant="dark"
+            @click="handleSubmit"
+          />
         </form>
       </section>
     </main>
@@ -24,6 +28,7 @@
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
@@ -36,7 +41,8 @@ export default {
   data() {
     return {
       code: '',
-      error: ''
+      error: '',
+      loading: false,
     }
   },
   methods: {
@@ -44,15 +50,33 @@ export default {
       this.code = this.code.toUpperCase().replace(/[^A-Z0-9]/g, '')
       this.error = ''
     },
-    handleSubmit() {
+    async handleSubmit() {
       this.error = ''
-      if (this.code.length !== 6) {
-        this.error = 'Code invalide'
+      const code = this.code.trim().toUpperCase()
+
+      if (code.length !== 6) {
+        this.error = 'Code invalide (6 caractères requis).'
         return
       }
-      // TODO (Laravel) : appeler GET /api/quizzes/code/{code}
-      // et gérer les erreurs “Code invalide” / “Quiz expiré”.
-      console.log('Rejoindre quiz avec code :', this.code)
+
+      this.loading = true
+      try {
+        // Appel Laravel : GET /api/quizzes/code/{code}
+        const { data } = await api.get(`/quizzes/code/${code}`)
+        // data doit contenir au moins { id, ... }
+        this.$router.push(`/etudiant/quiz/${data.id}`)
+      } catch (e) {
+        console.error('Erreur rejoindre quiz par code', e.response?.data || e)
+        if (e.response?.status === 404) {
+          this.error = 'Aucun quiz trouvé pour ce code.'
+        } else if (e.response?.status === 403) {
+          this.error = "Vous n’êtes pas autorisé à accéder à ce quiz."
+        } else {
+          this.error = "Erreur lors de la vérification du code."
+        }
+      } finally {
+        this.loading = false
+      }
     }
   }
 }
@@ -61,4 +85,3 @@ export default {
 <style scoped>
 @import './EnterQuizCodePage.css';
 </style>
-
