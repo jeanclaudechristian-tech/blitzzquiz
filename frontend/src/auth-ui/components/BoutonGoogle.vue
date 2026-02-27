@@ -11,17 +11,6 @@
 </template>
 
 <script>
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('ERREUR: Variables Supabase manquantes dans .env')
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
 export default {
   name: 'BoutonGoogle',
   data() {
@@ -30,43 +19,22 @@ export default {
     }
   },
   methods: {
-    async loginWithGoogle() {
-      if (this.isLoading) return
+    loginWithGoogle() {
+      const client_id = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      const redirect_uri = `${window.location.origin}/auth/callback`; // 确保是 3000 端口
+      const scope = "openid profile email";
 
-      if (!supabaseUrl || !supabaseAnonKey) {
-        alert('Configuration Supabase manquante. Vérifiez votre fichier .env')
-        return
-      }
+      // 构造 Google 官方登录 URL
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+          `client_id=${client_id}&` +
+          `redirect_uri=${encodeURIComponent(redirect_uri)}&` +
+          `response_type=id_token&` + // 我们要 ID Token，后端好验
+          `scope=${encodeURIComponent(scope)}&` +
+          `nonce=${Math.random().toString(36).substring(2)}`;
 
-      this.isLoading = true
-
-      try {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
-            }
-          },
-        })
-
-        if (error) {
-          console.error('Erreur Supabase:', error)
-          this.isLoading = false
-          throw error
-        }
-
-        console.log('Redirection vers Google OAuth...')
-
-      } catch (error) {
-        console.error('Erreur login Google:', error.message)
-        alert('Erreur lors de la connexion Google: ' + error.message)
-        this.isLoading = false
-      }
-    },
-  },
+      window.location.href = authUrl;
+    }
+  }
 }
 </script>
 

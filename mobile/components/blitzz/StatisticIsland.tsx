@@ -9,19 +9,43 @@ interface StatisticIslandProps {
   completedQuizzes: number;
   isExpanded: boolean;
   onToggle: () => void;
+  categories?: CategoryItem[];
 }
+
+interface CategoryItem {
+  id: number;
+  name: string;
+  score: number;
+}
+
+const ROW_HEIGHT = 50; // 每一行详情的高度（包含 gap）
+const BASE_HEIGHT = 56; // 闭合时的高度
+const DETAILS_PADDING = 20; // details 容器的 marginTop
 
 export const StatisticIsland = ({
                                   averageScore,
                                   completedQuizzes,
                                   isExpanded,
-                                  onToggle
-                                }: StatisticIslandProps) => {
+                                  onToggle,
+                                  categories = []
+                                }: StatisticIslandProps) =>
+{
+  // 计算展开后的总高度
+  // 逻辑：基础高度 + 详情间距 + (行数 * 行高)
+  const expandedHeight = BASE_HEIGHT + DETAILS_PADDING + (categories.length * ROW_HEIGHT);
 
-  // 高度动画：56 -> 200
   const containerStyle = useAnimatedStyle(() => {
     return {
-      height: withTiming(isExpanded ? 200 : 56, { duration: 300 }),
+      // 展开时使用计算出的高度，闭合时回落到 56
+      height: withTiming(isExpanded ? expandedHeight : BASE_HEIGHT, { duration: 300 }),
+    };
+  }, [isExpanded, categories.length]); // 监听长度变化
+
+  // 1. 定义间距动画
+  const spacerStyle = useAnimatedStyle(() => {
+    return {
+      // 闭合时宽度为 20，展开时平滑滑开到 40 (或你喜欢的数值)
+      width: withTiming(isExpanded ? 40 : 20, { duration: 300 }),
     };
   }, [isExpanded]);
 
@@ -53,10 +77,11 @@ export const StatisticIsland = ({
               </View>
 
               {/* 中：分割线 (展开时淡出，保持干净) */}
-              {!isExpanded && <View style={styles.divider} />}
+              {/* {!isExpanded && <View style={styles.divider} />} */}
+              <Animated.View style={spacerStyle} />
 
               {/* 右：完成数 */}
-              <View style={[styles.statGroup, isExpanded && { marginLeft: 24 }]}>
+              <View style={[styles.statGroup]}>
                 <View style={styles.iconWrapper}>
                   <IconSvg uri={assets.historyIcon} width={22} height={22} />
                 </View>
@@ -74,28 +99,18 @@ export const StatisticIsland = ({
                     exiting={FadeOut.duration(200)}
                     style={styles.details}
                 >
-                  {/* 模拟详情行 1 */}
-                  <View style={styles.detailRow}>
-                    <View style={styles.placeholderIcon} />
-                    <View>
-                      <View style={styles.valueRow}>
-                        <Text style={styles.mainValue}>68</Text>
-                        <Text style={styles.unitText}>%</Text>
+                  {categories.map((cat, index) => (
+                      <View key={index} style={[styles.detailRow, { height: ROW_HEIGHT - 15 }]}>
+                        <View style={styles.placeholderIcon} />
+                        <View>
+                          <View style={styles.valueRow}>
+                            <Text style={styles.mainValue}>{cat.score}</Text>
+                            <Text style={styles.unitText}>%</Text>
+                          </View>
+                          <Text style={styles.label}>{cat.name}</Text>
+                        </View>
                       </View>
-                      <Text style={styles.label}>Science</Text>
-                    </View>
-                  </View>
-                  {/* 模拟详情行 2 */}
-                  <View style={styles.detailRow}>
-                    <View style={styles.placeholderIcon} />
-                    <View>
-                      <View style={styles.valueRow}>
-                        <Text style={styles.mainValue}>82</Text>
-                        <Text style={styles.unitText}>%</Text>
-                      </View>
-                      <Text style={styles.label}>Math</Text>
-                    </View>
-                  </View>
+                  ))}
                 </Animated.View>
             )}
 
@@ -156,5 +171,9 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', alignItems: 'center' },
   placeholderIcon: {
     width: 32, height: 32, backgroundColor: '#24201d', borderRadius: 8, marginRight: 12
-  }
+  },
+  statSpacer: {
+    width: 15, // ✅ 调节这个数值来控制左右间距
+    height: '100%',
+  },
 });

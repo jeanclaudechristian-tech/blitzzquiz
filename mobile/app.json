@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BlitzzQuiz",
-    "slug": "blitzzquiz",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -59,6 +59,7 @@
       "eas": {
         "projectId": "97e152af-4bb5-42a9-af37-b8464bf15ea8"
       }
-    }
+    },
+    "owner": "dddemong"
   }
 }

@@ -49,6 +49,7 @@ export interface Group {
     is_public: boolean;
     created_at: string;
     updated_at: string;
+    nb_membres?: number;
 
     owner?: User;
     members?: User[];

@@ -27,6 +27,8 @@ class GroupController extends Controller
             return [
                 'id' => $g->id,
                 'nom' => $g->nom,
+                'owner_id' => $g->owner_id, // ✅ 别忘了这个，用来判断身份
+                'code_invitation' => $g->code_invitation, // ✅ 补上这一行！
                 'is_public' => $g->is_public,
                 'nb_membres' => $g->members->count(),
             ];
@@ -60,6 +62,7 @@ class GroupController extends Controller
             'members' => $group->members,
             'nb_membres' => $group->members->count(),
             'assignments' => [],
+            'owner_id' => $group->owner_id
         ]);
     }
 
@@ -125,6 +128,7 @@ class GroupController extends Controller
             return response()->json(['error' => 'Seul l\'owner peut supprimer'], 403);
         }
 
+        $group->members()->detach();
         $group->delete();
 
         return response()->json(['message' => 'Groupe supprimé']);
@@ -137,15 +141,15 @@ class GroupController extends Controller
     {
         $userId = Auth::id();
         $validated = $request->validate([
-            'code_invitation' => 'required|string|size:6',
+            'code_invitation' => 'required|string|size:6'
         ]);
 
         $code = strtoupper($validated['code_invitation']);
 
-        $group = Group::where('code_invitation', $code)->first();
+        $group = \App\Models\Group::where('code_invitation', $code)->first();
 
         if (!$group) {
-            return response()->json(['error' => 'Code invalide'], 404);
+            return response()->json(['error' => 'Code invalide ou groupe privé'], 404);
         }
 
         if ($group->members()->where('user_id', $userId)->exists()) {
@@ -155,9 +159,14 @@ class GroupController extends Controller
         // user_groups (user_id, group_id)
         $group->members()->attach($userId);
 
+        // 建议返回和 index 一致的结构，确保前端解析不出错
         return response()->json([
-            'message' => 'Tu as rejoint le groupe',
-            'group_id' => $group->id,
+            'id' => $group->id,
+            'nom' => $group->nom,
+            'owner_id' => $group->owner_id,
+            'code_invitation' => $group->code_invitation,
+            'is_public' => $group->is_public,
+            'nb_membres' => $group->members()->count(), // 实时计算人数
         ]);
     }
 
@@ -171,7 +180,7 @@ class GroupController extends Controller
         }
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id|different:owner_id',
+            'user_id' => 'required|exists:users,id|different:owner_id'
         ]);
 
         if ($group->members()->where('user_id', $validated['user_id'])->exists()) {

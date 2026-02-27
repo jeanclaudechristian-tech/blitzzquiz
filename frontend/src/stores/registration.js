@@ -8,9 +8,7 @@ export const useRegistrationStore = defineStore('registration', {
     password: '',
     confirmPassword: '',
     role: '',        // TEACHER ou STUDENT
-    
-    // NOUVEAU: Stocke les infos Google temporairement
-    googleUser: null 
+    googleUser: null
   }),
 
   getters: {
@@ -36,9 +34,14 @@ export const useRegistrationStore = defineStore('registration', {
 
     // NOUVEAU: Initialise le flux Google
     startGoogleFlow(googleData) {
-      this.googleUser = googleData
-      this.email = googleData.email
-      this.role = 'STUDENT' // On force le rôle étudiant pour Google
+      // 确保传入的对象有 google_id
+      this.googleUser = {
+        googleId: googleData.google_id,
+        email: googleData.email,
+        avatar: googleData.avatar
+      };
+      this.email = googleData.email;
+      this.role = 'STUDENT';
     },
 
     reset() {
@@ -50,5 +53,7 @@ export const useRegistrationStore = defineStore('registration', {
       this.role = ''
       this.googleUser = null
     },
+
+
   },
 })

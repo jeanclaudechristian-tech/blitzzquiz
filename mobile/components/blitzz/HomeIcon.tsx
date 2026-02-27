@@ -2,11 +2,11 @@ import React, { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import LottieView from 'lottie-react-native';
 
-interface ProfilIconProps {
+interface HomeIconProps {
     onPress?: () => void;
 }
 
-export const ProfilIcon = ({ onPress }: ProfilIconProps) => {
+export const HomeIcon = ({ onPress }: HomeIconProps) => {
     const animation = useRef<LottieView>(null);
 
     const handlePress = () => {
@@ -31,7 +31,7 @@ export const ProfilIcon = ({ onPress }: ProfilIconProps) => {
                 >
                     <LottieView
                         ref={animation}
-                        source={require('../../assets/animated/system-regular-8-account-hover-pinch.json')}
+                        source={require('../../assets/animated/system-regular-41-home-hover-pinch.json')}
                         style={styles.lottie}
                         autoPlay={false}
                         loop={false}

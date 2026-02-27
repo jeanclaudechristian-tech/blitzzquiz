@@ -1,60 +1,74 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { DarkButton } from '../../components/blitzz/DarkButton';
-import { useAuth } from '../../services/AuthContext';
-import { colors, fonts } from '../../components/blitzz/tokens';
-import { DashboardHeader } from '../../components/blitzz/DashboardHeader'; // 确保路径正确
+import React, { useState } from 'react';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
+import { colors } from '../../components/blitzz/tokens';
+import { DashboardHeader } from '../../components/blitzz/DashboardHeader';
+import Animated, { FadeIn } from 'react-native-reanimated';
+
+// 导入你新创建的模块
+import Dashboard from './Dashboard';
+import Profile from './Profile';
+import Groups from "@/app/(tabs)/Groups";
+import {Group} from "@/types";
+import GroupDetail from "@/app/(tabs)/GroupDetail";
+import {GroupDetailProvider} from "@/services/GroupDetailContext";
 
 export default function HomeScreen() {
-    // 从 Context 中获取用户信息和登出方法
-    const { user, logout } = useAuth();
+    // 定义当前显示的位面：'dashboard' (主页) 或 'profile' (个人资料)
+    const [currentTab, setCurrentTab] = useState<'dashboard' | 'profile' | 'groups' | 'group-detail'>('dashboard');
+    const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
+    // @ts-ignore
     return (
         <SafeAreaView style={styles.container}>
+            <Animated.View
+                entering={FadeIn.duration(600)}
+                style={{ flex: 1}}
+            >
             <View style={styles.content}>
-
+                {/* Header 逻辑：当在 groups 时，Header 应该显示为 profile 选中状态或根据你设计调整 */}
                 <DashboardHeader
-                    averageScore={78}
-                    completedQuizzes={23}
-                    onProfil={() => console.log('Profil Clicked')}
+                    currentTab={currentTab === 'groups' ? 'profile' : currentTab}
+                    onProfil={() => setCurrentTab('profile')}
+                    onHome={() => setCurrentTab('dashboard')}
                 />
 
-                {/* 顶部欢迎语 */}
-                <View style={styles.header}>
-                    <Text style={styles.welcomeLabel}>Bonjour,</Text>
-                    {/* 使用可选链 ?. 防止 user 为空时报错 */}
-                    <Text style={styles.username}>
-                        {user?.nickname || 'Voyageur'}
-                    </Text>
-                </View>
+                {/* 条件渲染逻辑：确保互斥，一次只显示一个 */}
+                {currentTab === 'dashboard' && (
+                    <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                        <Dashboard />
+                    </Animated.View>
+                )}
 
-                {/* 用户信息卡片 */}
-                <View style={styles.infoCard}>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>ID</Text>
-                        <Text style={styles.infoValue}>{user?.id}</Text>
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Email</Text>
-                        <Text style={styles.infoValue}>{user?.email}</Text>
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Rôle</Text>
-                        <Text style={styles.infoValue}>{user?.role || 'Étudiant'}</Text>
-                    </View>
-                </View>
+                {currentTab === 'profile' && (
+                    <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                        {/* 传入真正的切换函数，不再 throw error */}
+                        <Profile onViewGroups={() => setCurrentTab('groups')} />
+                    </Animated.View>
+                )}
 
-                {/* 撑开空间，把退出按钮挤到底部 */}
-                <View style={{ flex: 1 }} />
+                {currentTab === 'groups' && (
+                    <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                        <Groups onBack={() => setCurrentTab('profile')} onSelectGroup={(group) => {
+                            setSelectedGroup(group);
+                            // @ts-ignore
+                            setCurrentTab('group-detail');
+                        }}/>
+                    </Animated.View>
+                )}
 
-                {/* 退出按钮 */}
-                <View style={styles.footer}>
-                    <DarkButton label="Se déconnecter" onPress={logout} />
-                </View>
+                {currentTab === 'group-detail' && selectedGroup ? (
+                    <GroupDetailProvider>
+                        <Animated.View entering={FadeIn} style={{ flex: 1 }}>
+                            <GroupDetail
+                                group={selectedGroup}
+                                onBack={() => setCurrentTab('groups')}
+                            />
+                        </Animated.View>
+                    </GroupDetailProvider>
+                ) : null}
 
             </View>
+            </Animated.View>
         </SafeAreaView>
     );
 }
@@ -70,48 +84,4 @@ const styles = StyleSheet.create({
         paddingTop: 40,
         paddingBottom: 20,
     },
-    header: {
-        marginBottom: 40,
-    },
-    welcomeLabel: {
-        fontFamily: fonts.inter,
-        fontSize: 18,
-        color: colors.secondaryText,
-        marginBottom: 5,
-    },
-    username: {
-        fontFamily: fonts.inter,
-        fontSize: 36,
-        fontWeight: '700',
-        color: colors.dark,
-    },
-    infoCard: {
-        backgroundColor: colors.grayBg,
-        borderRadius: 20,
-        padding: 20,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 12,
-    },
-    infoLabel: {
-        fontFamily: fonts.inter,
-        fontSize: 15,
-        color: colors.secondaryText,
-    },
-    infoValue: {
-        fontFamily: fonts.inter,
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.dark,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-    },
-    footer: {
-        marginBottom: 20,
-    }
 });

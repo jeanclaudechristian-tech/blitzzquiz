@@ -1,16 +1,66 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import Animated, { useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
-import { StatisticIsland } from './StatisticIsland';
-import { ProfilIcon } from './ProfilIcon';
-import { SearchIcon } from './SearchIcon';
+import React, {useState} from 'react';
+import {View, StyleSheet} from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    withTiming,
+    Easing,
+    FadeInDown,
+    FadeOutDown,
+    ZoomIn,
+    ZoomOut
+} from 'react-native-reanimated';
+import {StatisticIsland} from './StatisticIsland';
+import {ProfilIcon} from './ProfilIcon';
+import {HomeIcon} from './HomeIcon';
+import {SearchIcon} from './SearchIcon';
 
 // @ts-ignore
-export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onProfil }) => {
+interface DashboardHeaderProps {
+    averageScore?: number
+}
+
+// @ts-ignore
+export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) => {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [isIslandExpanded, setIsIslandExpanded] = useState(false);
 
-    const config = { duration: 300, easing: Easing.inOut(Easing.quad) };
+    // 模拟数据
+    const mockRawResults = [
+        {id: 1, category: 'Science', score: 85},
+        {id: 2, category: 'Math', score: 92},
+        {id: 3, category: 'Science', score: 40}, // 这次考砸了
+        {id: 4, category: 'History', score: 78},
+        {id: 5, category: 'Math', score: 65},
+        {id: 6, category: 'Science', score: 95},
+        {id: 7, category: 'Geography', score: 88},
+        {id: 8, category: 'History', score: 55},
+        {id: 9, category: 'Informatique', score: 100},
+        {id: 10, category: 'Chimie', score: 72},
+        {id: 11, category: 'Physique', score: 60},
+        // ... 你可以随手复制几十条
+    ];
+
+    const completedQuizzes = mockRawResults.length;
+
+    const totalScoreSum = mockRawResults.reduce((sum, item) => sum + item.score, 0);
+    const averageScore = Math.round(totalScoreSum / completedQuizzes);
+
+    const categoryMap = mockRawResults.reduce((acc, item) => {
+        if (!acc[item.category]) {
+            acc[item.category] = {sum: 0, count: 0};
+        }
+        acc[item.category].sum += item.score;
+        acc[item.category].count += 1;
+        return acc;
+    }, {} as Record<string, { sum: number; count: number }>);
+
+    const categories = Object.keys(categoryMap).map((name, index) => ({
+        id: index,
+        name: name,
+        score: Math.round(categoryMap[name].sum / categoryMap[name].count)
+    }));
+
+    const config = {duration: 300, easing: Easing.inOut(Easing.quad)};
 
     const toggleIsland = () => {
         if (isSearchExpanded) return;
@@ -33,7 +83,7 @@ export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onPr
 
             // 2. 避免从 '100%' 直接跳回固定数值，动画过程中使用固定的参考宽
             // 当 flex 为 0 时，组件会回落到这个 width
-            width: withTiming(isHiding ? 0 : 215, config),
+            width: withTiming(isHiding ? 0 : 200, config),
 
             opacity: withTiming(isHiding ? 0 : 1, config),
         };
@@ -65,7 +115,7 @@ export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onPr
 
             // 4. 增加位移：让它向右滑动消失，而不是原地缩死
             transform: [
-                { translateX: withTiming(hide ? 20 : 0, config) }
+                {translateX: withTiming(hide ? 20 : 0, config)}
             ],
         };
     }, [isSearchExpanded, isIslandExpanded]);
@@ -83,26 +133,43 @@ export const DashboardHeader = ({ averageScore = 78, completedQuizzes = 23, onPr
 
     return (
         <View style={styles.headerContainer}>
-            <Animated.View style={[leftContainerStyle, { zIndex: 2 }]}>
+            <Animated.View style={[leftContainerStyle, {zIndex: 2}]}>
                 <StatisticIsland
                     averageScore={averageScore}
                     completedQuizzes={completedQuizzes}
                     isExpanded={isIslandExpanded}
                     onToggle={toggleIsland}
+                    categories={categories}
                 />
             </Animated.View>
 
-            <Animated.View style={spacerStyle} />
+            <Animated.View style={spacerStyle}/>
 
             <Animated.View style={searchWrapperStyle}>
-                <SearchIcon isExpanded={isSearchExpanded} onToggle={toggleSearch} />
+                <SearchIcon isExpanded={isSearchExpanded} onToggle={toggleSearch}/>
             </Animated.View>
 
-            <Animated.View style={[profileStyle, {
-                alignItems: 'flex-start', // ✅ 关键：确保收缩时内容保持居中，不被单侧切掉
-                justifyContent: 'center' }]}>
-                <View style={{ width: 56, alignItems: 'center' }}>
-                    <ProfilIcon onPress={onProfil}/>
+            <Animated.View
+                style={[profileStyle, {alignItems: 'flex-start', justifyContent: 'center'}]}
+            >
+                <View style={{width: 56, alignItems: 'center'}}>
+                    {currentTab === 'dashboard' ? (
+                        <Animated.View
+                            key="profil-btn"
+                            entering={ZoomIn.duration(200)}  // 从远处飞到前面
+                            exiting={ZoomOut.duration(200)} // 往后/往下飞走
+                        >
+                            <ProfilIcon onPress={onProfil}/>
+                        </Animated.View>
+                    ) : (
+                        <Animated.View
+                            key="home-btn"
+                            entering={ZoomIn.duration(200)}
+                            exiting={ZoomOut.duration(200)}
+                        >
+                            <HomeIcon onPress={onHome}/>
+                        </Animated.View>
+                    )}
                 </View>
             </Animated.View>
         </View>
