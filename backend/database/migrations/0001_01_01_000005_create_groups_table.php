@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('nom', 100);
             $table->char('code_invitation', 6)->unique();
             $table->boolean('is_public')->default(false);
+            $table->string('description')-> nullable();
 
             $table->foreignId('owner_id')
                 ->constrained('users')

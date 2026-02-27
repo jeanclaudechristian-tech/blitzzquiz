@@ -6,7 +6,7 @@
         <button type="button" class="back-button" @click="goBack">
           ← Retour au dashboard
         </button>
-        <h1>Rejoindre un groupe</h1>
+        <h1>Entrez le Code</h1>
         <p>Indique le code à 6 caractères partagé par ton enseignant.</p>
 
         <form class="code-form" @submit.prevent="handleSubmit">
@@ -20,7 +20,7 @@
           />
           <p v-if="error" class="error-msg">{{ error }}</p>
           <CallToActionBtn
-            text="Rejoindre le groupe"
+            text="Jouer au Quiz"
             variant="dark"
             @click="handleSubmit"
           />

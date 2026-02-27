@@ -17,6 +17,7 @@ class Group extends Model
         'code_invitation',
         'is_public',
         'owner_id',
+        'description',
     ];
 
     public function owner(): BelongsTo

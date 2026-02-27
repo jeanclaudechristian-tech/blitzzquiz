@@ -1,16 +1,21 @@
 <template>
   <div class="play-page">
     <AppHeader />
+
     <main class="play-main" v-if="quizLoaded && questions.length">
       <section class="play-card">
         <button type="button" class="back-button" @click="goBack">
           ← Abandonner
         </button>
+
         <header class="play-header">
           <div class="progress-info">
             <span>Question {{ currentIndex + 1 }} / {{ questions.length }}</span>
             <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+              <div
+                class="progress-fill"
+                :style="{ width: progressPercent + '%' }"
+              ></div>
             </div>
           </div>
           <div class="timer">
@@ -22,6 +27,7 @@
           <h1 class="question-text">{{ currentQuestion.texte }}</h1>
 
           <div class="choices-grid">
+<<<<<<< HEAD
             <button v-for="opt in ['A', 'B', 'C', 'D']" :key="opt" type="button" :class="[
               'choice-btn',
               {
@@ -30,6 +36,27 @@
               wrong: showFeedback && selectedChoice === opt && opt !== (currentQuestion.metadata?.bonneReponse || currentQuestion.bonneReponse)
                 }
             ]" @click="selectChoice(opt)">
+=======
+            <button
+              v-for="opt in ['A','B','C','D']"
+              :key="opt"
+              type="button"
+              :class="[
+                'choice-btn',
+                {
+                  selected: selectedChoice === opt,
+                  correct:
+                    showFeedback &&
+                    opt === (currentQuestion.metadata?.bonneReponse),
+                  wrong:
+                    showFeedback &&
+                    selectedChoice === opt &&
+                    opt !== (currentQuestion.metadata?.bonneReponse),
+                },
+              ]"
+              @click="selectChoice(opt)"
+            >
+>>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
               <span class="choice-label">{{ opt }}</span>
               <span class="choice-text">{{ choiceText(opt) }}</span>
             </button>
@@ -61,7 +88,7 @@ export default {
   name: 'EtudiantQuizPlayPage',
   components: {
     AppHeader,
-    CallToActionBtn
+    CallToActionBtn,
   },
   data() {
     return {
@@ -74,7 +101,7 @@ export default {
       timerId: null,
       answers: [],
       loading: false,
-      error: ''
+      error: '',
     }
   },
   computed: {
@@ -84,7 +111,7 @@ export default {
     progressPercent() {
       if (!this.questions.length) return 0
       return (this.currentIndex / this.questions.length) * 100
-    }
+    },
   },
   methods: {
     async loadQuestions() {
@@ -93,12 +120,12 @@ export default {
       const quizId = this.$route.params.id
 
       try {
-        // Appel API Laravel : GET /api/quizzes/{quiz}/questions
+        // GET /api/quizzes/{quiz}/questions
         const { data } = await api.get(`/quizzes/${quizId}/questions`)
         this.questions = Array.isArray(data) ? data : []
       } catch (e) {
         console.error('Erreur chargement questions', e.response?.data || e)
-        this.error = "Erreur lors du chargement des questions."
+        this.error = 'Erreur lors du chargement des questions.'
         this.questions = []
       } finally {
         this.loading = false
@@ -112,7 +139,6 @@ export default {
       }
     },
     startTimer() {
-      // TODO: si tu veux une durée spécifique par quiz, la récupérer via l’API
       this.remainingSeconds = 60
       this.timerId = setInterval(() => {
         if (this.remainingSeconds > 0) {
@@ -130,8 +156,13 @@ export default {
     },
     choiceText(opt) {
       const q = this.currentQuestion
+<<<<<<< HEAD
       const meta = q.meta.date || {}
       return meta[`choix${opt}`] || q[`choix${opt}`] || ''
+=======
+      if (!q || !q.metadata) return ''
+      return q.metadata[`choix${opt}`] || ''
+>>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
     },
     selectChoice(opt) {
       this.selectedChoice = opt
@@ -139,6 +170,7 @@ export default {
     },
     nextQuestion() {
       if (!this.selectedChoice) return
+
       this.answers[this.currentIndex] = this.selectedChoice
       this.showFeedback = true
 
@@ -154,9 +186,14 @@ export default {
       this.stopTimer()
       const total = this.questions.length
       let correct = 0
+
       this.questions.forEach((q, idx) => {
-        if (this.answers[idx] && this.answers[idx] === q.bonneReponse) correct += 1
+        const bonne = q.metadata?.bonneReponse
+        if (this.answers[idx] && this.answers[idx] === bonne) {
+          correct += 1
+        }
       })
+
       const percent = total ? Math.round((correct / total) * 100) : 0
       const tempsEcoule = 60 - this.remainingSeconds
       const quizId = this.$route.params.id
@@ -165,13 +202,12 @@ export default {
         total,
         correct,
         percent,
-        temps_ecoule: tempsEcoule
+        temps_ecoule: tempsEcoule,
       }
 
       // TODO Laravel: enregistrer le score dans la DB
       // await api.post(`/quizzes/${quizId}/submit`, result)
 
-      // Comportement actuel : stockage temporaire pour la page de résultat
       const key = `etudiant_quiz_result_${quizId}`
       sessionStorage.setItem(key, JSON.stringify(result))
       this.$router.push(`/etudiant/quiz/${quizId}/loading`)
@@ -179,14 +215,14 @@ export default {
     goBack() {
       this.stopTimer()
       this.$router.push('/etudiant')
-    }
+    },
   },
   mounted() {
     this.loadQuestions()
   },
   beforeUnmount() {
     this.stopTimer()
-  }
+  },
 }
 </script>
 
