@@ -19,6 +19,7 @@ class AdminUserController extends Controller
                 'nickname',
                 'role',
                 'education_level',
+                'is_disabled',
                 'created_at'
             ]);
 
@@ -31,6 +32,27 @@ class AdminUserController extends Controller
 
         return response()->json([
             'data' => $query->orderByDesc('id')->paginate(20),
+        ]);
+    }
+
+    public function disable($id)
+    {
+        $user = User::findOrFail($id);
+        if (request()->user()->id === $user->id) {
+            return response()->json([
+                'message' => 'Cannot disable yourself'
+            ], 400);
+        }
+
+        $user->is_disabled = !$user->is_disabled;
+        $user->save();
+
+        return response()->json([
+            'message' => $user->is_disabled ? 'User disabled' : 'User enabled',
+            'data' => [
+                'id' => $user->id,
+                'is_disabled' => $user->is_disabled,
+            ],
         ]);
     }
 }
