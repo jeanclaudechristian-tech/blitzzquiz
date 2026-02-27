@@ -160,20 +160,17 @@
         </div>
       </div>
     </main>
-    <AppFooter />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import { groupService } from '../../api/groups'
 
 export default {
   name: 'GroupeDetailsPage',
   components: {
-    AppHeader,
-    AppFooter,
+    AppHeader
   },
   data() {
     return {

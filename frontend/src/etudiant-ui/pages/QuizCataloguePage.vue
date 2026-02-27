@@ -50,19 +50,16 @@
         Aucun quiz trouvé pour cette recherche.
       </p>
     </main>
-    <AppFooter />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 
 export default {
   name: 'QuizCataloguePage',
   components: {
-    AppHeader,
-    AppFooter
+    AppHeader
   },
   data() {
     return {

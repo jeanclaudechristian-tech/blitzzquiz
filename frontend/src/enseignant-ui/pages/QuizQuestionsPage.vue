@@ -126,22 +126,18 @@
         </section>
       </section>
     </main>
-    <AppFooter />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 import api from '../../api/Axios'
 
 export default {
   name: 'QuizQuestionsPage',
   components: {
-    AppHeader,
-    AppFooter,
-    CallToActionBtn
+    AppHeader
   },
   data() {
     return {

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('email')->unique()->nullable();
             $table->string('password')->nullable();
             $table->string('nickname', 50);
+            $table->string('education_level')->nullable();
 
             // Role
             $table->enum('role', ['STUDENT', 'TEACHER', 'ADMIN'])

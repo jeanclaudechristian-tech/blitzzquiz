@@ -127,20 +127,17 @@
         </form>
       </section>
     </main>
-    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import api from '../../api/Axios' // même instance que pour le dashboard / questions
 
 export default {
   name: 'EditQuizPage',
   components: {
-    AppHeader,
-    AppFooter
+    AppHeader
   },
   data() {
     return {

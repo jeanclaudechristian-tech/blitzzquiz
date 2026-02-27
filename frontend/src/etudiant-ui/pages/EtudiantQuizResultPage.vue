@@ -37,20 +37,17 @@
         </div>
       </section>
     </main>
-    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
 export default {
   name: 'EtudiantQuizResultPage',
   components: {
     AppHeader,
-    AppFooter,
     CallToActionBtn
   },
   data() {

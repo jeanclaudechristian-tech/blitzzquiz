@@ -124,21 +124,18 @@
         </div>
       </transition>
     </main>
-    <AppFooter />
   </div>
 </template>
 
 <script>
 import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
 export default {
   name: 'EnseignantDashboard',
   components: {
     AppHeader,
-    AppFooter,
     CallToActionBtn
   },
   data() {
