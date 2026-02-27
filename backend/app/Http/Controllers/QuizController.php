@@ -102,48 +102,69 @@ class QuizController extends Controller
     return $quiz->questions()->orderBy('id')->get();
 }
     public function questionsStore(Request $request, Quiz $quiz)
-    {
-        $user = Auth::user();
-        if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
-
-        $data = $request->validate([
-            'texte'         => 'required|string',
-            'choixA'        => 'required|string',
-            'choixB'        => 'required|string',
-            'choixC'        => 'required|string',
-            'choixD'        => 'required|string',
-            'bonneReponse'  => 'required|in:A,B,C,D',
-            'explication'   => 'nullable|string',
-        ]);
-
-        $question = $quiz->questions()->create($data);
-
-        return response()->json($question, 201);
+{
+    $user = Auth::user();
+    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+        return response()->json(['error' => 'Forbidden'], 403);
     }
 
-    public function questionsUpdate(Request $request, Question $question)
-    {
-        $user = Auth::user();
-        if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
+    $data = $request->validate([
+        'texte'        => 'required|string',
+        'choixA'       => 'required|string',
+        'choixB'       => 'required|string',
+        'choixC'       => 'required|string',
+        'choixD'       => 'required|string',
+        'bonneReponse' => 'required|in:A,B,C,D',
+        'explication'  => 'nullable|string',
+    ]);
 
-        $data = $request->validate([
-            'texte'         => 'required|string',
-            'choixA'        => 'required|string',
-            'choixB'        => 'required|string',
-            'choixC'        => 'required|string',
-            'choixD'        => 'required|string',
-            'bonneReponse'  => 'required|in:A,B,C,D',
-            'explication'   => 'nullable|string',
-        ]);
+    $question = $quiz->questions()->create([
+        'type'       => 'QCM', // ou ce que tu veux par défaut
+        'texte'      => $data['texte'],
+        'metadata'   => [
+            'choixA'       => $data['choixA'],
+            'choixB'       => $data['choixB'],
+            'choixC'       => $data['choixC'],
+            'choixD'       => $data['choixD'],
+            'bonneReponse' => $data['bonneReponse'],
+        ],
+        'explanation' => $data['explication'] ?? null,
+    ]);
 
-        $question->update($data);
-
-        return response()->json($question);
+    return response()->json($question, 201);
+}
+   public function questionsUpdate(Request $request, Question $question)
+{
+    $user = Auth::user();
+    if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
+        return response()->json(['error' => 'Forbidden'], 403);
     }
+
+    $data = $request->validate([
+        'texte'        => 'required|string',
+        'choixA'       => 'required|string',
+        'choixB'       => 'required|string',
+        'choixC'       => 'required|string',
+        'choixD'       => 'required|string',
+        'bonneReponse' => 'required|in:A,B,C,D',
+        'explication'  => 'nullable|string',
+    ]);
+
+    $question->update([
+        'texte'      => $data['texte'],
+        'metadata'   => [
+            'choixA'       => $data['choixA'],
+            'choixB'       => $data['choixB'],
+            'choixC'       => $data['choixC'],
+            'choixD'       => $data['choixD'],
+            'bonneReponse' => $data['bonneReponse'],
+        ],
+        'explanation' => $data['explication'] ?? null,
+    ]);
+
+    return response()->json($question);
+}
+
 
     public function questionsDestroy(Question $question)
     {

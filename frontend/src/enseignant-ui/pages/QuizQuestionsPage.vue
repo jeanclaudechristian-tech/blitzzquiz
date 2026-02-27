@@ -98,7 +98,7 @@
               <CallToActionBtn
                 text="Ajouter la question"
                 variant="dark"
-                @click="addOrUpdateQuestion"
+                type="submit"
               />
               <CallToActionBtn
                 text="Enregistrer"
@@ -132,7 +132,7 @@
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
-import api from '../../api/Axios' // adapte le chemin si besoin [web:383]
+import api from '../../api/Axios'
 
 export default {
   name: 'QuizQuestionsPage',
@@ -238,12 +238,10 @@ export default {
 
       try {
         if (this.currentIndex == null || !this.questions[this.currentIndex]?.id) {
-          // création
           const { data } = await api.post(`/quizzes/${quizId}/questions`, payload)
           this.questions.push(data)
           this.currentIndex = this.questions.length - 1
         } else {
-          // mise à jour
           const qId = this.questions[this.currentIndex].id
           const { data } = await api.put(`/questions/${qId}`, payload)
           this.questions.splice(this.currentIndex, 1, data)
@@ -284,7 +282,6 @@ export default {
     },
 
     saveAll() {
-      // tout est déjà sauvegardé question par question
       this.$router.push('/enseignant')
     },
 
