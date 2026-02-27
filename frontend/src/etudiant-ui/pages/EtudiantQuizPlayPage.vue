@@ -53,7 +53,12 @@
         </section>
 
         <footer class="play-footer">
-          <CallToActionBtn text="Suivant" variant="blue" :class="{ disabled: !selectedChoice }" @click="nextQuestion" />
+          <CallToActionBtn
+            text="Suivant"
+            variant="blue"
+            :class="{ disabled: !selectedChoice }"
+            @click="nextQuestion"
+          />
         </footer>
       </section>
     </main>
@@ -109,7 +114,6 @@ export default {
       const quizId = this.$route.params.id
 
       try {
-        // GET /api/quizzes/{quiz}/questions
         const { data } = await api.get(`/quizzes/${quizId}/questions`)
         this.questions = Array.isArray(data) ? data : []
       } catch (e) {
@@ -189,8 +193,14 @@ export default {
         temps_ecoule: tempsEcoule,
       }
 
-      // TODO Laravel: enregistrer le score dans la DB
-      // await api.post(`/quizzes/${quizId}/submit`, result)
+      // Sauvegarde en DB : score = pourcentage
+      try {
+        await api.post(`/quizzes/${quizId}/results`, {
+          score: percent,
+        })
+      } catch (e) {
+        console.error('Erreur enregistrement résultat', e.response?.data || e)
+      }
 
       const key = `etudiant_quiz_result_${quizId}`
       sessionStorage.setItem(key, JSON.stringify(result))
