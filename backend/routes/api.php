@@ -46,12 +46,18 @@ Route::get('/quizzes', [QuizController::class, 'index']);
     Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
     Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
 
+    Route::get('/groups', [GroupController::class, 'index']);
     Route::post('groups/join', [GroupController::class, 'join']);
+    Route::get('/groups/{group}', [GroupController::class, 'show']);
+    Route::put('/groups/{group}', [GroupController::class, 'update']);
+    Route::post('/groups', [GroupController::class, 'store']);
     Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
     Route::delete('groups/{group}/leave', [GroupController::class, 'leave']);
     Route::delete('groups/{group}/destroy', [GroupController::class, 'destroy']);
+
     Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
     Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
+
     Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
     Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
 });

@@ -146,6 +146,8 @@ class GroupController extends Controller
 
         $code = strtoupper($validated['code_invitation']);
 
+        $group = \App\Models\Group::where('code_invitation', $code)->first();
+
         if (!$group) {
             return response()->json(['error' => 'Code invalide ou groupe privé'], 404);
         }
