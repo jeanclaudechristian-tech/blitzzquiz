@@ -26,9 +26,10 @@ export default function LoginScreen() {
     const { login, googleLogin } = useAuth();
 
     const [request, response, promptAsync] = Google.useAuthRequest({
-        androidClientId: "532138498181-14l35enq3ifpe2log0qevjfusipklovj.apps.googleusercontent.com",
-        iosClientId: "532138498181-rtushc0olk7vp3m15b8go1htdf0netre.apps.googleusercontent.com",
-        webClientId: "532138498181-val9blpnrt3ns8r7jimn87s7f18eupvg.apps.googleusercontent.com",
+        androidClientId: "851398001859-vanvpgbsi3qr2tqp0j6kjvi281neamvp.apps.googleusercontent.com",
+        // androidClientId: "851398001859-olgl0lu1bcir3o134ki3nqtdviiinpsa.apps.googleusercontent.com",
+        iosClientId: "851398001859-vtiht025g0u89bsfh1jasok9f15nuu9u.apps.googleusercontent.com",
+        webClientId: "851398001859-dad9lrj36rlh23pvknltls5mmgolh90t.apps.googleusercontent.com",
         redirectUri: makeRedirectUri({
             scheme: 'blitzzquiz',
             path: 'oauth2/callback',

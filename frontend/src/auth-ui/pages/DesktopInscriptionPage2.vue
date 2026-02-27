@@ -15,25 +15,19 @@
           <p> </p>
           <p>compte</p>
         </div>
-        
-        <InputCourriel 
-            v-model="formData.email" 
-            placeholder="Courriel (personnel ou scolaire)"
-            :disabled="registrationStore.isGoogleFlow" 
+
+        <InputCourriel
+            v-model="formData.email"
+            placeholder="Courriel"
+            :disabled="registrationStore.isGoogleFlow"
         />
 
         <InputNomUtilisateur v-model="formData.username" />
 
-        <InputMotDePasse 
-            v-model="formData.password" 
-            placeholder="Mot de passe"
-            :disabled="registrationStore.isGoogleFlow" 
-        />
-        
-        <InputConfirmerMotDePasse 
-            v-model="formData.confirmPassword"
-            :disabled="registrationStore.isGoogleFlow" 
-        />
+        <template v-if="!registrationStore.isGoogleFlow">
+          <InputMotDePasse v-model="formData.password" />
+          <InputConfirmerMotDePasse v-model="formData.confirmPassword" />
+        </template>
 
         <BoutonRetour class="bouton-retour-position" @click="$router.back()" />
         <BoutonConfirmer class="bouton-confirmer-position" @click="goToValidation" :disabled="loading" />
@@ -136,14 +130,20 @@ export default {
 
         let data
         if (this.registrationStore.isGoogleFlow) {
+          const gid = this.registrationStore.googleUser?.googleId;
+
+          if (!gid) {
+            console.error("Erreur: google_id est manquant!");
+          }
+
           data = await authService.registerGoogleFinal({
             email: this.formData.email,
             username: this.formData.username,
-            supabase_id: this.registrationStore.googleUser.supabaseId || this.registrationStore.googleUser.googleId,
-            avatar: this.registrationStore.googleUser.avatar,
+            google_id: gid, // 传给后端的字段名要对应
             role: this.registrationStore.role,
-            education_level: this.registrationStore.niveauEtude
-          })
+            education_level: this.registrationStore.niveauEtude,
+            avatar: this.registrationStore.googleUser?.avatar
+          });
         } else {
           data = await authService.register(
             this.formData.email,

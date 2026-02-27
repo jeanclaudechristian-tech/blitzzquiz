@@ -20,64 +20,50 @@ export default {
 
     onMounted(async () => {
       try {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
+        // 1. 获取 Google 返回的 access_token
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const idToken = hashParams.get('id_token');
 
-        if (!accessToken) {
-          console.error('Pas de access_token')
-          router.push('/connexion')
-          return
+        console.log("🔍 [Debug] 当前获取到的 Access Token:", idToken);
+
+        if (!idToken) {
+          router.push('/connexion');
+          return;
         }
 
-        const payload = JSON.parse(atob(accessToken.split('.')[1]))
-
+        // 2. 直接发给你的 Laravel 后端，不要在前端解析 JWT
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            access_token: accessToken,
-            user: {
-              id: payload.sub,
-              email: payload.email,
-              user_metadata: {
-                name: payload.user_metadata?.full_name || payload.user_metadata?.name,
-                avatar_url: payload.user_metadata?.avatar_url || payload.user_metadata?.picture
-              }
-            }
-          })
-        })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: idToken }) // 字段名保持 access_token 没关系，只要内容是 id_token
+        });
 
         if (!response.ok) {
-          throw new Error('Erreur backend')
+          const errorData = await response.json();
+          console.error("❌ [Backend Error] 后端验证失败详情:", errorData);
+          throw new Error('Erreur backend');
         }
 
-        const data = await response.json()
+        const data = await response.json();
 
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
+        // 3. 存储你自己的 Laravel Token
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
 
+        // 4. 根据后端返回的逻辑跳转
         if (data.needs_completion) {
           registrationStore.startGoogleFlow({
+            google_id: data.user.google_id, // 确保字段名与后端 AuthController 返回的一致
             email: data.user.email,
-            supabaseId: data.user.supabase_id,
             avatar: data.user.avatar
-          })
-          router.push('/inscription')
+          });
+          router.push('/inscription');
         } else {
-          if (data.user.role === 'TEACHER') {
-            router.push('/enseignant')
-          } else {
-            router.push('/etudiant')
-          }
+          router.push(data.user.role === 'TEACHER' ? '/enseignant' : '/etudiant');
         }
-
       } catch (error) {
-        console.error('Erreur:', error)
-        router.push('/connexion')
+        console.error('Erreur:', error);
+        // router.push('/connexion');
       }
     })
 
