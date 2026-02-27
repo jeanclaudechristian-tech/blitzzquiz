@@ -27,16 +27,6 @@
           <h1 class="question-text">{{ currentQuestion.texte }}</h1>
 
           <div class="choices-grid">
-<<<<<<< HEAD
-            <button v-for="opt in ['A', 'B', 'C', 'D']" :key="opt" type="button" :class="[
-              'choice-btn',
-              {
-                selected: selectedChoice === opt,
-                correct: showFeedback && opt === (currentQuestion.metadata?.bonneReponse || currentQuestion.bonneReponse),
-              wrong: showFeedback && selectedChoice === opt && opt !== (currentQuestion.metadata?.bonneReponse || currentQuestion.bonneReponse)
-                }
-            ]" @click="selectChoice(opt)">
-=======
             <button
               v-for="opt in ['A','B','C','D']"
               :key="opt"
@@ -56,7 +46,6 @@
               ]"
               @click="selectChoice(opt)"
             >
->>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
               <span class="choice-label">{{ opt }}</span>
               <span class="choice-text">{{ choiceText(opt) }}</span>
             </button>
@@ -156,13 +145,8 @@ export default {
     },
     choiceText(opt) {
       const q = this.currentQuestion
-<<<<<<< HEAD
-      const meta = q.meta.date || {}
-      return meta[`choix${opt}`] || q[`choix${opt}`] || ''
-=======
       if (!q || !q.metadata) return ''
       return q.metadata[`choix${opt}`] || ''
->>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
     },
     selectChoice(opt) {
       this.selectedChoice = opt

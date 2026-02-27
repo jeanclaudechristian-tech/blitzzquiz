@@ -38,17 +38,12 @@
           <form @submit.prevent="addOrUpdateQuestion">
             <div class="field-group">
               <label for="texte">Texte de la question *</label>
-<<<<<<< HEAD
-              <textarea id="texte" v-model="form.texte" rows="3"
-                placeholder="Ex: Quelle est la capitale de la France ?" />
-=======
               <textarea
                 id="texte"
                 v-model="form.texte"
                 rows="3"
                 placeholder="Ex: Quelle est la capitale de la France ?"
               />
->>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
             </div>
 
             <div class="field-group">
@@ -92,17 +87,12 @@
             <div class="field-group">
               <label>Bonne réponse *</label>
               <div class="answer-radios">
-<<<<<<< HEAD
-                <label v-for="opt in ['A', 'B', 'C', 'D']" :key="opt">
-                  <input type="radio" :value="opt" v-model="form.bonneReponse" />
-=======
                 <label v-for="opt in ['A','B','C','D']" :key="opt">
                   <input
                     type="radio"
                     :value="opt"
                     v-model="form.bonneReponse"
                   />
->>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
                   <span>{{ opt }}</span>
                 </label>
               </div>
@@ -110,27 +100,17 @@
 
             <div class="field-group">
               <label for="explication">Explication (optionnel)</label>
-<<<<<<< HEAD
-              <textarea id="explication" v-model="form.explication" rows="2"
-                placeholder="Expliquez pourquoi cette réponse est correcte…" />
-=======
               <textarea
                 id="explication"
                 v-model="form.explication"
                 rows="2"
                 placeholder="Expliquez pourquoi cette réponse est correcte…"
               />
->>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
             </div>
 
             <p v-if="error" class="form-error">{{ error }}</p>
 
             <div class="builder-actions">
-<<<<<<< HEAD
-              <CallToActionBtn text="Ajouter la question" variant="dark" type="submit" />
-              <CallToActionBtn text="Enregistrer" variant="blue" @click="saveAll" />
-              <button type="button" class="link-button" @click="preview">
-=======
               <CallToActionBtn
                 text="Ajouter la question"
                 variant="dark"
@@ -146,7 +126,6 @@
                 class="link-button"
                 @click="preview"
               >
->>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
                 Prévisualiser
               </button>
             </div>
@@ -238,19 +217,6 @@ export default {
     loadQuestion(index) {
       const q = this.questions[index]
       if (!q) return
-<<<<<<< HEAD
-      const meta = q.metadata || {}
-
-      this.currentIndex = index
-      this.form = {
-        texte: meta.text || q.texte || '',
-        choixA: meta.choixA || q.choixA || '',
-        choixB: meta.choixB || q.choixB || '',
-        choixC: meta.choixC || q.choixC || '',
-        choixD: meta.choixD || q.choixD || '',
-        bonneReponse: meta.bonneReponse || q.bonneReponse || 'A',
-        explication: q.explication || ''
-=======
 
       this.currentIndex = index
       this.form = {
@@ -261,7 +227,6 @@ export default {
         choixD: q.metadata?.choixD || '',
         bonneReponse: q.metadata?.bonneReponse || 'A',
         explication: q.explanation || '',
->>>>>>> aec8a9cb3c3e6ce3ad8909cc1857fe871dbd663f
       }
     },
 
