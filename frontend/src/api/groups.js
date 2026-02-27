@@ -18,6 +18,6 @@ export const groupService = {
   },
 
   destroy(id) {
-    return api.delete(`/groups/${id}`); // DELETE /api/groups/{id}
+    return api.delete(`/groups/${id}/destroy`); // DELETE /api/groups/{id}
   },
 };

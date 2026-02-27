@@ -52,6 +52,8 @@ Route::get('/quizzes', [QuizController::class, 'index']);
     Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
     Route::delete('groups/{group}/leave', [GroupController::class, 'leave']);
     Route::delete('groups/{group}/destroy', [GroupController::class, 'destroy']);
+    Route::delete('groups/{group}', [GroupController::class, 'destroy']);
+
 
     Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
     Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);

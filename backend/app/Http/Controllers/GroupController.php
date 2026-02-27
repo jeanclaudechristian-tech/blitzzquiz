@@ -56,7 +56,7 @@ class GroupController extends Controller
         return response()->json([
             'id' => $group->id,
             'nom' => $group->nom,
-            'description' => null,
+            'description' => $group->description,
             'is_public' => $group->is_public,
             'code_invitation' => $group->code_invitation,
             'members' => $group->members,
@@ -78,16 +78,19 @@ class GroupController extends Controller
 
         $isPublic = $validated['is_public'] ?? true;
 
+        $userID = Auth::id();
+
         $group = Group::create([
+
             'nom' => $validated['nom'],
             'code_invitation' => Str::upper(Str::random(6)), // 3 lettres + 3 chiffres possible plus tard
             'is_public' => $isPublic,
             'owner_id' => Auth::id(),
-            'description' => null,
+            'description' => $validated['description'] ?? null,
         ]);
 
+        $group -> members()->attach($userID);
         $group->load('owner');
-
         return response()->json($group, 201);
     }
 
@@ -125,7 +128,7 @@ class GroupController extends Controller
      */
     public function destroy(Group $group)
     {
-        if (Auth::id() !== $group->owner_id) {
+        if (Auth::id() != $group->owner_id) {
             return response()->json(['error' => 'Seul l\'owner peut supprimer'], 403);
         }
 

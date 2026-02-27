@@ -145,6 +145,7 @@ export default {
           nom: this.formData.nom.trim(),
           is_public: this.formData.isPublic,
           // description à ajouter côté BD plus tard si tu veux
+          description : this.formData.description?.trim()|| null,
         }
 
         const { data: groupe } = await groupService.create(payload)
