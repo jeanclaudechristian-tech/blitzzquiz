@@ -131,15 +131,9 @@ export default {
     },
 
     async openQuizFromDashboard(quiz) {
-      try {
-        // on rejoint le quiz AVANT d’ouvrir la page
-        await api.post(`/quizzes/${quiz.id}/join`) // ou quiz.code si tu as binding par code_quiz
-        this.$router.push(`/etudiant/quiz/${quiz.id}`)
-      } catch (e) {
-        console.error('Erreur join quiz', e.response?.data || e)
-        alert('Impossible de rejoindre ce quiz.')
-      }
-    }
+  this.$router.push(`/etudiant/quiz/${quiz.id}`)
+}
+
   }
 }
 </script>

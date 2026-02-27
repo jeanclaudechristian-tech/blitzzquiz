@@ -25,8 +25,11 @@
               type="button"
               :class="[
                 'choice-btn',
-                { selected: selectedChoice === opt, correct: showFeedback && opt === currentQuestion.bonneReponse,
-                  wrong: showFeedback && selectedChoice === opt && opt !== currentQuestion.bonneReponse }
+                {
+                  selected: selectedChoice === opt,
+                  correct: showFeedback && opt === currentQuestion.bonneReponse,
+                  wrong: showFeedback && selectedChoice === opt && opt !== currentQuestion.bonneReponse
+                }
               ]"
               @click="selectChoice(opt)"
             >
@@ -46,10 +49,19 @@
         </footer>
       </section>
     </main>
+
+    <main v-else class="play-main">
+      <section class="play-card">
+        <p v-if="loading">Chargement des questions…</p>
+        <p v-else-if="error" class="error">{{ error }}</p>
+        <p v-else>Aucune question disponible pour ce quiz.</p>
+      </section>
+    </main>
   </div>
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
@@ -68,40 +80,47 @@ export default {
       showFeedback: false,
       remainingSeconds: 60,
       timerId: null,
-      answers: []
+      answers: [],
+      loading: false,
+      error: ''
     }
   },
   computed: {
-    storageKey() {
-      const id = this.$route.params.id
-      return `enseignant_quiz_questions_${id}`
-    },
     currentQuestion() {
       return this.questions[this.currentIndex] || {}
     },
     progressPercent() {
       if (!this.questions.length) return 0
-      return ((this.currentIndex) / this.questions.length) * 100
+      return (this.currentIndex / this.questions.length) * 100
     }
   },
   methods: {
-    loadQuestions() {
+    async loadQuestions() {
+      this.loading = true
+      this.error = ''
+      const quizId = this.$route.params.id
+
       try {
-        const saved = localStorage.getItem(this.storageKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) this.questions = parsed
-      } catch {
+        // Appel API Laravel : GET /api/quizzes/{quiz}/questions
+        const { data } = await api.get(`/quizzes/${quizId}/questions`)
+        this.questions = Array.isArray(data) ? data : []
+      } catch (e) {
+        console.error('Erreur chargement questions', e.response?.data || e)
+        this.error = "Erreur lors du chargement des questions."
         this.questions = []
+      } finally {
+        this.loading = false
       }
+
       if (!this.questions.length) {
         this.$router.push('/etudiant')
       } else {
         this.quizLoaded = true
+        this.startTimer()
       }
     },
     startTimer() {
-      // TODO (Laravel) : durée réelle du quiz à récupérer côté backend.
+      // TODO: si tu veux une durée spécifique par quiz, la récupérer via l’API
       this.remainingSeconds = 60
       this.timerId = setInterval(() => {
         if (this.remainingSeconds > 0) {
@@ -138,7 +157,7 @@ export default {
         this.finishQuiz()
       }
     },
-    finishQuiz() {
+    async finishQuiz() {
       this.stopTimer()
       const total = this.questions.length
       let correct = 0
@@ -146,22 +165,23 @@ export default {
         if (this.answers[idx] && this.answers[idx] === q.bonneReponse) correct += 1
       })
       const percent = total ? Math.round((correct / total) * 100) : 0
-      const tempsEcoule = 60 - this.remainingSeconds // Temps utilisé en secondes
-      
+      const tempsEcoule = 60 - this.remainingSeconds
+      const quizId = this.$route.params.id
+
       const result = {
         total,
         correct,
-        percent
+        percent,
+        temps_ecoule: tempsEcoule
       }
-      
-      // TODO (Laravel) : ENREGISTRER le score dans la base de données
-      // Route API : POST /api/quiz/{quizId}/submit
-      // Body : { score, total_questions, percent, temps_ecoule }
-      
-      // Code temporaire front-only (à supprimer après Laravel)
-      const key = `etudiant_quiz_result_${this.$route.params.id}`
+
+      // TODO Laravel: enregistrer le score dans la DB
+      // await api.post(`/quizzes/${quizId}/submit`, result)
+
+      // Comportement actuel : stockage temporaire pour la page de résultat
+      const key = `etudiant_quiz_result_${quizId}`
       sessionStorage.setItem(key, JSON.stringify(result))
-      this.$router.push(`/etudiant/quiz/${this.$route.params.id}/loading`)
+      this.$router.push(`/etudiant/quiz/${quizId}/loading`)
     },
     goBack() {
       this.stopTimer()
@@ -170,9 +190,6 @@ export default {
   },
   mounted() {
     this.loadQuestions()
-    if (this.questions.length) {
-      this.startTimer()
-    }
   },
   beforeUnmount() {
     this.stopTimer()
@@ -183,4 +200,3 @@ export default {
 <style scoped>
 @import './EtudiantQuizPlayPage.css';
 </style>
-

@@ -133,11 +133,11 @@ export default {
 
       this.saving = true
 
-      const payload = {
+  const payload = {
   titre: this.form.titre.trim(),
   description: this.form.description.trim(),
   category: this.form.categorie || null,        
-  education_level: this.form.niveau || null,    
+  education_level: (this.form.niveau || '').toLowerCase() || null,
   is_public: this.form.isPublic
 }
 
