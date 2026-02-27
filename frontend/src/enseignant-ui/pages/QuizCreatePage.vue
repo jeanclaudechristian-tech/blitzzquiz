@@ -4,7 +4,7 @@
     <main class="quiz-main">
       <section class="quiz-card">
         <header class="quiz-card-header">
-          <h1>📝 Créer un quiz</h1>
+          <h1>Créer un quiz</h1>
           <p class="subtitle">Renseignez les informations de base de votre quiz</p>
         </header>
 

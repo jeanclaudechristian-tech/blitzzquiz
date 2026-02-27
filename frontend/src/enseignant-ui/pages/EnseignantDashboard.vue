@@ -8,16 +8,6 @@
           <p>
             Créez vos quiz et suivez vos activités avec vos étudiants.
           </p>
-          <div class="enseignant-hero-actions">
-            <CallToActionBtn
-              text="Créer un quiz"
-              variant="dark"
-              @click="goToCreateQuiz"
-            />
-            <button type="button" class="link-button" @click="scrollToMesQuiz">
-              Voir mes quiz
-            </button>
-          </div>
         </div>
         <div class="enseignant-hero-stats">
           <div class="stat-card">
@@ -49,7 +39,6 @@
         <div class="mes-quiz-table" v-if="quizzes.length">
           <div class="mes-quiz-row mes-quiz-row--header">
             <span>Titre</span>
-            <span>Statut</span>
             <span>Visibilité</span>
             <span>Questions</span>
             <span>Actions</span>
@@ -61,11 +50,6 @@
           >
             <span class="quiz-title">{{ quiz.titre }}</span>
             <span>
-              <span :class="['pill', quiz.statut === 'Publié' ? 'pill--success' : 'pill--draft']">
-                {{ quiz.statut }}
-              </span>
-            </span>
-            <span>
               <span :class="['pill', quiz.isPublic ? 'pill--public' : 'pill--private']">
                 {{ quiz.isPublic ? 'Public' : 'Privé' }}
               </span>
@@ -76,17 +60,17 @@
                 type="button"
                 class="action-btn action-btn--edit"
                 @click="editQuiz(quiz)"
-                title="Éditer le quiz"
+                title="Ajouter des questions"
               >
-                ✏️ Éditer
+                ➕ Ajouter questions
               </button>
               <button
                 type="button"
                 class="action-btn action-btn--preview"
                 @click="previewQuiz(quiz)"
-                title="Prévisualiser et modifier les questions"
+                title="Voir les questions"
               >
-                👁️ Prévisualiser
+                👁️ Voir questions
               </button>
               <button
                 type="button"
@@ -160,6 +144,13 @@ export default {
       const el = document.getElementById('mes-quiz-section')
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        // Déclenche l'animation après que le scroll soit terminé
+        setTimeout(() => {
+          el.classList.remove('section-highlight')
+          void el.offsetWidth // force reflow pour reset l'animation
+          el.classList.add('section-highlight')
+          setTimeout(() => el.classList.remove('section-highlight'), 800)
+        }, 400)
       }
     },
     goToGroups() {
@@ -171,7 +162,6 @@ export default {
     previewQuiz(quiz) {
       this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
     },
-
     requestDelete(quiz) {
       this.quizToDelete = quiz
       this.showDeleteModal = true
@@ -181,7 +171,6 @@ export default {
         this.showDeleteModal = false
         return
       }
-
       try {
         await api.delete(`/quizzes/${this.quizToDelete.id}`)
         this.quizzes = this.quizzes.filter(q => q.id !== this.quizToDelete.id)
@@ -197,17 +186,15 @@ export default {
       this.quizToDelete = null
       this.showDeleteModal = false
     },
-
     async loadTeacherQuizzes() {
       this.loadingQuizzes = true
       this.errorQuizzes = ''
       try {
         const { data } = await api.get('/quizzes')
-        console.log('Enseignant /quizzes =>', data)
         this.quizzes = data.map(q => ({
           id: q.id,
           titre: q.titre,
-          statut: 'Publié',                 // ou q.status si tu as une colonne
+          statut: 'Publié',
           isPublic: !!q.is_public,
           nbQuestions: q.questions_count ?? 0
         }))
