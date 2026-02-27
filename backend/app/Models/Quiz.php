@@ -22,6 +22,7 @@ class Quiz extends Model
         'is_public',
         'code_quiz',
         'owner_id',
+        'education_level',
     ];
 
     public function owner(): BelongsTo

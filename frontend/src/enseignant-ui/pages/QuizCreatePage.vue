@@ -134,12 +134,13 @@ export default {
       this.saving = true
 
       const payload = {
-        titre: this.form.titre.trim(),
-        description: this.form.description.trim(),
-        categorie: this.form.categorie || null,
-        niveau: this.form.niveau || null,
-        is_public: this.form.isPublic
-      }
+  titre: this.form.titre.trim(),
+  description: this.form.description.trim(),
+  category: this.form.categorie || null,        
+  education_level: this.form.niveau || null,    
+  is_public: this.form.isPublic
+}
+
 
       const { data } = await api.post('/quizzes', payload)
       // data doit contenir au moins { id, ... }

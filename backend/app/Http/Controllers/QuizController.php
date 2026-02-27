@@ -11,35 +11,36 @@ use Illuminate\Support\Str;
 
 class QuizController extends Controller
 {
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'titre' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'is_public' => 'boolean',
-        ]);
+  public function store(Request $request): JsonResponse
+{
+    $validated = $request->validate([
+        'titre'           => 'required|string|max:100',
+        'description'     => 'nullable|string',
+        'category'        => 'nullable|string|max:255',
+        'is_public'       => 'boolean',
+        'education_level' => 'nullable|string|max:255',
+    ]);
 
-        $user = Auth::user();
-        if (!$user) {
-            return response()->json(['error' => 'Auth required'], 401);
-        }
-
-        if (!in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
-
-        do {
-            $code = strtoupper(Str::random(6));
-        } while (Quiz::where('code_quiz', $code)->exists());
-
-        $quiz = Quiz::create($validated + [
-            'code_quiz' => $code,
-            'owner_id'  => $user->id,
-        ]);
-
-        return response()->json($quiz->load('questions'), 201);
+    $user = Auth::user();
+    if (!$user) {
+        return response()->json(['error' => 'Auth required'], 401);
     }
 
+    if (!in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    do {
+        $code = strtoupper(Str::random(6));
+    } while (Quiz::where('code_quiz', $code)->exists());
+
+    $quiz = Quiz::create($validated + [
+        'code_quiz' => $code,
+        'owner_id'  => $user->id,
+    ]);
+
+    return response()->json($quiz->load('questions'), 201);
+}
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();

@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('category')->nullable();
             $table->boolean('is_public')->default(false);
             $table->char('code_quiz', 6)->unique();
+            $table->string('education_level')->nullable();
+
 
             $table->foreignId('owner_id')
                 ->constrained('users')
