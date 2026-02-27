@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -72,4 +73,26 @@ class AdminUserController extends Controller
            'message' => 'User deleted successfully'
        ]);
        }
+
+   public function resetPassword($id)
+   {
+       $user = User::findOrFail($id);
+
+
+       if (request()->user()->id === $user->id) {
+           return response()->json(['message' => 'Cannot reset your own password'], 400);
+       }
+
+       $newPassword = Str::random(12);
+       $user->password = Hash::make($newPassword);
+       $user->save();
+
+       return response()->json([
+           'message' => 'Password reset',
+           'data' => [
+               'id' => $user->id,
+               'temporary_password' => $newPassword,
+           ],
+       ]);
+   }
    }
