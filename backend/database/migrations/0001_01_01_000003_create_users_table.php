@@ -29,6 +29,7 @@ return new class extends Migration
 
             // Avatar
             $table->string('avatar')->nullable();
+            $table->string('education_level')->nullable();
 
             // Social login
             $table->string('google_id')->unique()->nullable();
