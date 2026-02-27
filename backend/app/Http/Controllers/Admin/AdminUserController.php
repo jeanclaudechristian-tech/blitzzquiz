@@ -54,5 +54,22 @@ class AdminUserController extends Controller
                 'is_disabled' => $user->is_disabled,
             ],
         ]);
+
     }
-}
+   public function destroy($id)
+   {
+       $user = User::findOrFail($id);
+
+       if (request()->user()->id === $user->id) {
+           return response()->json([
+               'message' => 'Cannot delete yourself'
+           ], 400);
+       }
+
+       $user->delete();
+
+       return response()->json([
+           'message' => 'User deleted successfully'
+       ]);
+       }
+   }
