@@ -24,6 +24,10 @@ class Quiz extends Model
         'owner_id',
         'education_level',
     ];
+     protected $casts = [
+        'is_public' => 'boolean',
+    ];
+
 
     public function owner(): BelongsTo
     {

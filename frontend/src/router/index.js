@@ -29,6 +29,11 @@ import GroupeDetailsPage from "../enseignant-ui/pages/GroupeDetailsPage.vue";
 import EtudiantProfil from "../etudiant-ui/pages/EtudiantProfil.vue";
 const routes = [
   {
+  path: '/etudiant/quiz/code/:code/lobby',
+  name: 'EtudiantQuizLobby',
+  component: EtudiantQuizLobbyPage,
+},
+  {
     path: "/",
     name: "Home",
     component: HomePage,

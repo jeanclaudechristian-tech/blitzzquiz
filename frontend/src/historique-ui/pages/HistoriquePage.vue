@@ -104,6 +104,7 @@
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 
@@ -123,65 +124,56 @@ export default {
   computed: {
     filteredHistory() {
       let filtered = [...this.history]
-      
-      // Filtrage par recherche
+
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.toLowerCase()
         filtered = filtered.filter((attempt) =>
           attempt.quizTitre.toLowerCase().includes(query)
         )
       }
-      
+
       return filtered
     }
   },
   methods: {
-    loadHistory() {
-      // TODO (Laravel) : RÉCUPÉRER l'historique des tentatives de l'utilisateur
-      // Route API : GET /api/student/history
-      // Headers : Authorization: Bearer {token}
-      // Réponse attendue : [
-      //   {
-      //     id: 1,
-      //     quiz_id: 123,
-      //     quiz_titre: "Quiz de Math",
-      //     score: 8,
-      //     total_questions: 10,
-      //     percent: 80,
-      //     date: "2024-02-15T10:30:00",
-      //     groupe: "Groupe A" ou null,
-      //     duree: 120 (en secondes)
-      //   }
-      // ]
-      // Exemple d'appel :
-      // const token = localStorage.getItem('token')
-      // axios.get('/api/student/history', { headers: { Authorization: `Bearer ${token}` } })
-      //   .then(response => { this.history = response.data })
-      
+    async loadHistory() {
+      try {
+        // Appel API Laravel : GET /api/student/history
+        const { data } = await api.get('/student/history')
 
+        // Normalisation des champs (en fonction de ta réponse backend)
+        this.history = data.map(item => ({
+          id: item.id,
+          quizId: item.quiz_id,
+          quizTitre: item.quiz_titre,
+          score: item.score,
+          totalQuestions: item.total_questions,
+          percent: item.percent,
+          date: item.date,              // ex: ISO string
+          groupe: item.groupe || null,
+          duree: item.duree || 0        // en secondes
+        }))
+      } catch (e) {
+        console.error('Erreur chargement historique', e.response?.data || e)
+        // fallback démo éventuel :
+        this.history = [
+          {
+            id: 1,
+            quizId: 101,
+            quizTitre: 'Quiz de Mathématiques - Algèbre',
+            score: 8,
+            totalQuestions: 10,
+            percent: 80,
+            date: '2024-02-15T10:30:00',
+            groupe: 'Groupe Maths Avancées',
+            duree: 245
+          }
+        ]
+      }
 
-      // Code temporaire front-only (1 donnée fictive pour la démo)
-      this.history = [
-        {
-          id: 1,
-          quizId: 101,
-          quizTitre: 'Quiz de Mathématiques - Algèbre',
-          score: 8,
-          totalQuestions: 10,
-          percent: 80,
-          date: '2024-02-15T10:30:00',
-          groupe: 'Groupe Maths Avancées',
-          duree: 245
-        }
-      ]
-      
       this.sortHistory()
     },
     sortHistory() {
-      // TODO (Laravel) : Le tri peut être fait côté backend en modifiant la requête SQL
-      // Pour trier par date : ORDER BY quiz_attempts.date_tentative DESC
-      // Pour trier par score : ORDER BY quiz_attempts.percent DESC, quiz_attempts.date_tentative DESC
-      
       if (this.sortBy === 'date') {
         this.history.sort((a, b) => new Date(b.date) - new Date(a.date))
       } else if (this.sortBy === 'score') {
@@ -196,9 +188,9 @@ export default {
     },
     formatDate(dateStr) {
       const date = new Date(dateStr)
-      const options = { 
-        day: '2-digit', 
-        month: 'long', 
+      const options = {
+        day: '2-digit',
+        month: 'long',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
@@ -211,10 +203,6 @@ export default {
       return `${mins}min ${secs}s`
     },
     replayQuiz(attempt) {
-      // TODO (Laravel) : Vérifier que le quiz existe toujours et est accessible
-      // Route API : GET /api/quizzes/{quizId}/check
-      // puis rediriger vers la page lobby du quiz
-      
       this.$router.push(`/etudiant/quiz/${attempt.quizId}`)
     },
     goToCatalogue() {
@@ -226,6 +214,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 @import './HistoriquePage.css';

@@ -1,15 +1,28 @@
 <template>
   <div class="lobby-page">
     <AppHeader />
+
+    <!-- Quand le quiz est chargé -->
     <main class="lobby-main" v-if="quiz">
       <section class="lobby-card">
         <h1>{{ quiz.titre }}</h1>
-        <p class="lobby-description">{{ quiz.description || 'Aucune description fournie.' }}</p>
+        <p class="lobby-description">
+          {{ quiz.description || 'Aucune description fournie.' }}
+        </p>
 
         <ul class="lobby-meta">
-          <li><strong>Questions :</strong> {{ quiz.nbQuestions }}</li>
-          <li><strong>Durée estimée :</strong> ~{{ estimatedDuration }} min</li>
-          <li><strong>Catégorie :</strong> {{ quiz.categorie || 'Non définie' }}</li>
+          <li>
+            <strong>Questions :</strong>
+            {{ quiz.questions_count ?? quiz.nbQuestions }}
+          </li>
+          <li>
+            <strong>Durée estimée :</strong>
+            ~{{ estimatedDuration }} min
+          </li>
+          <li>
+            <strong>Catégorie :</strong>
+            {{ quiz.category || 'Non définie' }}
+          </li>
         </ul>
 
         <div class="lobby-rules">
@@ -30,10 +43,20 @@
         </div>
       </section>
     </main>
+
+    <!-- États chargement / erreur / introuvable -->
+    <main class="lobby-main" v-else>
+      <section class="lobby-card">
+        <p v-if="loading">Chargement du quiz…</p>
+        <p v-else-if="error" class="error">{{ error }}</p>
+        <p v-else>Quiz introuvable.</p>
+      </section>
+    </main>
   </div>
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 
@@ -41,50 +64,54 @@ export default {
   name: 'EtudiantQuizLobbyPage',
   components: {
     AppHeader,
-    CallToActionBtn
+    CallToActionBtn,
   },
   data() {
     return {
-      quiz: null
+      quiz: null,
+      loading: false,
+      error: '',
     }
   },
   computed: {
     estimatedDuration() {
       // estimation simple : 1 minute par 3 questions
-      const q = this.quiz?.nbQuestions || 0
+      const q = this.quiz?.questions_count ?? this.quiz?.nbQuestions ?? 0
       return Math.max(1, Math.round(q / 3) || 1)
-    }
+    },
   },
   methods: {
-    loadQuiz() {
-      // TODO (Laravel) : remplacer cette lecture par GET /api/quizzes/{id}
-      const storageKey = 'enseignant_quizzes'
-      const id = Number(this.$route.params.id)
-      try {
-        const saved = localStorage.getItem(storageKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          this.quiz = parsed.find((q) => q.id === id && q.isPublic)
-        }
-      } catch {
-        this.quiz = null
-      }
-      if (!this.quiz) {
-        this.$router.push('/etudiant/catalogue')
-      }
-    },
-    startQuiz() {
-      this.$router.push(`/etudiant/quiz/${this.$route.params.id}/jouer`)
-    }
+   async loadQuiz() {
+  this.loading = true
+  this.error = ''
+  const id = this.$route.params.id
+
+  try {
+    const { data } = await api.get(`/quizzes/${id}`)
+    this.quiz = data
+  } catch (e) {
+    console.error('Erreur chargement quiz', e.response?.data || e)
+    this.error = e.response?.data?.error || "Erreur lors du chargement du quiz."
+    this.quiz = null
+  } finally {
+    this.loading = false
+  }
+
+  if (!this.quiz) {
+    this.$router.push('/etudiant/catalogue')
+  }
+},
+startQuiz() {
+  this.$router.push(`/etudiant/quiz/${this.$route.params.id}/jouer`)
+}
+
   },
   mounted() {
     this.loadQuiz()
-  }
+  },
 }
 </script>
 
 <style scoped>
 @import './EtudiantQuizLobbyPage.css';
 </style>
-

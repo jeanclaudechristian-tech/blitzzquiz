@@ -31,7 +31,7 @@
         >
           <h3 class="quiz-title">{{ quiz.titre }}</h3>
           <p class="quiz-meta">
-            {{ quiz.categorie }} • {{ quiz.nbQuestions }} questions •
+            {{ quiz.categorie || 'Non définie' }} • {{ quiz.nbQuestions }} questions •
             <span :class="['pill', quiz.isPublic ? 'pill--public' : 'pill--private']">
               {{ quiz.isPublic ? 'Public' : 'Privé' }}
             </span>
@@ -54,6 +54,7 @@
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 
 export default {
@@ -66,7 +67,9 @@ export default {
       search: '',
       selectedCategorie: this.$route.query.categorie || '',
       categories: ['Math', 'Français', 'Sciences', 'Histoire'],
-      quizzes: []
+      quizzes: [],
+      error: '',
+      loading: false,
     }
   },
   computed: {
@@ -87,20 +90,25 @@ export default {
     goToEnterCode() {
       this.$router.push('/etudiant/code')
     },
-    loadPublicQuizzes() {
-      // TODO (Laravel) : remplacer la lecture locale par un appel API :
-      // - GET /api/quizzes?visibility=public&search={term}&category={categorie}
-      // - supprimer complètement l'utilisation de localStorage côté étudiant.
-      const storageKey = 'enseignant_quizzes'
+    async loadPublicQuizzes() {
+      this.loading = true
+      this.error = ''
       try {
-        const saved = localStorage.getItem(storageKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          this.quizzes = parsed.filter((q) => q.isPublic)
-        }
-      } catch {
+        const { data } = await api.get('/quizzes')
+        // Normalisation des champs venant de l’API Laravel
+        this.quizzes = data.map(q => ({
+          id: q.id,
+          titre: q.titre,
+          categorie: q.category,                 // mapping category -> categorie
+          nbQuestions: q.questions_count ?? 0,
+          isPublic: !!q.is_public,               // mapping is_public -> isPublic
+        }))
+      } catch (e) {
+        console.error('Erreur chargement quiz étudiant', e.response?.data || e)
+        this.error = "Erreur lors du chargement des quiz."
         this.quizzes = []
+      } finally {
+        this.loading = false
       }
     },
     openQuiz(quiz) {
@@ -116,4 +124,3 @@ export default {
 <style scoped>
 @import './QuizCataloguePage.css';
 </style>
-

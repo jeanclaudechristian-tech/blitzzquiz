@@ -42,42 +42,64 @@ class QuizController extends Controller
     return response()->json($quiz->load('questions'), 201);
 }
     public function index(Request $request): JsonResponse
-    {
-        $user = $request->user();
+{
+    $user = $request->user();
 
-        if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
-            $quizzes = Quiz::withCount('questions')
-                ->where(function ($q) use ($user) {
-                    $q->where('owner_id', $user->id)
-                      ->orWhere('is_public', true);
-                })
-                ->latest()
-                ->get();
-        } elseif ($user->role === 'STUDENT') {
-            $quizzes = Quiz::withCount('questions')
-                ->where('is_public', true)
-                ->latest()
-                ->get();
-        } else {
-            return response()->json(['error' => 'Rôle non autorisé'], 403);
-        }
+    if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
+        $quizzes = Quiz::withCount('questions')
+            ->where(function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhere('is_public', true);
+            })
+            ->latest()
+            ->get();
 
-        return response()->json($quizzes);
+    } elseif ($user->role === 'STUDENT') {
+        $quizzes = Quiz::withCount('questions')
+            ->where('is_public', true)
+            ->when($user->education_level, function ($q) use ($user) {
+                $q->where(function ($sub) use ($user) {
+                    $sub->whereNull('education_level')                
+                        ->orWhere('education_level', $user->education_level); 
+                });
+            })
+            ->latest()
+            ->get();
+
+    } else {
+        return response()->json(['error' => 'Rôle non autorisé'], 403);
     }
 
-    public function show(Quiz $quiz): JsonResponse
+    return response()->json($quizzes);
+}
+
+
+  public function show(Quiz $quiz): JsonResponse
 {
     $user = Auth::user();
 
-    // owner, admin, OU quiz public
-    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN' && !$quiz->is_public) {
-        return response()->json(['error' => 'Forbidden'], 403);
+    if (! $user) {
+        if (! $quiz->is_public) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+    } else {
+        if ($user->role === 'ADMIN') {
+        } elseif ($user->role === 'TEACHER') {
+            if ($quiz->owner_id !== $user->id && ! $quiz->is_public) {
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
+        } elseif ($user->role === 'STUDENT') {
+           
+        } else {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
     }
 
     $quiz->loadCount('questions');
 
     return response()->json($quiz);
 }
+
 
     public function destroy(Quiz $quiz)
     {
@@ -96,12 +118,25 @@ class QuizController extends Controller
 {
     $user = Auth::user();
 
-    if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN' && !$quiz->is_public) {
-        return response()->json(['error' => 'Forbidden'], 403);
+    if (! $user) {
+        if (! $quiz->is_public) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+    } else {
+        if ($user->role === 'ADMIN') {
+        } elseif ($user->role === 'TEACHER') {
+            if ($quiz->owner_id !== $user->id && ! $quiz->is_public) {
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
+        } elseif ($user->role === 'STUDENT') {
+        } else {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
     }
 
     return $quiz->questions()->orderBy('id')->get();
 }
+
     public function questionsStore(Request $request, Quiz $quiz)
 {
     $user = Auth::user();
@@ -178,4 +213,36 @@ class QuizController extends Controller
 
         return response()->json(['message' => 'Question supprimée']);
     }
+   public function findByCode(string $code): JsonResponse
+{
+    $user = Auth::user();
+
+    $quiz = Quiz::where('code_quiz', strtoupper($code))
+        ->withCount('questions')
+        ->first();
+
+    if (! $quiz) {
+        return response()->json(['error' => 'Quiz introuvable'], 404);
+    }
+
+    if ($user && $user->role === 'ADMIN') {
+        return response()->json($quiz);
+    }
+
+    if ($user && $quiz->owner_id === $user->id) {
+        return response()->json($quiz);
+    }
+
+    if ($user && $user->role === 'STUDENT') {
+        return response()->json($quiz);
+    }
+
+    if (! $user) {
+        return response()->json($quiz);
+    }
+
+    return response()->json(['error' => 'Forbidden'], 403);
+}
+
+
 }

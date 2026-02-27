@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
 
+
 /* ─────────────────────────────────────────
    PAGE SHELL
 ───────────────────────────────────────── */
@@ -20,6 +21,7 @@
   flex: 1;
   padding: clamp(28px, 5vw, 52px) clamp(16px, 4vw, 44px);
 }
+
 
 /* ─────────────────────────────────────────
    HERO CARD
@@ -145,6 +147,7 @@
   flex-wrap: wrap;
 }
 
+
 /* ─────────────────────────────────────────
    SHORTCUT / UTILITY BUTTONS
 ───────────────────────────────────────── */
@@ -192,6 +195,7 @@
   box-shadow: 0 6px 20px rgba(192, 57, 43, 0.42);
   transform: translateY(-2px);
 }
+
 
 /* ─────────────────────────────────────────
    MES QUIZ SECTION
@@ -261,7 +265,8 @@
 
 .mes-quiz-row {
   display: grid;
-  grid-template-columns: 1.8fr 1fr 0.8fr 3fr;
+  /* 5 colonnes : Titre | Visibilité | Questions | Code | Actions */
+  grid-template-columns: 1.6fr 1fr 0.8fr 0.9fr 3fr;
   gap: 8px;
   align-items: center;
   padding: 14px 20px;
@@ -294,6 +299,7 @@
   font-size: 14px;
 }
 
+
 /* ─ Pills ─ */
 .pill {
   display: inline-flex;
@@ -310,6 +316,7 @@
 .pill--draft   { background: #fff0c2; color: #9a6800; }
 .pill--public  { background: #d0eeff; color: #1b6fb8; }
 .pill--private { background: #edf0f4; color: #5a7a96; }
+
 
 /* ─ Action buttons ─ */
 .quiz-actions {
@@ -371,6 +378,7 @@
   box-shadow: 0 4px 14px rgba(192, 57, 43, 0.4);
 }
 
+
 /* ─ Empty state ─ */
 .mes-quiz-empty {
   font-size: 14px;
@@ -383,6 +391,7 @@
   border-radius: 22px;
   border: 2px dashed #b8d8ee;
 }
+
 
 /* ─────────────────────────────────────────
    MODAL
