@@ -59,6 +59,10 @@ Route::get('/quizzes', [QuizController::class, 'index']);
     Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
     Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
     Route::get('/quizzes/code/{code}', [QuizController::class, 'findByCode']);
+    Route::post('/quizzes/{quiz}/results', [QuizController::class, 'storeResult']);
+    Route::get('/me/results', [QuizController::class, 'myResults']);
+
+
 
 Route::middleware('auth:sanctum')->group(function () {
 
