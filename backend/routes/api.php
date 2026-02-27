@@ -64,4 +64,14 @@ Route::get('/quizzes', [QuizController::class, 'index']);
 
 
 
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::middleware('admin')->prefix('admin')->group(function () {
+        Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index']);
+        Route::patch('/users/{id}/disable', [\App\Http\Controllers\Admin\AdminUserController::class, 'disable']);
+        Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy']);
+        Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword']);
+    });
+
+});
 });
