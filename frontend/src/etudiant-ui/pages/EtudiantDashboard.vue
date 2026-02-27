@@ -15,9 +15,9 @@
               @click="goToCatalogue"
             />
             <CallToActionBtn
-              text="Rejoindre un groupe"
+              text="Rejoindre Quiz Privé"
               variant="dark"
-              @click="goToJoinGroup"
+              @click="goToPrivateQuiz"
             />
           </div>
         </div>
@@ -94,7 +94,7 @@ export default {
     goToCatalogue() {
       this.$router.push('/etudiant/catalogue')
     },
-    goToJoinGroup() {
+    goToPrivateQuiz() {
       this.$router.push('/etudiant/code')
     },
     goToCatalogueWithFilter(cat) {
