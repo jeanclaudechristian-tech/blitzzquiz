@@ -24,7 +24,7 @@ class Quiz extends Model
         'owner_id',
         'education_level',
     ];
-     protected $casts = [
+    protected $casts = [
         'is_public' => 'boolean',
     ];
 
@@ -47,5 +47,24 @@ class Quiz extends Model
     public function results(): HasMany
     {
         return $this->hasMany(Result::class, 'quiz_id');
+    }
+
+    // Ajouter après la méthode results() dans Quiz.php
+
+    public function scopeSearch($query, string $term)
+    {
+        if (blank($term)) {
+            return $query;
+        }
+
+        return $query
+            ->whereRaw(
+                "search_vector @@ plainto_tsquery('french', ?)",
+                [$term]
+            )
+            ->orderByRaw(
+                "ts_rank(search_vector, plainto_tsquery('french', ?)) DESC",
+                [$term]
+            );
     }
 }

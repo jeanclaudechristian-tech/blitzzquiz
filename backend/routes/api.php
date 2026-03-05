@@ -38,7 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/me/password', [ProfileController::class, 'password']);
 
 
-Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::get('/quizzes', [QuizController::class, 'index']);
     Route::post('/quizzes', [QuizController::class, 'store']);
     Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
     Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
@@ -66,14 +66,19 @@ Route::get('/quizzes', [QuizController::class, 'index']);
 
 
 
-Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
 
-    Route::middleware('admin')->prefix('admin')->group(function () {
-        Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index']);
-        Route::patch('/users/{id}/disable', [\App\Http\Controllers\Admin\AdminUserController::class, 'disable']);
-        Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy']);
-        Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword']);
+        Route::middleware('admin')->prefix('admin')->group(function () {
+            Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index']);
+            Route::patch('/users/{id}/disable', [\App\Http\Controllers\Admin\AdminUserController::class, 'disable']);
+            Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy']);
+            Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword']);
+        });
+
     });
 
-});
+    // Search AVANT les routes dynamiques
+    Route::get('/quizzes/search', [QuizController::class, 'search']);
+    // Routes dynamiques en dessous
+    Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
 });
