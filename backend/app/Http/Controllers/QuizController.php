@@ -306,24 +306,21 @@ class QuizController extends Controller
         }
 
         $quizzes = $query
-            ->select([
-                'id',
-                'titre',
-                'category',
-                'description',
-                'code_quiz',
-                'education_level',
-                'is_public'
-            ])
-            ->selectRaw(
-                "ts_headline(
-                'french',
-                description,
-                plainto_tsquery('french', ?),
-                'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15'
-            ) as description_highlight",
-                [$term]
-            )
+            ->selectRaw("
+        id,
+        titre,
+        category,
+        description,
+        code_quiz,
+        education_level,
+        is_public,
+        ts_headline(
+            'french',
+            description,
+            plainto_tsquery('french', ?),
+            'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15'
+        ) as description_highlight
+    ", [$term])
             ->withCount('questions')
             ->limit(20)
             ->get();

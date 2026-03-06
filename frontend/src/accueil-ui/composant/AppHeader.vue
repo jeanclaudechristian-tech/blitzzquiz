@@ -13,6 +13,17 @@
         <NavLink text="Contact" :active="activeSection === 'section-contact'"
           @click="scrollToSection('section-contact')" />
       </nav>
+
+      <!-- ✅ NOUVEAU : Icône recherche pour TEACHER et ADMIN -->
+      <div v-if="canSearch" class="header-search-wrapper">
+        <button class="search-icon-btn" @click.stop="toggleSearch" aria-label="Rechercher un quiz">
+          🔍
+        </button>
+        <div v-if="showSearch" class="search-dropdown" @click.stop>
+          <QuizSearch />
+        </div>
+      </div>
+
       <!-- Connecté : avatar avec menu déroulant -->
       <div v-if="showUserAvatar" class="header-user-menu">
         <div class="header-user-avatar" aria-label="Menu utilisateur" @click.stop="toggleUserMenu">
@@ -24,16 +35,15 @@
         </div>
         <!-- Dropdown menu -->
         <div v-if="showUserDropdown" class="user-dropdown" @click.stop>
-
           <button type="button" class="logout-button" @click="goToProfile">
             Mon profil
           </button>
-
           <button type="button" class="logout-button" @click="handleLogout">
             Se déconnecter
           </button>
         </div>
       </div>
+
       <!-- Non connecté : boutons Connexion/Inscription -->
       <AuthButtons v-else @login="handleLogin" @signup="handleSignup" />
     </div>
@@ -43,38 +53,56 @@
 <script>
 import NavLink from './NavLink.vue'
 import AuthButtons from './AuthButtons.vue'
+import QuizSearch from '../../search/QuizSearch.vue' // ✅ NOUVEAU
 
 export default {
   name: 'AppHeader',
   components: {
     NavLink,
-    AuthButtons
+    AuthButtons,
+    QuizSearch // ✅ NOUVEAU
   },
   data() {
     return {
       activeSection: 'section-jouer',
       showUserDropdown: false,
-      isLoggedIn: false  // True si un token existe dans localStorage
+      showSearch: false,  // ✅ NOUVEAU
+      isLoggedIn: false,
+      userRole: null,     // ✅ NOUVEAU
     }
   },
   computed: {
-    // Afficher l'avatar si l'utilisateur a un token (connecté)
     showUserAvatar() {
       return this.isLoggedIn
+    },
+    canSearch() {
+      return this.isLoggedIn && ['TEACHER', 'ADMIN', 'STUDENT'].includes(this.userRole) // ✅ ajoute STUDENT ici
     }
   },
   mounted() {
-    // Vérifier si un token existe au démarrage du composant
+    const user = JSON.parse(localStorage.getItem('user') || 'null')
+
     this.isLoggedIn = !!localStorage.getItem('token')
+    this.userRole   = user?.role ?? null // ✅ NOUVEAU
 
     window.addEventListener('scroll', this.onScroll)
-    window.addEventListener('click', this.closeUserMenu)
+    window.addEventListener('click', this.closeAll)
   },
   beforeUnmount() {
     window.removeEventListener('scroll', this.onScroll)
-    window.removeEventListener('click', this.closeUserMenu)
+    window.removeEventListener('click', this.closeAll)
   },
   methods: {
+    // ✅ NOUVEAU
+    toggleSearch() {
+      this.showSearch = !this.showSearch
+      this.showUserDropdown = false
+    },
+    // ✅ NOUVEAU
+    closeAll() {
+      this.showSearch = false
+      this.showUserDropdown = false
+    },
     scrollToSection(sectionId) {
       const el = document.getElementById(sectionId)
       if (el) {
@@ -104,6 +132,7 @@ export default {
     },
     toggleUserMenu() {
       this.showUserDropdown = !this.showUserDropdown
+      this.showSearch = false
     },
     closeUserMenu() {
       this.showUserDropdown = false
@@ -112,19 +141,12 @@ export default {
       this.$router.push('/etudiant/profil')
       this.showUserDropdown = false
     },
-
     handleLogout() {
-      // Supprimer le token et les données utilisateur du localStorage
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-
-      // Mettre à jour l'état de connexion
       this.isLoggedIn = false
+      this.userRole = null // ✅ NOUVEAU
       this.showUserDropdown = false
-
-      // TODO (Laravel) : appeler POST /api/logout pour invalider le token côté serveur
-
-      // Rediriger vers la page d'accueil
       this.$router.push('/')
     }
   }
@@ -133,4 +155,33 @@ export default {
 
 <style scoped>
 @import './AppHeader.css';
+
+/* ✅ NOUVEAU */
+.header-search-wrapper {
+  position: relative;
+}
+
+.search-icon-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background .2s;
+}
+.search-icon-btn:hover { background: rgba(0,0,0,0.06); }
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 480px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 100;
+}
 </style>

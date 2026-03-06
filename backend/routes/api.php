@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/quizzes', [QuizController::class, 'index']);
     Route::post('/quizzes', [QuizController::class, 'store']);
+    Route::get('/quizzes/search', [QuizController::class, 'search']);
     Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
     Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
     Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
@@ -76,9 +77,4 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
     });
-
-    // Search AVANT les routes dynamiques
-    Route::get('/quizzes/search', [QuizController::class, 'search']);
-    // Routes dynamiques en dessous
-    Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
 });
