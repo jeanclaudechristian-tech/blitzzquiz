@@ -48,9 +48,6 @@ class Quiz extends Model
     {
         return $this->hasMany(Result::class, 'quiz_id');
     }
-
-    // Ajouter après la méthode results() dans Quiz.php
-
     public function scopeSearch($query, string $term)
     {
         if (blank($term)) {

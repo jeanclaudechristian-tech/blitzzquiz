@@ -293,36 +293,51 @@ class QuizController extends Controller
         ]);
 
         $term = $request->input('q');
-        $user = Auth::user();
 
-        $query = Quiz::search($term)->where('is_public', true);
-
-        // Si étudiant → filtrer par son niveau d'éducation
-        if ($user && $user->role === 'STUDENT' && $user->education_level) {
-            $query->where(function ($q) use ($user) {
-                $q->whereNull('education_level')
-                    ->orWhere('education_level', $user->education_level);
-            });
-        }
-
-        $quizzes = $query
-            ->selectRaw("
-        id,
-        titre,
-        category,
-        description,
-        code_quiz,
-        education_level,
-        is_public,
-        ts_headline(
-            'french',
-            description,
-            plainto_tsquery('french', ?),
-            'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15'
-        ) as description_highlight
-    ", [$term])
+        $quizzes = Quiz::where('is_public', true)
+            ->where(function ($q) use ($term) {
+                $q->whereRaw("search_vector @@ websearch_to_tsquery('french', ?)", [$term])
+                    ->orWhereRaw("titre ILIKE ?", ["%{$term}%"])
+                    ->orWhereRaw("description ILIKE ?", ["%{$term}%"])
+                    ->orWhereRaw("category ILIKE ?", ["%{$term}%"])
+                    ->orWhereRaw("similarity(titre, ?) > 0.3", [$term])
+                    ->orWhereRaw("similarity(coalesce(description, ''), ?) > 0.3", [$term])
+                    ->orWhereRaw("similarity(coalesce(category, ''), ?) > 0.3", [$term]);
+            })
+            ->orderByRaw(
+                "ts_rank(search_vector, websearch_to_tsquery('french', ?)) DESC",
+                [$term]
+            )
+            ->select([
+                'id',
+                'titre',
+                'category',
+                'description',
+                'code_quiz',
+                'education_level',
+                'is_public'
+            ])
+            ->selectRaw(
+                "ts_headline(
+                'french',
+                coalesce(description, ''),
+                websearch_to_tsquery('french', ?),
+                'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15'
+            ) as description_highlight",
+                [$term]
+            )
             ->withCount('questions')
             ->limit(20)
+            ->get();
+
+        return response()->json($quizzes);
+    }
+
+    public function publicIndex(Request $request): JsonResponse
+    {
+        $quizzes = Quiz::withCount('questions')
+            ->where('is_public', true)
+            ->latest()
             ->get();
 
         return response()->json($quizzes);
