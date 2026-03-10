@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
+import {View, Text, StyleSheet, ScrollView, Platform, Alert} from "react-native";
 import { useAuth } from "../../services/AuthContext";
 import { useRouter, useNavigation, Stack, useLocalSearchParams } from "expo-router";
 // 引入动画库：这次我们用左右滑动的动画，体现“流程感”
@@ -34,10 +34,29 @@ export default function EducationLevelScreen() {
   const [selectedRole, setSelectedRole] = useState("");
   const roleOptions = ["Étudiant", "Enseignant"];
 
+  const [educationLevel, setEducationLevel] = useState("");
+
   // 简单的映射表：把法语选项转成数据库的大写英文
   const roleMap: { [key: string]: string } = {
     "Étudiant": "STUDENT",
     "Enseignant": "TEACHER"
+  };
+
+  // 选项列表（用于 SelectField 显示）
+  const educationOptions = ["Primaire", "Secondaire", "Collégial", "Universitaire"];
+
+  // 转换映射表：UI 文本 -> 数据库存储值
+  const educationMap: { [key: string]: string } = {
+    "Primaire": "Primaire",
+    "Secondaire": "Secondaire",
+    "Collégial": "Collegial", // 注意：去掉特殊字符，匹配 index.ts 中的 'Collegial'
+    "Universitaire": "Universitaire"
+  };
+
+  const [activeDropdown, setActiveDropdown] = useState<'role' | 'edu' | null>(null);
+
+  const toggleDropdown = (type: 'role' | 'edu') => {
+    setActiveDropdown(prev => (prev === type ? null : type));
   };
 
   // 1. 拦截器：处理返回/退出动画
@@ -58,29 +77,27 @@ export default function EducationLevelScreen() {
 
   // 2. 导航处理
   const handleRegister = async () => {
-    if (!selectedRole) {
-      // 如果没选身份，提示一下（这里简单用 console 或 Alert）
-      console.log("Please select a role");
+    if (!selectedRole || !educationLevel) {
+      Alert.alert("Erreur", "Veuillez remplir tous les champs.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // 1. 转换角色名 (例如 "Étudiant" -> "STUDENT")
+      // 执行转换
       const dbRole = roleMap[selectedRole] || "STUDENT";
+      const dbEducation = educationMap[educationLevel] || educationLevel;
 
-      // 2. 发送所有数据给后端
-      // 注意：这里需要断言成 string，因为 searchParams 可能是数组
+      // ✅ 调用 AuthContext 的新顺序：email, nickname, password, educationLevel, role
       await register(
           email as string,
           nickname as string,
           password as string,
+          dbEducation, // 传转换后的值
           dbRole
       );
-
-      // 3. 注册成功后，AuthContext 会自动跳转首页，这里不用管了
     } catch (e) {
-      setIsSubmitting(false); // 失败停止转圈
+      setIsSubmitting(false);
     }
   };
 
@@ -115,15 +132,37 @@ export default function EducationLevelScreen() {
                     <Animated.View
                         entering={SlideInRight.delay(200).duration(600).springify()}
                         exiting={SlideOutLeft.delay(100).duration(500)}
+                        style={{ zIndex: activeDropdown === 'role' ? 10 : 5 }}
                     >
                       <SelectField
                           label="Choisir"
                           options={roleOptions}
                           onSelect={setSelectedRole}
                           icon={<IconSvg uri={assets.dropdownIcon} width={24} height={24} />}
+                          isOpenExternal={activeDropdown === 'role'} // 传入状态
+                          onToggle={() => toggleDropdown('role')}
+                      />
+                    </Animated.View>
+
+                    <View style={{ height: 20 }} />
+
+                    {/* 2. 教育程度选择 (Role同款) */}
+                    <Animated.View
+                        entering={SlideInRight.delay(250).duration(600).springify()}
+                        exiting={SlideOutLeft.delay(150).duration(500)}
+                    >
+                      <SelectField
+                          label="Niveau d'études"
+                          options={educationOptions}
+                          onSelect={setEducationLevel}
+                          icon={<IconSvg uri={assets.dropdownIcon} width={24} height={24} />}
+                          isOpenExternal={activeDropdown === 'edu'} // 传入状态
+                          onToggle={() => toggleDropdown('edu')}
                       />
                     </Animated.View>
                   </View>
+
+
 
                   {/* 3. 底部按钮区 */}
                   <View style={styles.buttonSection}>

@@ -5,13 +5,18 @@ import { useRouter } from 'expo-router';
 import { Alert } from 'react-native';
 // 确保你已经创建了 types/index.ts 并导出了 User 接口
 import { User } from "@/types";
+import {Result} from "@/types";
 
 type AuthContextType = {
     user: User | null; // ✅ 修复 1：允许 user 为空
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (email: string, nickname: string, password: string, role?: string) => Promise<void>;    googleLogin: (token: string) => Promise<void>; // ✅ 修复 2：加上 Google 登录定义
+    register: (email: string, nickname: string, password: string, education_level: string, role?: string) => Promise<void>;
+    googleLogin: (token: string) => Promise<void>; // ✅ 修复 2：加上 Google 登录定义
     logout: () => Promise<void>;
+    results: Result[]; // ✅ 新增：全局成绩状态
+    refreshResults: () => Promise<void>; // ✅ 新增：刷新方法
+    loadingResults: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -21,10 +26,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 💡 修复：初始化必须为 true！
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const [results, setResults] = useState<Result[]>([]); // ✅ 初始化
+    const [loadingResults, setLoadingResults] = useState(false);
 
     useEffect(() => {
         checkLoginStatus();
     }, []);
+
+    const refreshResults = async () => {
+        if (!user) return;
+        setLoadingResults(true);
+        try {
+            const response = await api.get('/me/results');
+            setResults(response.data);
+            console.log("✅ [AuthContext] 成绩已同步");
+        } catch (error) {
+            console.error("❌ [AuthContext] 获取成绩失败:", error);
+        } finally {
+            setLoadingResults(false);
+        }
+    };
+
+    // 当用户登录状态变化时，自动抓取一次数据
+    useEffect(() => {
+        if (user) {
+            refreshResults();
+        } else {
+            setResults([]); // 登出清空
+        }
+    }, [user]);
 
     const checkLoginStatus = async () => {
         // 这里不需要写 setIsLoading(true)，因为初始化就是 true
@@ -82,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const register = async (email: string, nickname: string, password: string, role: string = 'STUDENT') => {
+    const register = async (email: string, nickname: string, password: string, educationLevel: string, role: string = 'STUDENT') => {
         setIsLoading(true);
         try {
             console.log(`🔥 [AuthContext] 开始注册: ${email}, 角色: ${role}`);
@@ -93,7 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 nickname,
                 password,
                 password_confirmation: password,
-                role: role // 将角色传给后端
+                education_level: educationLevel,
+                role: role,  // 将角色传给后端
             });
 
             console.log("✅ [AuthContext] 注册成功!");
@@ -120,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             console.log("🧐 [Debug] 准备发给后端的 Token:", token.substring(0, 30) + "...");
 
-            const response = await api.post('/auth/google/callback', { token });
+            const response = await api.post('/auth/google/callback', { access_token: token });
             const { user, token: jwt } = response.data;
 
             await SecureStore.setItemAsync('auth_token', jwt);
@@ -170,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout }}>
+        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout, results, refreshResults, loadingResults }}>
             {children}
         </AuthContext.Provider>
     );
