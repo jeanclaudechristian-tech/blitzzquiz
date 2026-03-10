@@ -6,8 +6,7 @@
       <!-- Hero -->
       <section class="etudiant-hero">
         <div class="etudiant-hero-left">
-          <h1>Profil étudiant</h1>
-          <p>Consulte et mets à jour les informations de ton compte Blitzz Quiz.</p>
+          <h1>Profil</h1>
 
           <div class="etudiant-hero-actions">
             <button class="btn-primary" @click="goBackToDashboard">
