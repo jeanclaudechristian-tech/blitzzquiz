@@ -10,7 +10,6 @@
         <CallToActionBtn text="Créer un groupe" variant="dark" @click="goToCreateGroupe" />
       </header>
 
-      <!-- Filtres et recherche -->
       <div class="groupes-filters">
         <input v-model="searchTerm" type="text" placeholder="Rechercher un groupe…" class="search-input" />
         <select v-model="filterStatut" class="filter-select">
@@ -20,7 +19,6 @@
         </select>
       </div>
 
-      <!-- Liste des groupes -->
       <div v-if="filteredGroupes.length" class="groupes-grid">
         <article v-for="groupe in filteredGroupes" :key="groupe.id" class="groupe-card">
           <h3 class="groupe-name">{{ groupe.nom }}</h3>
@@ -36,7 +34,6 @@
         </article>
       </div>
 
-      <!-- Message si aucun groupe -->
       <div v-else class="groupes-empty">
         <p>Aucun groupe trouvé.</p>
         <button type="button" class="link-button" @click="goToCreateGroupe">
@@ -50,13 +47,11 @@
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
-import { groupService } from '../../api/groups' // AJOUT
+import { groupService } from '../../api/groups'
 
 export default {
   name: 'GroupesListPage',
-  components: {
-    AppHeader
-  },
+  components: { AppHeader, CallToActionBtn },
   data() {
     return {
       groupes: [],
@@ -79,16 +74,14 @@ export default {
   },
   methods: {
     async loadGroupes() {
-      // VERSION API (remplace complètement le localStorage)
       try {
         const { data } = await groupService.list()
         const raw = Array.isArray(data) ? data : data.data
-
         this.groupes = raw.map((g) => ({
           id: g.id,
-          nom: g.nom,
+          nom: g.name ?? g.nom,
           isPublic: !!g.is_public,
-          nbMembres: g.nb_membres ?? (g.members ? g.members.length : 0),
+          nbMembres: g.members_count ?? g.nb_membres ?? (g.members ? g.members.length : 0),
         }))
       } catch (e) {
         console.error('Erreur chargement groupes', e)

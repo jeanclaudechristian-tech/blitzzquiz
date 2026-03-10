@@ -9,23 +9,20 @@
       <!-- Nav normale (non connecté) -->
       <nav v-if="!isLoggedIn && !showSearch" class="navigation">
         <NavLink text="Jouer" :active="activeSection === 'section-jouer'" @click="scrollToSection('section-jouer')" />
-        <NavLink text="Community" :active="activeSection === 'section-community'" @click="scrollToSection('section-community')" />
-        <NavLink text="Resources" :active="activeSection === 'section-resources'" @click="scrollToSection('section-resources')" />
-        <NavLink text="Contact" :active="activeSection === 'section-contact'" @click="scrollToSection('section-contact')" />
+        <NavLink text="Community" :active="activeSection === 'section-community'"
+          @click="scrollToSection('section-community')" />
+        <NavLink text="Resources" :active="activeSection === 'section-resources'"
+          @click="scrollToSection('section-resources')" />
+        <NavLink text="Contact" :active="activeSection === 'section-contact'"
+          @click="scrollToSection('section-contact')" />
       </nav>
 
       <!-- Barre de recherche étendue dans le header -->
       <transition name="search-expand">
         <div v-if="showSearch" class="header-search-bar" @click.stop>
           <span class="material-icons search-bar-icon">search</span>
-          <input
-            ref="searchInput"
-            v-model="searchQuery"
-            class="search-bar-input"
-            type="text"
-            placeholder="Rechercher un quiz..."
-            @input="onSearchInput"
-          />
+          <input ref="searchInput" v-model="searchQuery" class="search-bar-input" type="text"
+            placeholder="Rechercher un quiz..." @input="onSearchInput" />
           <button class="search-bar-close" @click="closeSearch">
             <span class="material-icons">close</span>
           </button>
@@ -36,12 +33,7 @@
               Aucun quiz trouvé pour <strong>{{ searchQuery }}</strong>
             </p>
             <ul v-else class="search-results-list">
-              <li
-                v-for="quiz in searchResults"
-                :key="quiz.id"
-                class="search-result-item"
-                @click="goToQuiz(quiz)"
-              >
+              <li v-for="quiz in searchResults" :key="quiz.id" class="search-result-item" @click="goToQuiz(quiz)">
                 <div class="result-header">
                   <span class="result-titre">{{ quiz.titre }}</span>
                   <span class="result-category">{{ quiz.category }}</span>
@@ -54,14 +46,16 @@
       </transition>
 
       <!-- Icône loupe (connecté, barre fermée) -->
-      <button v-if="canSearch && !showSearch" class="search-icon-btn" @click.stop="toggleSearch" aria-label="Rechercher un quiz">
+      <button v-if="canSearch && !showSearch" class="search-icon-btn" @click.stop="toggleSearch"
+        aria-label="Rechercher un quiz">
         <span class="material-icons">search</span>
       </button>
 
       <!-- Avatar connecté -->
       <div v-if="showUserAvatar" class="header-user-menu">
         <div class="header-user-avatar" aria-label="Menu utilisateur" @click.stop="toggleUserMenu">
-          <svg class="header-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <svg class="header-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            aria-hidden="true">
             <circle cx="12" cy="8" r="3" />
             <path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
           </svg>
@@ -167,7 +161,7 @@ export default {
       if (role === 'STUDENT') {
         this.$router.push(`/etudiant/quiz/${quiz.id}`)
       } else if (role === 'TEACHER' || role === 'ADMIN') {
-        this.$router.push(`/enseignant/quiz/${quiz.id}/editer`)
+        this.$router.push(`/enseignant/quiz/${quiz.id}/previsualiser`)
       }
       this.closeSearch()
     },
@@ -190,7 +184,7 @@ export default {
       }
       if (current) this.activeSection = current
     },
-    handleLogin()  { this.$router.push('/connexion') },
+    handleLogin() { this.$router.push('/connexion') },
     handleSignup() { this.$router.push('/inscription') },
     toggleUserMenu() {
       this.showUserDropdown = !this.showUserDropdown
