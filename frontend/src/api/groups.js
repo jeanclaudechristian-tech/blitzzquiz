@@ -20,4 +20,21 @@ export const groupService = {
   destroy(id) {
     return api.delete(`/groups/${id}/destroy`); // DELETE /api/groups/{id}
   },
+
+  /**
+   * Rejoindre un groupe par code (étudiant).
+   * POST /api/groups/join avec { code_invitation }
+   * Retourne { id, nom } du groupe si succès.
+   */
+  joinByCode(code) {
+    return api.post("/groups/join", { code_invitation: code });
+  },
+
+  /**
+   * Liste des quiz assignés au groupe (étudiant membre ou enseignant owner).
+   * GET /api/groups/{id}/quizzes
+   */
+  getQuizzes(groupId) {
+    return api.get(`/groups/${groupId}/quizzes`);
+  },
 };

@@ -47,7 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
 
     Route::get('/groups', [GroupController::class, 'index']);
-    Route::post('groups/join', [GroupController::class, 'join']);
+    Route::post('/groups/join', [GroupController::class, 'join']);
+    Route::get('/groups/{group}/quizzes', [GroupController::class, 'quizzes']);
     Route::get('/groups/{group}', [GroupController::class, 'show']);
     Route::put('/groups/{group}', [GroupController::class, 'update']);
     Route::post('/groups', [GroupController::class, 'store']);

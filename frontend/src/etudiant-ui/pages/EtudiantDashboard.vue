@@ -23,8 +23,6 @@
               variant="dark"
               @click="goToJoinGroup"
             />
-            <CallToActionBtn text="Jouer un quiz" variant="dark" @click="goToCatalogue" />
-            <CallToActionBtn text="Rejoindre Quiz Privé" variant="dark" @click="goToPrivateQuiz" />
           </div>
         </div>
       </section>
@@ -140,7 +138,7 @@ export default {
       this.$router.push('/etudiant/code')
     },
     goToJoinGroup() {
-      this.$router.push('/etudiant/code')
+      this.$router.push('/etudiant/rejoindre-groupe')
     },
     goToCatalogueWithFilter(cat) {
       this.$router.push({ path: '/etudiant/catalogue', query: { categorie: cat } })

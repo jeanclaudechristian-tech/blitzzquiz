@@ -14,6 +14,8 @@ import PrevisualiserQuestions from "../enseignant-ui/pages/PrevisualiserQuestion
 import EtudiantDashboard from "../etudiant-ui/pages/EtudiantDashboard.vue";
 import QuizCataloguePage from "../etudiant-ui/pages/QuizCataloguePage.vue";
 import EnterQuizCodePage from "../etudiant-ui/pages/EnterQuizCodePage.vue";
+import EnterGroupCodePage from "../etudiant-ui/pages/EnterGroupCodePage.vue";
+import EtudiantGroupeQuizzesPage from "../etudiant-ui/pages/EtudiantGroupeQuizzesPage.vue";
 import EtudiantQuizLobbyPage from "../etudiant-ui/pages/EtudiantQuizLobbyPage.vue";
 import EtudiantQuizPlayPage from "../etudiant-ui/pages/EtudiantQuizPlayPage.vue";
 import EtudiantQuizLoadingPage from "../etudiant-ui/pages/EtudiantQuizLoadingPage.vue";
@@ -132,6 +134,16 @@ const routes = [
     path: "/etudiant/code",
     name: "EtudiantEnterCode",
     component: EnterQuizCodePage,
+  },
+  {
+    path: "/etudiant/rejoindre-groupe",
+    name: "EnterGroupCode",
+    component: EnterGroupCodePage,
+  },
+  {
+    path: "/etudiant/groupes/:id/quiz",
+    name: "EtudiantGroupeQuizzes",
+    component: EtudiantGroupeQuizzesPage,
   },
   {
     path: "/etudiant/quiz/:id",
