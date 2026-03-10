@@ -8,8 +8,21 @@
           <h1>Bienvenue dans l'espace étudiant</h1>
           <p>Jouez à des quiz, révisez vos cours et progressez à votre rythme.</p>
           <div class="etudiant-hero-actions">
-            <CallToActionBtn text="Jouer un quiz" variant="dark" @click="goToCatalogue" />
-            <CallToActionBtn text="Rejoindre Quiz Privé" variant="dark" @click="goToPrivateQuiz" />
+            <CallToActionBtn
+              text="Jouer un quiz"
+              variant="dark"
+              @click="goToCatalogue"
+            />
+            <CallToActionBtn
+              text="Rejoindre Quiz Privé"
+              variant="dark"
+              @click="goToPrivateQuiz"
+            />
+            <CallToActionBtn
+              text="Rejoindre groupe"
+              variant="dark"
+              @click="goToJoinGroup"
+            />
           </div>
         </div>
       </section>
@@ -123,6 +136,9 @@ export default {
     },
     goToPrivateQuiz() {
       this.$router.push('/etudiant/code')
+    },
+    goToJoinGroup() {
+      this.$router.push('/etudiant/rejoindre-groupe')
     },
     goToCatalogueWithFilter(cat) {
       this.$router.push({ path: '/etudiant/catalogue', query: { categorie: cat } })

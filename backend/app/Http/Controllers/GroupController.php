@@ -157,17 +157,45 @@ class GroupController extends Controller
             return response()->json(['error' => 'Code invalide'], 404);
         }
 
-        if ($group->members()->where('user_id', $userId)->exists()) {
-            return response()->json(['error' => 'Déjà membre'], 409);
+        // Si déjà membre, on renvoie quand même les infos pour rediriger vers la page quiz
+        if (!$group->members()->where('user_id', $userId)->exists()) {
+            $group->members()->attach($userId);
         }
-
-        // user_groups (user_id, group_id)
-        $group->members()->attach($userId);
 
         return response()->json([
             'message' => 'Tu as rejoint le groupe',
-            'group_id' => $group->id,
+            'id' => $group->id,
+            'nom' => $group->nom,
         ]);
+    }
+
+    /**
+     * Liste des quiz assignés au groupe (accès membre ou owner).
+     */
+    public function quizzes(Group $group)
+    {
+        $userId = Auth::id();
+        $isOwner = ($userId === $group->owner_id);
+        $isMember = $group->members()->where('user_id', $userId)->exists();
+
+        if (!$isOwner && !$isMember) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        // Récupère les quiz via la table assignments
+        $assignments = $group->assignments()->with(['quiz' => fn ($q) => $q->withCount('questions')])->get();
+
+        $quizzes = $assignments->map(function ($a) {
+            $quiz = $a->quiz;
+            return [
+                'id' => $quiz->id,
+                'titre' => $quiz->titre,
+                'category' => $quiz->category ?? '',
+                'questions_count' => $quiz->questions_count ?? 0,
+            ];
+        });
+
+        return response()->json($quizzes);
     }
 
     /**
