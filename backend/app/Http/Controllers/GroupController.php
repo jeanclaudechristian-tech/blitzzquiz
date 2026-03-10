@@ -87,12 +87,7 @@ class GroupController extends Controller
             'code_invitation' => Str::upper(Str::random(6)), // 3 lettres + 3 chiffres possible plus tard
             'is_public' => $isPublic,
             'owner_id' => Auth::id(),
-<<<<<<< HEAD
             'description' => $validated['description'] ?? null,
-=======
-            'description' => null,
-
->>>>>>> 1f666d28d9a87ed9e2ec55799644179f9a76fc6c
         ]);
 
         $group -> members()->attach($userID);
