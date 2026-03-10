@@ -38,8 +38,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/me/password', [ProfileController::class, 'password']);
 
 
-Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::get('/quizzes', [QuizController::class, 'index']);
     Route::post('/quizzes', [QuizController::class, 'store']);
+    Route::get('/quizzes/search', [QuizController::class, 'search']);
+    Route::get('/quizzes/public', action: [QuizController::class, 'publicIndex']);
     Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
     Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
     Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
@@ -54,7 +56,6 @@ Route::get('/quizzes', [QuizController::class, 'index']);
     Route::delete('groups/{group}/destroy', [GroupController::class, 'destroy']);
     Route::delete('groups/{group}', [GroupController::class, 'destroy']);
 
-
     Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
     Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
 
@@ -66,14 +67,14 @@ Route::get('/quizzes', [QuizController::class, 'index']);
 
 
 
-Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
 
-    Route::middleware('admin')->prefix('admin')->group(function () {
-        Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index']);
-        Route::patch('/users/{id}/disable', [\App\Http\Controllers\Admin\AdminUserController::class, 'disable']);
-        Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy']);
-        Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword']);
+        Route::middleware('admin')->prefix('admin')->group(function () {
+            Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index']);
+            Route::patch('/users/{id}/disable', [\App\Http\Controllers\Admin\AdminUserController::class, 'disable']);
+            Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy']);
+            Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword']);
+        });
+
     });
-
-});
 });

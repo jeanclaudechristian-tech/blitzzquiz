@@ -15,19 +15,19 @@ class QuizController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'titre'           => 'required|string|max:100',
-            'description'     => 'nullable|string',
-            'category'        => 'nullable|string|max:255',
-            'is_public'       => 'boolean',
+            'titre' => 'required|string|max:100',
+            'description' => 'nullable|string',
+            'category' => 'nullable|string|max:255',
+            'is_public' => 'boolean',
             'education_level' => 'nullable|string|max:255',
         ]);
 
         $user = Auth::user();
-        if (! $user) {
+        if (!$user) {
             return response()->json(['error' => 'Auth required'], 401);
         }
 
-        if (! in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
+        if (!in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
@@ -37,7 +37,7 @@ class QuizController extends Controller
 
         $quiz = Quiz::create($validated + [
             'code_quiz' => $code,
-            'owner_id'  => $user->id,
+            'owner_id' => $user->id,
         ]);
 
         return response()->json($quiz->load('questions'), 201);
@@ -51,7 +51,7 @@ class QuizController extends Controller
             $quizzes = Quiz::withCount('questions')
                 ->where(function ($q) use ($user) {
                     $q->where('owner_id', $user->id)
-                      ->orWhere('is_public', true);
+                        ->orWhere('is_public', true);
                 })
                 ->latest()
                 ->get();
@@ -79,15 +79,15 @@ class QuizController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
-            if (! $quiz->is_public) {
+        if (!$user) {
+            if (!$quiz->is_public) {
                 return response()->json(['error' => 'Forbidden'], 403);
             }
         } else {
             if ($user->role === 'ADMIN') {
                 // ok
             } elseif ($user->role === 'TEACHER') {
-                if ($quiz->owner_id !== $user->id && ! $quiz->is_public) {
+                if ($quiz->owner_id !== $user->id && !$quiz->is_public) {
                     return response()->json(['error' => 'Forbidden'], 403);
                 }
             } elseif ($user->role === 'STUDENT') {
@@ -119,15 +119,15 @@ class QuizController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
-            if (! $quiz->is_public) {
+        if (!$user) {
+            if (!$quiz->is_public) {
                 return response()->json(['error' => 'Forbidden'], 403);
             }
         } else {
             if ($user->role === 'ADMIN') {
                 // ok
             } elseif ($user->role === 'TEACHER') {
-                if ($quiz->owner_id !== $user->id && ! $quiz->is_public) {
+                if ($quiz->owner_id !== $user->id && !$quiz->is_public) {
                     return response()->json(['error' => 'Forbidden'], 403);
                 }
             } elseif ($user->role === 'STUDENT') {
@@ -148,23 +148,23 @@ class QuizController extends Controller
         }
 
         $data = $request->validate([
-            'texte'        => 'required|string',
-            'choixA'       => 'required|string',
-            'choixB'       => 'required|string',
-            'choixC'       => 'required|string',
-            'choixD'       => 'required|string',
+            'texte' => 'required|string',
+            'choixA' => 'required|string',
+            'choixB' => 'required|string',
+            'choixC' => 'required|string',
+            'choixD' => 'required|string',
             'bonneReponse' => 'required|in:A,B,C,D',
-            'explication'  => 'nullable|string',
+            'explication' => 'nullable|string',
         ]);
 
         $question = $quiz->questions()->create([
-            'type'       => 'QCM',
-            'texte'      => $data['texte'],
-            'metadata'   => [
-                'choixA'       => $data['choixA'],
-                'choixB'       => $data['choixB'],
-                'choixC'       => $data['choixC'],
-                'choixD'       => $data['choixD'],
+            'type' => 'QCM',
+            'texte' => $data['texte'],
+            'metadata' => [
+                'choixA' => $data['choixA'],
+                'choixB' => $data['choixB'],
+                'choixC' => $data['choixC'],
+                'choixD' => $data['choixD'],
                 'bonneReponse' => $data['bonneReponse'],
             ],
             'explanation' => $data['explication'] ?? null,
@@ -181,22 +181,22 @@ class QuizController extends Controller
         }
 
         $data = $request->validate([
-            'texte'        => 'required|string',
-            'choixA'       => 'required|string',
-            'choixB'       => 'required|string',
-            'choixC'       => 'required|string',
-            'choixD'       => 'required|string',
+            'texte' => 'required|string',
+            'choixA' => 'required|string',
+            'choixB' => 'required|string',
+            'choixC' => 'required|string',
+            'choixD' => 'required|string',
             'bonneReponse' => 'required|in:A,B,C,D',
-            'explication'  => 'nullable|string',
+            'explication' => 'nullable|string',
         ]);
 
         $question->update([
-            'texte'      => $data['texte'],
-            'metadata'   => [
-                'choixA'       => $data['choixA'],
-                'choixB'       => $data['choixB'],
-                'choixC'       => $data['choixC'],
-                'choixD'       => $data['choixD'],
+            'texte' => $data['texte'],
+            'metadata' => [
+                'choixA' => $data['choixA'],
+                'choixB' => $data['choixB'],
+                'choixC' => $data['choixC'],
+                'choixD' => $data['choixD'],
                 'bonneReponse' => $data['bonneReponse'],
             ],
             'explanation' => $data['explication'] ?? null,
@@ -225,7 +225,7 @@ class QuizController extends Controller
             ->withCount('questions')
             ->first();
 
-        if (! $quiz) {
+        if (!$quiz) {
             return response()->json(['error' => 'Quiz introuvable'], 404);
         }
 
@@ -241,7 +241,7 @@ class QuizController extends Controller
             return response()->json($quiz);
         }
 
-        if (! $user) {
+        if (!$user) {
             return response()->json($quiz);
         }
 
@@ -252,7 +252,7 @@ class QuizController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || $user->role !== 'STUDENT') {
+        if (!$user || $user->role !== 'STUDENT') {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
@@ -261,9 +261,9 @@ class QuizController extends Controller
         ]);
 
         $result = Result::create([
-            'user_id'        => $user->id,
-            'quiz_id'        => $quiz->id,
-            'score'          => $data['score'],
+            'user_id' => $user->id,
+            'quiz_id' => $quiz->id,
+            'score' => $data['score'],
             'date_tentative' => now(),
         ]);
 
@@ -274,7 +274,7 @@ class QuizController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || $user->role !== 'STUDENT') {
+        if (!$user || $user->role !== 'STUDENT') {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
@@ -284,5 +284,62 @@ class QuizController extends Controller
             ->get();
 
         return response()->json($results);
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $request->validate([
+            'q' => ['required', 'string', 'min:2', 'max:100'],
+        ]);
+
+        $term = $request->input('q');
+
+        $quizzes = Quiz::where('is_public', true)
+            ->where(function ($q) use ($term) {
+                $q->whereRaw("search_vector @@ websearch_to_tsquery('french', ?)", [$term])
+                    ->orWhereRaw("titre ILIKE ?", ["%{$term}%"])
+                    ->orWhereRaw("description ILIKE ?", ["%{$term}%"])
+                    ->orWhereRaw("category ILIKE ?", ["%{$term}%"])
+                    ->orWhereRaw("similarity(titre, ?) > 0.3", [$term])
+                    ->orWhereRaw("similarity(coalesce(description, ''), ?) > 0.3", [$term])
+                    ->orWhereRaw("similarity(coalesce(category, ''), ?) > 0.3", [$term]);
+            })
+            ->orderByRaw(
+                "ts_rank(search_vector, websearch_to_tsquery('french', ?)) DESC",
+                [$term]
+            )
+            ->select([
+                'id',
+                'titre',
+                'category',
+                'description',
+                'code_quiz',
+                'education_level',
+                'is_public'
+            ])
+            ->selectRaw(
+                "ts_headline(
+                'french',
+                coalesce(description, ''),
+                websearch_to_tsquery('french', ?),
+                'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15'
+            ) as description_highlight",
+                [$term]
+            )
+            ->withCount('questions')
+            ->limit(20)
+            ->get();
+
+        return response()->json($quizzes);
+    }
+
+    public function publicIndex(Request $request): JsonResponse
+    {
+        $quizzes = Quiz::withCount('questions')
+            ->where('is_public', true)
+            ->latest()
+            ->get();
+
+        return response()->json($quizzes);
     }
 }

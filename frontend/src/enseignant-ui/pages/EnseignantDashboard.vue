@@ -44,11 +44,7 @@
             <span>Code</span>
             <span>Actions</span>
           </div>
-          <div
-            v-for="quiz in quizzes"
-            :key="quiz.id"
-            class="mes-quiz-row"
-          >
+          <div v-for="quiz in quizzes" :key="quiz.id" class="mes-quiz-row">
             <span class="quiz-title">{{ quiz.titre }}</span>
             <span>
               <span :class="['pill', quiz.isPublic ? 'pill--public' : 'pill--private']">
@@ -58,28 +54,16 @@
             <span>{{ quiz.nbQuestions }}</span>
             <span>{{ quiz.code }}</span>
             <span class="quiz-actions">
-              <button
-                type="button"
-                class="action-btn action-btn--edit"
-                @click="editQuiz(quiz)"
-                title="Ajouter des questions"
-              >
+              <button type="button" class="action-btn action-btn--edit" @click="editQuiz(quiz)"
+                title="Ajouter des questions">
                 ➕ Ajouter questions
               </button>
-              <button
-                type="button"
-                class="action-btn action-btn--preview"
-                @click="previewQuiz(quiz)"
-                title="Voir les questions"
-              >
+              <button type="button" class="action-btn action-btn--preview" @click="previewQuiz(quiz)"
+                title="Voir les questions">
                 👁️ Voir questions
               </button>
-              <button
-                type="button"
-                class="action-btn action-btn--delete"
-                @click="requestDelete(quiz)"
-                title="Supprimer le quiz"
-              >
+              <button type="button" class="action-btn action-btn--delete" @click="requestDelete(quiz)"
+                title="Supprimer le quiz">
                 🗑️ Supprimer
               </button>
             </span>
@@ -187,30 +171,32 @@ export default {
       this.quizToDelete = null
       this.showDeleteModal = false
     },
-   async loadTeacherQuizzes() {
-  this.loadingQuizzes = true
-  this.errorQuizzes = ''
-  try {
-    const { data } = await api.get('/quizzes')
-    this.quizzes = data.map(q => ({
-      id: q.id,
-      titre: q.titre,
-      statut: 'Publié',
-      isPublic:
-        q.is_public === true ||
-        q.is_public === 1 ||
-        q.is_public === '1',
-      nbQuestions: q.questions_count ?? 0,
-      code: q.code_quiz,
-    }))
-  } catch (e) {
-    console.error('Erreur /quizzes enseignant', e.response?.data || e)
-    this.errorQuizzes = 'Impossible de charger vos quiz.'
-  } finally {
-    this.loadingQuizzes = false
-  }
-}
+    async loadTeacherQuizzes() {
+      this.loadingQuizzes = true
+      this.errorQuizzes = ''
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || 'null')
+        const userId = user?.id ?? null
 
+        const { data } = await api.get('/quizzes')
+
+        this.quizzes = data
+          .filter(q => q.owner_id === userId) 
+          .map(q => ({
+            id: q.id,
+            titre: q.titre,
+            statut: 'Publié',
+            isPublic: q.is_public === true || q.is_public === 1 || q.is_public === '1',
+            nbQuestions: q.questions_count ?? 0,
+            code: q.code_quiz,
+          }))
+      } catch (e) {
+        console.error('Erreur /quizzes enseignant', e.response?.data || e)
+        this.errorQuizzes = 'Impossible de charger vos quiz.'
+      } finally {
+        this.loadingQuizzes = false
+      }
+    }
   },
   async mounted() {
     await this.loadTeacherQuizzes()
