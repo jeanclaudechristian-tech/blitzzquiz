@@ -389,9 +389,7 @@
 @media (max-width: 480px) {
   .edit-card-header h1 {
     font-size: 24px;
-  }
-
-  .field-group input,
+  }  .field-group input,
   .field-group textarea,
   .field-group select {
     padding: 12px 14px;

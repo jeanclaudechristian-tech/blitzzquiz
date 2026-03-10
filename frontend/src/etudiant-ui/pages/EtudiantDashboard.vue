@@ -19,6 +19,11 @@
               variant="dark"
               @click="goToPrivateQuiz"
             />
+            <CallToActionBtn
+              text="Rejoindre groupe"
+              variant="dark"
+              @click="goToJoinGroup"
+            />
           </div>
         </div>
       </section>
@@ -95,6 +100,9 @@ export default {
       this.$router.push('/etudiant/catalogue')
     },
     goToPrivateQuiz() {
+      this.$router.push('/etudiant/code')
+    },
+    goToJoinGroup() {
       this.$router.push('/etudiant/code')
     },
     goToCatalogueWithFilter(cat) {
