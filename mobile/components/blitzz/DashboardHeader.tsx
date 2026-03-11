@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import Animated, {
     useAnimatedStyle,
@@ -7,12 +7,15 @@ import Animated, {
     FadeInDown,
     FadeOutDown,
     ZoomIn,
-    ZoomOut
+    ZoomOut, withRepeat, withSequence, FadeIn, FadeOut
 } from 'react-native-reanimated';
 import {StatisticIsland} from './StatisticIsland';
 import {ProfilIcon} from './ProfilIcon';
 import {HomeIcon} from './HomeIcon';
 import {SearchIcon} from './SearchIcon';
+import { useAuth } from '@/services/AuthContext';
+import {Result} from "@/types/index";
+import {colors} from "@/components/blitzz/tokens";
 
 // @ts-ignore
 interface DashboardHeaderProps {
@@ -24,33 +27,18 @@ export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) =>
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [isIslandExpanded, setIsIslandExpanded] = useState(false);
 
-    // 模拟数据
-    const mockRawResults = [
-        {id: 1, category: 'Science', score: 85},
-        {id: 2, category: 'Math', score: 92},
-        {id: 3, category: 'Science', score: 40}, // 这次考砸了
-        {id: 4, category: 'History', score: 78},
-        {id: 5, category: 'Math', score: 65},
-        {id: 6, category: 'Science', score: 95},
-        {id: 7, category: 'Geography', score: 88},
-        {id: 8, category: 'History', score: 55},
-        {id: 9, category: 'Informatique', score: 100},
-        {id: 10, category: 'Chimie', score: 72},
-        {id: 11, category: 'Physique', score: 60},
-        // ... 你可以随手复制几十条
-    ];
+    const { results, loadingResults } = useAuth();
+    const [loading, setLoading] = useState(true);
+    // 📊 1. 实时计算逻辑：只要 results 变了，这里会自动重算
+    const completedQuizzes = results.length;
+    const totalScoreSum = results.reduce((sum, item) => sum + item.score, 0);
+    const averageScore = completedQuizzes > 0 ? Math.round(totalScoreSum / completedQuizzes) : 0;
 
-    const completedQuizzes = mockRawResults.length;
-
-    const totalScoreSum = mockRawResults.reduce((sum, item) => sum + item.score, 0);
-    const averageScore = Math.round(totalScoreSum / completedQuizzes);
-
-    const categoryMap = mockRawResults.reduce((acc, item) => {
-        if (!acc[item.category]) {
-            acc[item.category] = {sum: 0, count: 0};
-        }
-        acc[item.category].sum += item.score;
-        acc[item.category].count += 1;
+    const categoryMap = results.reduce((acc, item) => {
+        const catName = item.quiz?.category || "Général";
+        if (!acc[catName]) acc[catName] = { sum: 0, count: 0 };
+        acc[catName].sum += item.score;
+        acc[catName].count += 1;
         return acc;
     }, {} as Record<string, { sum: number; count: number }>);
 
@@ -60,7 +48,15 @@ export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) =>
         score: Math.round(categoryMap[name].sum / categoryMap[name].count)
     }));
 
-    const config = {duration: 300, easing: Easing.inOut(Easing.quad)};
+    const skeletonOpacity = useAnimatedStyle(() => ({
+        opacity: withRepeat(
+            withSequence(withTiming(0.4, { duration: 800 }), withTiming(0.8, { duration: 800 })),
+            -1,
+            true
+        ),
+    }));
+
+    const config = { duration: 300, easing: Easing.inOut(Easing.quad) };
 
     const toggleIsland = () => {
         if (isSearchExpanded) return;
@@ -134,13 +130,22 @@ export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) =>
     return (
         <View style={styles.headerContainer}>
             <Animated.View style={[leftContainerStyle, {zIndex: 2}]}>
-                <StatisticIsland
-                    averageScore={averageScore}
-                    completedQuizzes={completedQuizzes}
-                    isExpanded={isIslandExpanded}
-                    onToggle={toggleIsland}
-                    categories={categories}
-                />
+                {loadingResults ? (
+                    /* ✅ 加载时的占位岛屿 */
+                    <Animated.View
+                        entering={FadeIn}
+                        exiting={FadeOut}
+                        style={[styles.skeletonIsland, skeletonOpacity]}
+                    />
+                ) : (
+                    <StatisticIsland
+                        averageScore={averageScore}
+                        completedQuizzes={completedQuizzes}
+                        isExpanded={isIslandExpanded}
+                        onToggle={toggleIsland}
+                        categories={categories}
+                    />
+                )}
             </Animated.View>
 
             <Animated.View style={spacerStyle}/>
@@ -185,5 +190,13 @@ const styles = StyleSheet.create({
         paddingBottom: 12, // ✅ 为阴影留出空间，防止被切
         paddingHorizontal: 4, // ✅ 为侧面阴影留空间
         zIndex: 10,
+    },
+    skeletonIsland: {
+        height: 56,
+        width: 140, // 稍微窄一点，给呼吸感留空间
+        backgroundColor: colors.grayBg,
+        borderRadius: 28,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     }
 });

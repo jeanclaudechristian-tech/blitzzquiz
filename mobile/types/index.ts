@@ -4,6 +4,7 @@ export interface User {
     email: string;
     nickname: string;
     role: 'admin' | 'student' | 'teacher' | string; // 根据你的逻辑调整
+    education_level: 'Primaire' | 'Secondaire' | 'Collegial' | 'Universitaire' |string;
     avatar?: string | null;
     google_id?: string | null;
     apple_id?: string | null;
@@ -26,6 +27,7 @@ export interface Quiz {
     owner?: User;
     questions?: Question[];
     results?: Result[];
+    category?: string | null;
 }
 
 // 3. 问题 (对应 Question.php)
