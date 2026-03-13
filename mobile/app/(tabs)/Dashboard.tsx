@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { colors, fonts } from '../../components/blitzz/tokens';
 import { useQuizzes } from '@/services/QuizContext';
 import { QuizCard } from '@/components/blitzz/QuizCard';
@@ -15,10 +15,33 @@ export default function Dashboard({ onSelectQuiz }: DashboardProps) {
     const { quizzes, isLoading, fetchQuizzes } = useQuizzes();
     const { user } = useAuth();
 
+    const [hasMore, setHasMore] = useState(true);
+    const [isMoreLoading, setIsMoreLoading] = useState(false);
+
     // 组件挂载时，根据用户的 education_level 同步后端测验
     useEffect(() => {
-        fetchQuizzes();
+        handleRefresh();
     }, []);
+
+    const handleRefresh = async () => {
+        setHasMore(true);
+        await fetchQuizzes(0, 5, false); // 刷新重置，从 0 开始
+    };
+
+    const handleLoadMore = async () => {
+        // 如果正在加载中，或者已经确定没有更多了，直接返回
+        if (isLoading || isMoreLoading || !hasMore) return;
+
+        setIsMoreLoading(true);
+        // 跳过当前已有的个数，再抓 5 个
+        const newData = await fetchQuizzes(quizzes.length, 5, true);
+
+        // 如果这次抓回来的数据少于 5 个，说明服务器已经掏空了，标记 hasMore 为 false
+        if (newData.length < 5) {
+            setHasMore(false);
+        }
+        setIsMoreLoading(false);
+    };
 
     const getFrenchDay = () => {
         const days = [
@@ -71,11 +94,13 @@ export default function Dashboard({ onSelectQuiz }: DashboardProps) {
                 )}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
+                onEndReached={handleLoadMore} // ✅ 触底触发加载
+                onEndReachedThreshold={0.5}
                 // 下拉刷新，再次感应后端数据
                 refreshControl={
                     <RefreshControl
                         refreshing={isLoading}
-                        onRefresh={fetchQuizzes}
+                        onRefresh={handleRefresh}
                         tintColor={colors.primary}
                     />
                 }
@@ -84,6 +109,10 @@ export default function Dashboard({ onSelectQuiz }: DashboardProps) {
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>Aucun quiz trouvé pour votre profil.</Text>
                     </View>
+                ) : null}
+
+                ListFooterComponent={isMoreLoading ? (
+                    <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
                 ) : null}
             />
         </View>

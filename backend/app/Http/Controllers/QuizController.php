@@ -47,30 +47,72 @@ class QuizController extends Controller
     {
         $user = $request->user();
 
+        // 1. 初始化基础查询
+        $query = Quiz::withCount('questions');
+
+        // 2. 权限与等级过滤
         if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
-            $quizzes = Quiz::withCount('questions')
-                ->where(function ($q) use ($user) {
-                    $q->where('owner_id', $user->id)
-                        ->orWhere('is_public', true);
-                })
-                ->latest()
-                ->get();
-
+            $query->where(function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhere('is_public', true);
+            });
         } elseif ($user->role === 'STUDENT') {
-            $quizzes = Quiz::withCount('questions')
-                ->where('is_public', true)
-                ->when($user->education_level, function ($q) use ($user) {
-                    $q->where(function ($sub) use ($user) {
-                        $sub->whereNull('education_level')
-                            ->orWhere('education_level', $user->education_level);
-                    });
-                })
-                ->latest()
-                ->get();
+            $query->where('is_public', true)
+                  ->when($user->education_level, function ($q) use ($user) {
+                      $q->where(function ($sub) use ($user) {
+                          $sub->whereNull('education_level')
+                              ->orWhere('education_level', $user->education_level);
+                      });
+                  });
 
+            // --- 核心：更安全的权重计算 ---
+
+            // A. 获取弱点类别 (平均分 < 70)
+            // 这里不使用 join，而是通过关联关系或直接查 Result 表
+            $weakCategories = Result::where('user_id', $user->id)
+                ->with('quiz')
+                ->get()
+                ->groupBy(fn($r) => $r->quiz->category ?? 'Général')
+                ->map(fn($group) => $group->avg('score'))
+                ->filter(fn($score) => $score < 70)
+                ->keys()
+                ->toArray();
+
+            // B. 获取已尝试的 Quiz ID
+            $attemptedIds = Result::where('user_id', $user->id)->pluck('quiz_id')->unique()->toArray();
+
+            // C. 安全排序
+            if (!empty($weakCategories)) {
+                // 使用 findInSet 的逻辑或 field 排序的替代方案
+                // 这里用 simple orderByRaw，并对输入进行处理
+                $catList = collect($weakCategories)->map(fn($c) => "'".addslashes($c)."'")->implode(',');
+                $query->orderByRaw("CASE WHEN category IN ($catList) THEN 0 ELSE 1 END");
+            }
+
+            if (!empty($attemptedIds)) {
+                $idList = implode(',', $attemptedIds);
+                // 没做过的排在前面
+                $query->orderByRaw("CASE WHEN id NOT IN ($idList) THEN 0 ELSE 1 END");
+            }
         } else {
             return response()->json(['error' => 'Rôle non autorisé'], 403);
         }
+
+        // 3. 基础排序：最新发布
+        $query->latest();
+
+        // 4. 分页逻辑
+        if ($request->has(['offset', 'limit'])) {
+            $query->offset((int)$request->query('offset'))->limit((int)$request->query('limit'));
+        }
+
+        $quizzes = $query->get();
+
+        // ✅ 为了防止 500，使用 transform 来安全添加属性
+        $quizzes->transform(function ($q) use ($weakCategories) {
+            $q->is_recommended = in_array($q->category, $weakCategories ?? []);
+            return $q;
+        });
 
         return response()->json($quizzes);
     }

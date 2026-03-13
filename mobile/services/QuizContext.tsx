@@ -8,7 +8,7 @@ interface QuizContextType {
     quizzes: Quiz[];           // 首页推荐列表
     isLoading: boolean;
     currentQuestions: Question[]; // 当前正在进行的题目
-    fetchQuizzes: () => Promise<void>;
+    fetchQuizzes: (offset?: number, limit?: number, append?: boolean) => Promise<Quiz[]>;
     findQuizByCode: (code: string) => Promise<Quiz | null>;
     fetchQuestions: (quizId: number) => Promise<Question[] | null>;
     submitScore: (quizId: number, score: number) => Promise<boolean>;
@@ -24,15 +24,23 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     const { refreshResults } = useAuth(); // 提交成绩后刷新全局成绩
 
     // 1. 获取首页推荐 (基于用户的 education_level)
-    const fetchQuizzes = async () => {
-        setIsLoading(true);
+    const fetchQuizzes = async (offset = 0, limit = 5, append = false) => {
+        setIsLoading(true); // 这里建议只在 offset 为 0 时设为 true，或者新增一个 isMoreLoading
         try {
-            // 对接 QuizController::index
-            const response = await api.get('/quizzes');
-            setQuizzes(response.data);
-            console.log("🎯 推荐测验同步成功");
+            const response = await api.get(`/quizzes?offset=${offset}&limit=${limit}`);
+            const newData = response.data;
+
+            if (append) {
+                // ✅ 追加位面数据
+                setQuizzes(prev => [...prev, ...newData]);
+            } else {
+                // ✅ 刷新位面数据
+                setQuizzes(newData);
+            }
+            return newData; // 返回数据供 UI 判断是否“还有更多”
         } catch (error) {
             console.error("💥 无法感知测验位面", error);
+            return [];
         } finally {
             setIsLoading(false);
         }
