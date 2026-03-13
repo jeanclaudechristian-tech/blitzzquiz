@@ -22,12 +22,15 @@ export interface Quiz {
     code_quiz: string;
     created_at: string;
     updated_at: string;
+    titre_highlight?: string;
+    description_highlight?: string;
 
     // 关联关系 (可选，因为 API 不一定每次都把这些带回来)
     owner?: User;
     questions?: Question[];
     results?: Result[];
     category?: string | null;
+    questions_count?: number;
 }
 
 // 3. 问题 (对应 Question.php)

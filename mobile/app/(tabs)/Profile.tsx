@@ -31,6 +31,13 @@ export default function Profile({ onViewGroups }: { onViewGroups: () => void }) 
                 </View>
                 <View style={styles.divider} />
                 <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Niveau d&#39;études</Text>
+                    <Text style={[styles.infoValue, { color: colors.primary }]}>
+                        {user?.education_level || 'Non spécifié'}
+                    </Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>Rôle</Text>
                     <Text style={[styles.infoValue, { color: colors.primary }]}>
                         {user?.role}

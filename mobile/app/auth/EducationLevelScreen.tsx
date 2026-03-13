@@ -47,10 +47,10 @@ export default function EducationLevelScreen() {
 
   // 转换映射表：UI 文本 -> 数据库存储值
   const educationMap: { [key: string]: string } = {
-    "Primaire": "Primaire",
-    "Secondaire": "Secondaire",
-    "Collégial": "Collegial", // 注意：去掉特殊字符，匹配 index.ts 中的 'Collegial'
-    "Universitaire": "Universitaire"
+    "Primaire": "primaire",
+    "Secondaire": "secondaire",
+    "Collégial": "collegial", // 注意：去掉特殊字符，匹配 index.ts 中的 'Collegial'
+    "Universitaire": "universitaire"
   };
 
   const [activeDropdown, setActiveDropdown] = useState<'role' | 'edu' | null>(null);

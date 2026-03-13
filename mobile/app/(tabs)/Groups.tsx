@@ -40,6 +40,11 @@ export default function Groups({ onBack, onSelectGroup }: { onBack: () => void, 
 
             <FlatList
                 data={groups} //
+                style={{ marginHorizontal: -15 }}
+                contentContainerStyle={{
+                    paddingHorizontal: 15, // 给阴影留出绝对安全的渲染区
+                    paddingBottom: 20
+                }}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => {
                     const isOwner = user?.id === item.owner_id; // 比对数据库里的 owner_id
@@ -65,7 +70,7 @@ export default function Groups({ onBack, onSelectGroup }: { onBack: () => void, 
                     );
                 }}
                 ListEmptyComponent={
-                    <Text style={styles.emptyText}>Vous n'avez rejoint aucun groupe.</Text>
+                    <Text style={styles.emptyText}>Vous n&#39;avez rejoint aucun groupe.</Text>
                 }
             />
 
