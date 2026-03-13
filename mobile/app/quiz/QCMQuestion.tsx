@@ -59,7 +59,7 @@ export const QCMModule = ({ question, onAnswer, disabled }: QuestionModuleProps)
                                     />
                                 ) : selectedKey && isSelected && !isCorrectAnswer ? (
                                     <LottieView
-                                        source={require('../../assets/animated/Error animation.json')}
+                                        source={require('../../assets/animated/Error-animation.json')}
                                         autoPlay
                                         loop={false}
                                         style={styles.lottieIcon2}
