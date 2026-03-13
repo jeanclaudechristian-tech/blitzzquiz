@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import {View, StyleSheet, SafeAreaView, Platform, StatusBar} from 'react-native';
+import {View, StyleSheet, SafeAreaView, Platform, StatusBar, Alert} from 'react-native';
 import { colors } from '../../components/blitzz/tokens';
 import { DashboardHeader } from '../../components/blitzz/DashboardHeader';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -14,6 +14,9 @@ import {GroupDetailProvider} from "@/services/GroupDetailContext";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import SearchPage from './SearchPage';
 import {QuizDetailModal} from "@/app/(tabs)/QuizDetailModal";
+import { useQuizzes } from '@/services/QuizContext';
+import {useRouter} from "expo-router";
+import { LoadingScreen } from '@/components/blitzz/LoadingScreen';
 
 export default function HomeScreen() {
     const insets = useSafeAreaInsets();
@@ -25,6 +28,36 @@ export default function HomeScreen() {
     const [searchText, setSearchText] = useState('');
     const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const router = useRouter();
+    const { fetchQuestions } = useQuizzes(); // 获取加载题目
+    const [isStarting, setIsStarting] = useState(false);
+
+    const handleStartQuiz = async (quiz: Quiz) => {
+        setIsStarting(true);
+        try {
+            // 现在 TypeScript 知道 questions 是 Question[] | null 了
+            const questions = await fetchQuestions(quiz.id);
+
+            // ✅ 检查是否有题目返回
+            if (questions && questions.length > 0) {
+                setIsModalVisible(false);
+
+                setTimeout(() => {
+                    // 穿越至答题位面
+                    router.push("/quiz/QuizPlayer");
+                }, 300);
+            } else {
+                // 如果返回了空数组或 null
+                Alert.alert("Désolé", "Ce quiz ne contient aucune question.");
+            }
+        } catch (e) {
+            console.error(e);
+            Alert.alert("Erreur", "Une erreur est survenue.");
+        } finally {
+            setIsStarting(false);
+        }
+    };
 
     const handleOpenDetail = (quiz: Quiz) => {
         setSelectedQuiz(quiz);
@@ -118,12 +151,11 @@ export default function HomeScreen() {
                 quiz={selectedQuiz}
                 isVisible={isModalVisible}
                 onClose={() => setIsModalVisible(false)}
-                onStart={(quiz) => {
-                    setIsModalVisible(false);
-                    console.log("进入答题位面：", quiz.titre);
-                    // TODO: 启动审判程序
-                }}
+                onStart={handleStartQuiz} // ✅ 绑定这个仪式
             />
+
+            {/* 如果正在加载题目，可以加个全局加载状态 */}
+            {isStarting && <LoadingScreen />}
         </SafeAreaView>
     );
 }

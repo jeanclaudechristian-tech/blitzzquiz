@@ -6,7 +6,8 @@ import Animated, {
     withRepeat,
     withTiming,
     withSequence,
-    FadeIn
+    FadeIn,
+    cancelAnimation
 } from 'react-native-reanimated';
 import { colors } from './tokens'; //
 
@@ -18,6 +19,11 @@ export const LoadingScreen = () => {
         // 模拟呼吸动画：在 1.2 倍和 0.8 倍之间循环
         scale.value = withRepeat(withTiming(1.2, { duration: 1000 }), -1, true);
         opacity.value = withRepeat(withTiming(0.8, { duration: 1000 }), -1, true);
+
+        return () => {
+            cancelAnimation(scale);
+            cancelAnimation(opacity);
+        };
     }, []);
 
     const animatedCircle = useAnimatedStyle(() => ({

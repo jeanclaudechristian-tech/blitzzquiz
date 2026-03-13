@@ -10,7 +10,7 @@ interface QuizContextType {
     currentQuestions: Question[]; // 当前正在进行的题目
     fetchQuizzes: () => Promise<void>;
     findQuizByCode: (code: string) => Promise<Quiz | null>;
-    fetchQuestions: (quizId: number) => Promise<void>;
+    fetchQuestions: (quizId: number) => Promise<Question[] | null>;
     submitScore: (quizId: number, score: number) => Promise<boolean>;
     searchQuizzes: (query: string) => Promise<Quiz[]>;
 }
@@ -54,11 +54,13 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     const fetchQuestions = async (quizId: number) => {
         setIsLoading(true);
         try {
-            // 对接 QuizController::questionsIndex
             const response = await api.get(`/quizzes/${quizId}/questions`);
             setCurrentQuestions(response.data);
+            // ✅ 必须 return，否则 handleStartQuiz 里的 success 永远是 undefined
+            return response.data;
         } catch (error) {
-            Alert.alert("Erreur", "Impossible de charger les questions");
+            console.error("❌ 无法获取题目:", error);
+            return null; // 失败返回 null
         } finally {
             setIsLoading(false);
         }
