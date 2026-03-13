@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\Assignment;
+use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -167,6 +169,57 @@ class GroupController extends Controller
             'id' => $group->id,
             'nom' => $group->nom,
         ]);
+    }
+
+    /**
+     * Associer un quiz à un groupe (enseignant owner).
+     * Insère une ligne dans la table assignments.
+     */
+    public function assignQuiz(Request $request, Group $group)
+    {
+        // Seul le propriétaire du groupe peut associer des quiz
+        if (Auth::id() !== $group->owner_id) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        $validated = $request->validate([
+            'quiz_id' => 'required|exists:quizzes,id',
+        ]);
+
+        $quizId = (int) $validated['quiz_id'];
+
+        // Crée l'assignation si elle n'existe pas encore
+        $assignment = Assignment::firstOrCreate(
+            [
+                'quiz_id' => $quizId,
+                'group_id' => $group->id,
+            ],
+            [
+                'assigned_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'quizId' => $assignment->quiz_id,
+            'statut' => 'actif',
+            'dateAssignation' => $assignment->assigned_at,
+        ], 201);
+    }
+
+    /**
+     * Retirer un quiz assigné d'un groupe (enseignant owner).
+     */
+    public function unassignQuiz(Group $group, Quiz $quiz)
+    {
+        if (Auth::id() !== $group->owner_id) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        Assignment::where('group_id', $group->id)
+            ->where('quiz_id', $quiz->id)
+            ->delete();
+
+        return response()->json(['message' => 'Quiz retiré du groupe']);
     }
 
     /**
