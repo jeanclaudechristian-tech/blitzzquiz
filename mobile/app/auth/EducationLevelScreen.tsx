@@ -49,7 +49,7 @@ export default function EducationLevelScreen() {
   const educationMap: { [key: string]: string } = {
     "Primaire": "primaire",
     "Secondaire": "secondaire",
-    "Collégial": "collegial", // 注意：去掉特殊字符，匹配 index.ts 中的 'Collegial'
+    "Collégial": "collégiale", // 注意：去掉特殊字符，匹配 index.ts 中的 'Collegial'
     "Universitaire": "universitaire"
   };
 
