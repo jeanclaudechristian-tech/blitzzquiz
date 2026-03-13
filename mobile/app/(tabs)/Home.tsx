@@ -139,6 +139,7 @@ export default function HomeScreen() {
                                         <GroupDetail
                                             group={selectedGroup}
                                             onBack={() => setCurrentTab('groups')}
+                                            onSelectQuiz={handleOpenDetail}
                                         />
                                     </Animated.View>
                                 </GroupDetailProvider>
@@ -152,10 +153,15 @@ export default function HomeScreen() {
                 isVisible={isModalVisible}
                 onClose={() => setIsModalVisible(false)}
                 onStart={handleStartQuiz} // ✅ 绑定这个仪式
+                groupId={(!isSearching && currentTab === 'group-detail') ? selectedGroup?.id : undefined}
             />
 
             {/* 如果正在加载题目，可以加个全局加载状态 */}
-            {isStarting && <LoadingScreen />}
+            {isStarting && (
+                <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
+                    <LoadingScreen />
+                </View>
+            )}
         </SafeAreaView>
     );
 }

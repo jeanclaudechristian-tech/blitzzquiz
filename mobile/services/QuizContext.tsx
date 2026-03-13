@@ -52,7 +52,6 @@ export function QuizProvider({ children }: { children: ReactNode }) {
 
     // 3. 开始答题：获取题目列表
     const fetchQuestions = async (quizId: number) => {
-        setIsLoading(true);
         try {
             const response = await api.get(`/quizzes/${quizId}/questions`);
             setCurrentQuestions(response.data);
@@ -61,8 +60,6 @@ export function QuizProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error("❌ 无法获取题目:", error);
             return null; // 失败返回 null
-        } finally {
-            setIsLoading(false);
         }
     };
 

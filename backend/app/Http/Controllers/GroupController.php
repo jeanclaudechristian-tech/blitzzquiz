@@ -192,6 +192,9 @@ class GroupController extends Controller
                 'titre' => $quiz->titre,
                 'category' => $quiz->category ?? '',
                 'questions_count' => $quiz->questions_count ?? 0,
+                'is_public' => $quiz->is_public,
+                'code_quiz' => $quiz->code_quiz,
+                'description' => $quiz->description,
             ];
         });
 
@@ -228,6 +231,42 @@ class GroupController extends Controller
         $group->members()->detach(Auth::id());
 
         return response()->json(['message' => 'Groupe quitté']);
+    }
+
+    /**
+     * Classement
+     */
+    public function quizRanking(Group $group, \App\Models\Quiz $quiz)
+    {
+        $userId = Auth::id();
+
+        // 1. 权限鉴定：只有 Owner 和 Member 可以看排名
+        $isOwner = ($userId === $group->owner_id);
+        $isMember = $group->members()->where('user_id', $userId)->exists();
+
+        if (!$isOwner && !$isMember) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        // 2. 收集有资格参与排名的人员名单（群成员 + 也许还有群主）
+        $memberIds = $group->members()->pluck('users.id')->push($group->owner_id)->unique();
+
+        // 3. 查询 Result 表，获取最高分排名
+        // 假设你的 Result 模型里有 public function user() 关联
+        $results = \App\Models\Result::with('user:id,nickname,avatar')
+            ->where('quiz_id', $quiz->id)
+            ->whereIn('user_id', $memberIds)
+            ->get();
+
+        // 4. 数据清洗：如果学生可以多次答题，我们只取他分数最高的那一次作为排名依据
+        $ranking = $results->groupBy('user_id')->map(function ($userResults) {
+            // 选出该用户分数最高的那条记录
+            return $userResults->sortByDesc('score')->first();
+        })
+        ->sortByDesc('score') // 全局按最高分降序
+        ->values(); // 重置数组索引
+
+        return response()->json($ranking);
     }
 
 }
