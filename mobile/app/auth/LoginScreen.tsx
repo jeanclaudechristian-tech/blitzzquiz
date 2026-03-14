@@ -234,6 +234,7 @@ const styles = StyleSheet.create({
     mainWrapper: {
         flex: 1,
         backgroundColor: colors.light,
+        alignItems: "center"
     },
     container: {
         flexGrow: 1,

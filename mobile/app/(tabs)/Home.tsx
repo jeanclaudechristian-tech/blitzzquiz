@@ -36,19 +36,15 @@ export default function HomeScreen() {
     const handleStartQuiz = async (quiz: Quiz) => {
         setIsStarting(true);
         try {
-            // 现在 TypeScript 知道 questions 是 Question[] | null 了
             const questions = await fetchQuestions(quiz.id);
 
-            // ✅ 检查是否有题目返回
             if (questions && questions.length > 0) {
                 setIsModalVisible(false);
 
                 setTimeout(() => {
-                    // 穿越至答题位面
-                    router.push("/quiz/QuizPlayer");
+                    router.replace("/quiz/QuizPlayer");
                 }, 300);
             } else {
-                // 如果返回了空数组或 null
                 Alert.alert("Désolé", "Ce quiz ne contient aucune question.");
             }
         } catch (e) {
