@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import Animated, { Layout, SlideInUp, SlideOutDown } from "react-native-reanimated";
 import * as WebBrowser from 'expo-web-browser'; // 1. 引入浏览器支持
-import * as Google from 'expo-auth-session/providers/google'; // 2. 引入 Google 验证
 // 引入 AuthContext
 import { useAuth } from "../../services/AuthContext";
 import { InputField } from "../../components/blitzz/InputField";
@@ -16,27 +15,19 @@ import { GoogleIcon } from "../../components/blitzz/GoogleIcon";
 import { IconSvg } from "../../components/blitzz/IconSvg";
 import { assets } from "../../components/blitzz/assets";
 import { colors, fonts } from "../../components/blitzz/tokens";
-import { makeRedirectUri } from 'expo-auth-session';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
-WebBrowser.maybeCompleteAuthSession();
+GoogleSignin.configure({
+    webClientId: "851398001859-dad9lrj36rlh23pvknltls5mmgolh90t.apps.googleusercontent.com",
+    iosClientId: "851398001859-vtiht025g0u89bsfh1jasok9f15nuu9u.apps.googleusercontent.com",
+    scopes: ['profile', 'email', 'openid'],
+});
 
 export default function LoginScreen() {
     const router = useRouter();
     // 1. 获取登录方法
     const { login, googleLogin } = useAuth();
 
-    const [request, response, promptAsync] = Google.useAuthRequest({
-        androidClientId: "851398001859-vanvpgbsi3qr2tqp0j6kjvi281neamvp.apps.googleusercontent.com",
-        // androidClientId: "851398001859-olgl0lu1bcir3o134ki3nqtdviiinpsa.apps.googleusercontent.com",
-        iosClientId: "851398001859-vtiht025g0u89bsfh1jasok9f15nuu9u.apps.googleusercontent.com",
-        webClientId: "851398001859-dad9lrj36rlh23pvknltls5mmgolh90t.apps.googleusercontent.com",
-        redirectUri: makeRedirectUri({
-            scheme: 'blitzzquiz',
-            path: 'oauth2/callback',
-            // @ts-ignore
-            useProxy: false,
-        }),
-    });
     // 2. 定义输入框状态
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -53,28 +44,12 @@ export default function LoginScreen() {
         }, [])
     );
 
-    useEffect(() => {
-        if (response?.type === 'success') {
-            const { authentication } = response;
-            if (authentication?.accessToken) {
-                // 拿到 Token 了！交给 AuthContext 去找后端换用户信息
-                handleBackendGoogleLogin(authentication.accessToken);
-            }
-        } else if (response?.type === 'error') {
-            Alert.alert("Erreur", "Google Login Failed");
-        }
-        if (request?.url) {
-            console.log("🔗 即将访问的 Google 授权网址: ", request.url);
-        }
-    }, [response, request]);
-
     const handleBackendGoogleLogin = async (token: string) => {
-        setIsLoggingIn(true); // 复用一下 loading 状态或者单独定义
+        setIsLoggingInGoogle(true); // 👈 修改这里
         try {
             await googleLogin(token);
-            // 成功后 AuthContext 会处理跳转，这里不用管
         } catch (e) {
-            setIsLoggingIn(false);
+            setIsLoggingInGoogle(false); // 👈 修改这里，报错时停掉 Google 的转圈
         }
     };
 
@@ -95,23 +70,42 @@ export default function LoginScreen() {
         }
     };
 
-    // Google 登录模拟 (后续可接 SDK)
-    const handleGoogleLogin = () => {
+    const handleGoogleSignIn = async () => {
+        console.log("🚀 战车启动：呼叫系统原生 Google 服务...");
         setIsLoggingInGoogle(true);
-        setTimeout(() => {
+        try {
+            // 1. 检查手机（愚者）是否安装了 Google Play 基础服务
+            await GoogleSignin.hasPlayServices();
+
+            // 2. 唤起丝滑的原生底部弹窗！
+            const userInfo = await GoogleSignin.signIn();
+
+            // 3. 拿到纯正的 idToken
+            const idToken = userInfo.data?.idToken;
+
+            if (idToken) {
+                console.log("✅ 拿到原生 idToken，准备送往移动端神道...");
+                // 调用你写好的后端对接方法
+                await handleBackendGoogleLogin(idToken);
+            } else {
+                throw new Error("Google 未返回 idToken");
+            }
+        } catch (error: any) {
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                console.log("🚫 用户主动取消了登录弹窗");
+            } else if (error.code === statusCodes.IN_PROGRESS) {
+                console.log("⏳ 登录正在进行中...");
+            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                Alert.alert("Erreur", "Google Play Services non disponible sur cet appareil");
+            } else {
+                console.error("❌ 原生登录遭遇未知错误: ", error);
+                Alert.alert("Erreur", "Échec de la connexion Google");
+            }
+        } finally {
             setIsLoggingInGoogle(false);
-            handleNav("/auth/EducationLevelScreen");
-        }, 1500);
+        }
     };
 
-    // Apple 登录模拟
-    const handleAppleLogin = () => {
-        setIsLoggingInApple(true);
-        setTimeout(() => {
-            setIsLoggingInApple(false);
-            handleNav("/auth/EducationLevelScreen");
-        }, 1500);
-    };
 
     const handleNav = (path: string) => {
         setIsVisible(false); // 触发掉落动画
@@ -216,29 +210,15 @@ export default function LoginScreen() {
                                 <View style={{ height: 10 }} />
 
                                 <Animated.View
-                                    entering={SlideInUp.delay(150).springify()}
-                                    exiting={SlideOutDown.delay(50).duration(500)}
-                                >
-                                    <DarkButton
-                                        label="Inscription avec Apple"
-                                        icon={<AppleIcon />}
-                                        onPress={handleAppleLogin}
-                                        isLoading={isLoggingInApple}
-                                    />
-                                </Animated.View>
-
-                                <View style={{ height: 10 }} />
-
-                                <Animated.View
                                     entering={SlideInUp.delay(50).springify()}
                                     exiting={SlideOutDown.delay(0).duration(500)}
                                 >
                                     <DarkButton
                                         label="Inscription with Google"
                                         icon={<GoogleIcon />}
-                                        // 这里的 disabled 是防止重复点击
-                                        onPress={() => !request ? null : promptAsync()}
-                                        isLoading={false} // Google 自己的 SDK 会处理状态
+                                        onPress={handleGoogleSignIn}
+                                        // 💡 逻辑：只要 request 还没加载出来，或者正在登录中，就转圈
+                                        isLoading={isLoggingInGoogle}
                                     />
                                 </Animated.View>
                             </View>
