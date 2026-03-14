@@ -252,6 +252,42 @@ class GroupController extends Controller
     }
 
     /**
+     * Inviter un membre par email (owner seulement).
+     * Cherche l'utilisateur par email, l'ajoute au groupe (table user_groups).
+     */
+    public function inviteByEmail(Request $request, Group $group)
+    {
+        if (Auth::id() !== $group->owner_id) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Aucun utilisateur trouvé avec cet email'], 404);
+        }
+
+        if ($group->members()->where('user_id', $user->id)->exists()) {
+            return response()->json(['error' => 'Cette personne est déjà membre du groupe'], 409);
+        }
+
+        $group->members()->attach($user->id);
+
+        return response()->json([
+            'message' => 'Membre ajouté au groupe',
+            'member' => [
+                'id' => $user->id,
+                'nickname' => $user->nickname,
+                'email' => $user->email,
+            ],
+        ], 201);
+    }
+
+    /**
      * Ajouter membre spécifique (owner seulement).
      */
     public function addMember(Request $request, Group $group)
