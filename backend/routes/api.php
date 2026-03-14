@@ -18,6 +18,11 @@ Route::post('auth/google-register', [AuthController::class, 'registerGoogleFinal
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
+// reset password publiques
+Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
+Route::post('reset-password', [ResetPasswordController::class, 'reset']);
+
+
 // Routes protégées (API)
 Route::middleware('auth:sanctum')->group(function () {
 
