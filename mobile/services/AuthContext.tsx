@@ -96,8 +96,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             console.log("💥 [AuthContext] 登录失败:", error);
-            const message = error.response?.data?.message || 'Login failed';
-            Alert.alert('Erreur', message);
             throw error;
         }
     };

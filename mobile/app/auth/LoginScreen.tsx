@@ -154,7 +154,7 @@ export default function LoginScreen() {
                                     exiting={SlideOutDown.delay(350).duration(500)}
                                 >
                                     <InputField
-                                        placeholder="Nom d’utilisateur" // 这里建议改成 Courriel
+                                        placeholder="Courriel" // 这里建议改成 Courriel
                                         leftIcon={<IconSvg uri={assets.userIcon} width={24} height={24} />}
                                         // 绑定数据
                                         value={email}
