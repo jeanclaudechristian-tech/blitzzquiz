@@ -28,7 +28,7 @@ L'application s'exécute via **Expo Go**, évitant ainsi l'installation fastidie
 2. Scannez le **QR Code de Production** ci-dessous (généré via EAS).
 3. L'application se chargera automatiquement depuis les serveurs d'Expo.
 > ✨ **Astuce :** Le premier chargement peut prendre quelques secondes le temps de récupérer le dernier "Bundle" depuis les serveurs d'Expo. Une fois chargé, le logo **Eclaire** s'affichera sur l'écran de démarrage.
-![QR Code de Production](https://qr.expo.dev/eas-update?slug=exp&projectId=97e152af-4bb5-42a9-af37-b8464bf15ea8&groupId=f9d0fcf3-81a1-43e4-b76f-ec5254d13339&host=u.expo.dev)
+![QR Code de Production](https://qr.expo.dev/eas-update?slug=exp&projectId=97e152af-4bb5-42a9-af37-b8464bf15ea8&groupId=0a3d18f0-e66d-46fc-932c-498ca6825652&host=u.expo.dev)
 >
 > [!IMPORTANT]
 > **Avis pour l'aperçu Expo Go**：
