@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 class AuthController extends Controller
 {
@@ -39,11 +41,10 @@ class AuthController extends Controller
             'education_level' => $request->education_level,
         ]);
 
-        $token = $user->createToken('quiz-token')->plainTextToken;
+        event(new Registered($user));
 
         return response()->json([
             'user' => $user,
-            'token' => $token,
         ], 201);
     }
 
@@ -60,6 +61,13 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['Credentials incorrects.'],
             ]);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Votre adresse email n\'est pas encore vérifiée.',
+                'needs_verification' => true
+            ], 403); // 使用 403 Forbidden [cite: 1, 2026-03-15]
         }
 
         $token = $user->createToken('quiz-token')->plainTextToken;
@@ -157,6 +165,7 @@ class AuthController extends Controller
            'password' => Hash::make(Str::random(24)), // 随机密码
            'role' => $request->role,
            'education_level' => $request->education_level,
+           'email_verified_at' => now(),
        ]);
 
        $token = $user->createToken('quiz-token')->plainTextToken;
@@ -211,5 +220,48 @@ class AuthController extends Controller
        } catch (\Exception $e) {
            return response()->json(['error' => $e->getMessage()], 500);
        }
+   }
+
+   public function verify(Request $request, $id, $hash)
+   {
+       // 1. 物理定位用户 [cite: 2026-03-15]
+       $user = User::findOrFail($id);
+
+       // 2. 校验签名 Hash（防止恶意篡改 ID 激活他人账号） [cite: 2026-03-15]
+       if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+           return response()->json(['message' => 'Lien de vérification invalide.'], 403);
+       }
+
+       // 3. 检查是否已激活，避免重复写入
+       if ($user->email_verified_at !== null) {
+           return response()->json(['message' => 'Compte déjà activé.'], 200);
+       }
+
+       $user->email_verified_at = now();
+       $user->save();
+
+       return response()->json(['message' => 'Votre compte a été activé avec succès !'], 200);
+   }
+
+   public function resendVerificationByEmail(Request $request)
+   {
+       $request->validate(['email' => 'required|email']);
+
+       $user = User::where('email', $request->email)->first();
+
+       // 1. 如果用户不存在，保持沉默或给个模糊提示（安全考虑）
+       if (!$user) {
+           return response()->json(['message' => 'Si cet email existe, un lien a été envoyé.'], 200);
+       }
+
+       // 2. 如果已经验证过了，就没必要再发了
+       if ($user->email_verified_at !== null) {
+           return response()->json(['message' => 'Ce compte est déjà activé.'], 400);
+       }
+
+       // 3. 手动触发发送通知 [cite: 2026-03-15]
+       $user->sendEmailVerificationNotification();
+
+       return response()->json(['message' => 'Un nouveau lien de vérification a été envoyé.'], 200);
    }
 }

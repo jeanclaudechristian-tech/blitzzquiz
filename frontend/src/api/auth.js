@@ -69,9 +69,15 @@ export const authService = {
   },
 
   // (可选) 新增验证邮箱方法，供你之后的验证页面使用
-  async verifyEmail(verifyUrl) {
-    // 因为 verifyUrl 是后端生成的完整带签名 URL，直接请求即可
-    const response = await api.get(verifyUrl);
+  async verifyEmail(queryURL) {
+    // 这里的 queryURL 是后端生成的带签名的完整 URL
+    const response = await api.get(queryURL);
+    return response.data;
+  },
+
+  async resendVerification(email) {
+    // 对应 api.php 里的 Route::post('/email/resend-verification', ...)
+    const response = await api.post("/email/resend-verification", { email });
     return response.data;
   }
 };

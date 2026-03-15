@@ -8,8 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\URL;
+use App\Notifications\CustomVerifyEmailNotification;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -73,5 +76,21 @@ class User extends Authenticatable
 
         // 2. 触发自定义通知类 [cite: 2026-03-15]
         $this->notify(new \App\Notifications\ResetPasswordNotification($url));
+    }
+
+    public function sendEmailVerificationNotification()
+    {
+        // 生成带签名的后端路由
+        $temporarySignedUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $this->getKey(), 'hash' => sha1($this->getEmailForVerification())]
+        );
+
+        // 拼接到你的前端地址上
+        $url = env('FRONTEND_URL') . '/verify-email?queryURL=' . urlencode($temporarySignedUrl);
+
+        // 触发通知
+        $this->notify(new CustomVerifyEmailNotification($url));
     }
 }

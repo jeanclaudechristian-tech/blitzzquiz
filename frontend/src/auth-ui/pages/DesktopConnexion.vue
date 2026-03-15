@@ -70,45 +70,44 @@ export default {
       this.loading = true
       this.error = null
 
-      if (!this.formData.username || !this.formData.password) {
-        this.error = 'Veuillez remplir votre email et votre mot de passe.'
-        alert(this.error)
-        this.loading = false
-        return
-      }
-
       try {
         const data = await authService.login(
-          this.formData.username,
-          this.formData.password
+            this.formData.username, // 确保这里传的是 Email
+            this.formData.password
         )
 
-        // sauvegarde token + user
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
 
-        // on n’utilise plus axios.defaults ici,
-        // c’est ton instance `api` qui gère baseURL + Authorization
-        console.log('Connexion réussie:', data.user)
-
         const role = data.user.role
-        if (role === 'TEACHER') {
-          this.$router.push('/enseignant')
-        } else if (role === 'STUDENT') {
-          this.$router.push('/etudiant')
-        } else {
-          this.$router.push('/')
-        }
+        this.$router.push(role === 'TEACHER' ? '/enseignant' : (role === 'STUDENT' ? '/etudiant' : '/'))
+
       } catch (error) {
-        console.error('Erreur de connexion:', error)
-        if (error.response?.status === 422) {
-          this.error = 'Email ou mot de passe incorrect'
+        const status = error.response?.status
+        const message = error.response?.data?.message
+
+        if (status === 403 && error.response?.data?.needs_verification) {
+          // --- 核心：拦截未验证用户并提示重发 --- [cite: 1, 2026-03-15]
+          const confirmResend = confirm("Votre compte n'est pas activé. Voulez-vous renvoyer l'email de vérification ?")
+          if (confirmResend) {
+            await this.handleResendEmail()
+          }
+        } else if (status === 422 || status === 401) {
+          alert('Email ou mot de passe incorrect.')
         } else {
-          this.error = 'Erreur de connexion. Réessayez plus tard.'
+          alert(message || 'Erreur de connexion. Réessayez plus tard.')
         }
-        alert(this.error)
       } finally {
         this.loading = false
+      }
+    },
+    async handleResendEmail() {
+      try {
+        // 调用 authService 里的新接口
+        await authService.resendVerification(this.formData.username)
+        alert("Un nouveau lien a été envoyé à votre adresse courriel.")
+      } catch (e) {
+        alert("Erreur lors de l'envoi du lien de vérification.")
       }
     }
   }
