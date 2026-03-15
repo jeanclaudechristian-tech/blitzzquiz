@@ -338,7 +338,7 @@ class QuizController extends Controller
 
         $term = $request->input('q');
 
-        $quizzes = Quiz::where('is_public', true)
+        $quizzes = Quiz::where('is_public = true')
             ->where(function ($q) use ($term) {
                 $q->whereRaw("search_vector @@ websearch_to_tsquery('french', ?)", [$term])
                     ->orWhereRaw("titre ILIKE ?", ["%{$term}%"])
