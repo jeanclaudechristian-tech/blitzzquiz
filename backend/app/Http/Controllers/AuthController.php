@@ -63,11 +63,11 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->hasVerifiedEmail()) {
+        if ($user->email_verified_at === null) {
             return response()->json([
-                'message' => 'Votre adresse email n\'est pas encore vérifiée.',
+                'message' => 'Veuillez vérifier votre courriel.',
                 'needs_verification' => true
-            ], 403); // 使用 403 Forbidden [cite: 1, 2026-03-15]
+            ], 403); // 确保返回了 403 [cite: 1, 2026-03-15]
         }
 
         $token = $user->createToken('quiz-token')->plainTextToken;
