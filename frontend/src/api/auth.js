@@ -54,4 +54,24 @@ export const authService = {
     const response = await api.get("/user");
     return response.data;
   },
+
+  async forgotPassword(email) {
+    // 这里的路径要对应 api.php 里的 Route::post('/forgot-password', ...)
+    const response = await api.post("/forgot-password", { email });
+    return response.data;
+  },
+
+  // 顺便修正一下之前的 resetPassword 路径，确保与 api.php 对齐
+  async resetPassword(data) {
+    // 你的 api.php 定义的是 /reset-password
+    const response = await api.post("/reset-password", data);
+    return response.data;
+  },
+
+  // (可选) 新增验证邮箱方法，供你之后的验证页面使用
+  async verifyEmail(verifyUrl) {
+    // 因为 verifyUrl 是后端生成的完整带签名 URL，直接请求即可
+    const response = await api.get(verifyUrl);
+    return response.data;
+  }
 };
