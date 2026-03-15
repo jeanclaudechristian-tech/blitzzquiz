@@ -1,0 +1,19 @@
+services:
+  # 整个项目的唯一核心容器
+  backend:
+    container_name: blizzquiz-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:80" # 将容器内部的 80 端口映射到宿主机的 8000
+    volumes:
+      - ./backend:/var/www
+      - ./backend/.env:/var/www/.env
+    networks:
+      - blizzquiz-network
+
+networks:
+  blizzquiz-network:
+    driver: bridge

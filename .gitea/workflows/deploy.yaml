@@ -2,6 +2,24 @@ name: Deploy BlizzQuiz Separately
 on: [push, workflow_dispatch]
 
 jobs:
+  sync-backend:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sync Backend Files
+        run: |
+          mkdir -p /DevMultiRuntime/BlizzQuiz/backend/
+          rsync -av --delete \
+            --exclude='node_modules' \
+            --exclude='vendor' \
+            --exclude='.git' \
+            --exclude='.env' \
+            ./backend/ /DevMultiRuntime/BlizzQuiz/backend/
+          
+          echo "✅ Backend files synced to /DevMultiRuntime/BlizzQuiz/backend/"
+
   deploy-mobile:
     runs-on: self-hosted
     steps:
