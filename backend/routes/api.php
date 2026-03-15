@@ -7,7 +7,8 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Quiz;
-
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 // Routes Google existantes
 Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
 Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
@@ -19,8 +20,8 @@ Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 // reset password publiques
-Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
-Route::post('reset-password', [ResetPasswordController::class, 'reset']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
+Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 
 
 // Routes protégées (API)
