@@ -68,10 +68,11 @@ export const authService = {
     return response.data;
   },
 
-  // (可选) 新增验证邮箱方法，供你之后的验证页面使用
   async verifyEmail(verifyUrl) {
-    // 因为 verifyUrl 是后端生成的完整带签名 URL，直接请求即可
-    const response = await api.get(verifyUrl);
+    // 关键：使用 decodeURIComponent 确保 URL 里的签名哈希不被二次编码破坏
+    // 即使 verifyUrl 是完整的绝对路径（https://...），Axios 也会优先处理它而忽略 baseURL
+    const response = await api.get(decodeURIComponent(verifyUrl));
     return response.data;
-  }
+  },
+
 };

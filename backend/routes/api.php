@@ -23,6 +23,13 @@ Route::post('login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
 Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
+    ->middleware(['signed'])
+    ->name('verification.verify');
+
+Route::post('/email/resend-verification', [AuthController::class, 'resendByEmail'])
+    ->middleware(['throttle:3,1']);
+
 // Routes protégées
 Route::middleware('auth:sanctum')->group(function () {
 

@@ -29,6 +29,8 @@ import GroupesListPage from "../enseignant-ui/pages/GroupesListPage.vue";
 import GroupeCreatePage from "../enseignant-ui/pages/GroupeCreatePage.vue";
 import GroupeDetailsPage from "../enseignant-ui/pages/GroupeDetailsPage.vue";
 import EtudiantProfil from "../etudiant-ui/pages/EtudiantProfil.vue";
+import InscriptionSuccess from "../auth-ui/pages/InscriptionSuccess.vue";
+import DesktopEmailVerify from "../auth-ui/pages/DesktopEmailVerify.vue";
 const routes = [
   {
   path: '/etudiant/quiz/code/:code/lobby',
@@ -68,6 +70,16 @@ const routes = [
     path: "/reset-password",
     name: "ResetPassword",
     component: DesktopResetMotDePasse,
+  },
+  {
+    path: "/inscription/success",
+    name: "InscriptionSuccess",
+    component: InscriptionSuccess,
+  },
+  {
+    path: "/verify-email",
+    name: "VerifyEmail",
+    component: DesktopEmailVerify,
   },
   {
     path: "/succes",
