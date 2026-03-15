@@ -14,7 +14,7 @@ Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
 Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
 Route::post('auth/google-register', [AuthController::class, 'registerGoogleFinal']);
 // -------------------------------------------
-
+Route::post('auth/google-mobile', [AuthController::class, 'googleMobileLogin']);
 // Auth publiques
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);

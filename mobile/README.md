@@ -1,65 +1,47 @@
-# 📱 BlizzQuiz - Module d'Aperçu Mobile
+# ⚡ BlizzQuiz - Module d'Aperçu Mobile
 
-[![Hôte](https://img.shields.io/badge/Host-Emperor-orange?logo=ubuntu&logoColor=white)](http://emperor.tail28a528.ts.net)
-[![Network](https://img.shields.io/badge/Network-Tailscale-9993FF?logo=tailscale&logoColor=white)](https://tailscale.com/)
-[![Framework](https://img.shields.io/badge/Framework-Expo_SDK_51-black?logo=expo&logoColor=white)](https://expo.dev/)
+[![Framework](https://img.shields.io/badge/Framework-Expo_SDK_54-black?logo=expo&logoColor=white)](https://expo.dev/)
+[![React Native](https://img.shields.io/badge/React_Native-0.81.5-20232A?logo=react&logoColor=61DAFB)](https://reactnative.dev/)
+[![iOS](https://img.shields.io/badge/iOS-Ready-lightgrey?logo=apple&logoColor=white)](https://expo.dev/)
+[![Android](https://img.shields.io/badge/Android-Ready-3DDC84?logo=android&logoColor=white)](https://expo.dev/)
+[![Deployment](https://img.shields.io/badge/Status-EAS_Cloud_Hosted-blue)](https://expo.dev/)
 
 ## 🚀 Présentation du Déploiement
-Le module BlizzQuiz Mobile est un environnement d'aperçu en temps réel basé sur **Expo**. Il permet de valider les fonctionnalités mobiles directement sur votre appareil **Le Monde** (iPhone 17).
+Le module **BlizzQuiz Mobile** est désormais hébergé sur le **Cloud Expo (EAS)**. Il permet un aperçu instantané sans aucune configuration réseau complexe, accessible de n'importe où, que vous soyez au Collège Ahuntsic ou ailleurs.
 
-* **Hôte de service :** Emperor (Ubuntu 24.04 LTS)
-* **Adresse Tailscale :** http://emperor.tail28a528.ts.net:8086
-* **Statut de gestion :** Administré via CasaOS
+* **Dernière Version :** `test version 1` (avec logo Eclaire)
+* **Runtime Version :** `1.0.0`
 
 ---
 
-## 📲 Guide d'Installation Rapide
+## 📲 Guide d'Installation Rapide (iOS & Android)
 
-Pour tester l'application sur votre iPhone ou Android, suivez ces étapes :
+Plus besoin de VPN ou de configuration serveur. Suivez simplement ces étapes :
 
-### 1. Rejoindre le Réseau (Tailscale)
-Le serveur est sur un réseau privé. Sans cela, l'application ne pourra pas se connecter à **Emperor**.
-* **Télécharger :** [Tailscale pour iOS/Android](https://tailscale.com/download)
-* **Connexion :** Connectez-vous au compte autorisé.
-* **Vérification :** Assurez-vous que le statut est "Active" et que le nœud `emperor` est joignable.
+### 1. Préparer le Runtime (Expo Go)
+L'application s'exécute via **Expo Go**, évitant ainsi l'installation fastidieuse de fichiers IPA/APK en phase de test.
+* **iOS :** [Télécharger sur l'App Store](https://apps.apple.com/app/expo-go/id982107779)
+* **Android :** [Télécharger sur Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
 
-### 2. Installer le Runtime (Expo Go)
-Expo Go permet d'exécuter le code de développement sans compiler de fichier IPA/APK.
-* **Télécharger iOS :** [Expo Go sur l'App Store](https://apps.apple.com/app/expo-go/id982107779)
-* **Télécharger Android :** [Expo Go sur Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
-
-### 3. Lancement
-1. Ouvrez **Expo Go**.
-2. Scannez le QR Code fourni par le terminal ou saisissez l'URL : `exp://emperor.tail28a528.ts.net:8086`.
-![QR.png](QR.png)
-3. 
-> ⚠️ **Note Importante :** Vous devez être membre du réseau Tailscale de **Siyuan** pour accéder au serveur. Si vous n'avez pas d'accès, une erreur de réseau apparaîtra.
+### 2. Lancement Immédiat
+1. Ouvrez l'application **Expo Go**.
+2. Scannez le **QR Code de Production** ci-dessous (généré via EAS).
+3. L'application se chargera automatiquement depuis les serveurs d'Expo.
+> ✨ **Astuce :** Le premier chargement peut prendre quelques secondes le temps de récupérer le dernier "Bundle" depuis les serveurs d'Expo. Une fois chargé, le logo **Eclaire** s'affichera sur l'écran de démarrage.
+![QR Code de Production](https://qr.expo.dev/eas-update?slug=exp&projectId=97e152af-4bb5-42a9-af37-b8464bf15ea8&groupId=527f53cc-e6ea-4f8c-8d3b-bfc344563b84&host=u.expo.dev)
 
 ---
 
 ## 🛠️ Stack Technique
 
-| Composant | Technologie | Version / Détails |
-| :--- | :--- | :--- |
-| **Framework** | Expo (React Native Web) | SDK 51+ |
-| **Runtime Node** | Node.js | v20.19.0 (Bullseye) |
-| **Réseau** | Tailscale Mesh | Sécurisé de bout en bout |
+| Composant | Technologie                       | Détails                              |
+| :--- |:----------------------------------|:-------------------------------------|
+| **Framework** | Expo SDK 54                       | React Native avec React Compiler     |
+| **Distribution** | EAS Update                        | Hébergement Cloud (CDN)              |
+| **Animation** | Lottie React Native et Reanimated | Fluidité interactive                 |
+| **Compatibilité Android** | Android 6.0+                      | API Level 23+                        |
+| **Compatibilité iOS** | iOS 15.1+                         | -                                    |
+
 
 ---
-
-## 📦 Méthodes de Déploiement (Admin)
-
-### Option A : Déploiement via Docker (Recommandé)
-```bash
-cd /DevMultiRuntime/BlizzQuiz/mobile/
-sudo docker compose up -d
-```
-
-### Option B : Déploiement Temporaire Dans Terminale Windows (Développement local)
-```bash
-npm install
-npx expo start
-```
-
----
-*Dernière mise à jour : Janvier 2026*
+*Dernière mise à jour : 13/03/2026*

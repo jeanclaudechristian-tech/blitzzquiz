@@ -1,17 +1,56 @@
 // app/quiz/Result.tsx
 import React, {useEffect, useRef, useState} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TouchableWithoutFeedback} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TouchableWithoutFeedback, Alert} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, fonts } from '@/components/blitzz/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {ZoomIn, FadeInUp, SlideOutDown, useSharedValue, useAnimatedStyle, withDelay, withSpring} from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
+import { useQuizzes } from '@/services/QuizContext';
+import { LoadingScreen } from '@/components/blitzz/LoadingScreen';
 
 export default function ResultPage() {
     const router = useRouter();
-    const { score } = useLocalSearchParams<{ score: string }>();
+    const { score, quizId } = useLocalSearchParams<{ score: string; quizId: string }>();
     const finalScore = parseInt(score || '0');
     const lottieRef = useRef<LottieView>(null);
+    const { fetchQuestions } = useQuizzes(); // ✅ 引入抓取能力
+    const [isStarting, setIsStarting] = useState(false); // ✅ 新增加载状态
+
+    const handleRetry = async () => {
+        if (!quizId) return;
+
+        // 1. 开启加载动画
+        setIsStarting(true);
+
+        try {
+            const questions = await fetchQuestions(parseInt(quizId));
+
+            if (questions && questions.length > 0) {
+                // ✅ 关键改动：先让当前页面的所有 Animated.View 消失
+                setIsVisible(false);
+
+                // ✅ 给 UI 一个喘息的机会，确保 isVisible 的变更已经触发渲染
+                setTimeout(() => {
+                    router.replace({
+                        pathname: "/quiz/QuizPlayer",
+                        params: {
+                            quizId: quizId,
+                            key: Date.now().toString()
+                        }
+                    });
+                    // 💡 注意：千万不要在这里 setIsStarting(false)，
+                    // 只有成功跳转后，这个加载屏才会随着页面销毁而消失。
+                }, 100);
+            } else {
+                Alert.alert("Désolé", "Ce quiz ne contient aucune question.");
+                setIsStarting(false);
+            }
+        } catch (e) {
+            setIsStarting(false);
+            Alert.alert("Erreur", "Une erreur est survenue.");
+        }
+    };
 
     // 评价位面：根据分数给出不同的称谓
     const getRankData = (score: number) => {
@@ -81,8 +120,9 @@ export default function ResultPage() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {isStarting && <LoadingScreen />}
             {/* ✅ 所有的内容都必须在 isVisible 的大括号内，并由一个顶级容器包裹 */}
-            {isVisible && (
+            {isVisible && !isStarting && (
                 <Animated.View
                     style={{ flex: 1 }}
                 >
@@ -128,7 +168,7 @@ export default function ResultPage() {
                         <Animated.View entering={FadeInUp.delay(800)} exiting={SlideOutDown.duration(600).delay(0)} style={styles.footer}>
                             <TouchableOpacity
                                 style={styles.secondaryButton}
-                                onPress={() => router.back()}
+                                onPress={handleRetry}
                             >
                                 <Text style={styles.secondaryButtonText}>Réessayer</Text>
                             </TouchableOpacity>

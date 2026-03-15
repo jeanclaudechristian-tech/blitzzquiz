@@ -4,8 +4,8 @@ import {Alert, StyleSheet, View} from 'react-native';
 import { SafeAreaView } from 'react-native';
 import {useQuizzes} from "@/services/QuizContext";
 import { colors } from '@/components/blitzz/tokens';
-import {useState} from "react";
-import {useRouter} from "expo-router";
+import {useEffect, useState} from "react";
+import {useLocalSearchParams, useRouter} from "expo-router";
 import Animated, {FadeIn, FadeInUp, FadeOut} from 'react-native-reanimated';
 import { DarkButton } from '@/components/blitzz/DarkButton';
 import { LoadingScreen } from '@/components/blitzz/LoadingScreen';
@@ -69,10 +69,18 @@ export default function QuizPlayer() {
             const success = await submitScore(currentQuestion.quiz_id, finalPercentage);
 
             if (success) {
-                // 成功后进行路由跳转，此时保持 LoadingScreen 显示，直到页面完全卸载
-                handleNav("/quiz/Result", { score: finalPercentage.toString() });
+                // ✅ 1. 成功后务必解除加载状态，防止幽灵残留
+                setIsSubmitting(false);
+
+                // ✅ 2. 废弃 handleNav 的 push，直接使用 router.replace 斩断退路！
+                router.replace({
+                    pathname: "/quiz/Result",
+                    params: {
+                        score: finalPercentage.toString(),
+                        quizId: currentQuestion.quiz_id.toString()
+                    }
+                });
             } else {
-                // ❌ 失败处理：关闭加载状态，允许用户重新点击提交
                 setIsSubmitting(false);
                 Alert.alert("Erreur", "La soumission a échoué. Veuillez réessayer.");
             }

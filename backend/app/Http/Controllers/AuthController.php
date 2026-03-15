@@ -166,4 +166,50 @@ class AuthController extends Controller
            'token' => $token,
        ], 201);
    }
+
+   public function googleMobileLogin(Request $request)
+   {
+       // 1. 接收来自 App 的令牌
+       $token = $request->input('token');
+
+       try {
+           // 2. 移动端通常更适合验证 userinfo 接口（如果是 Access Token）
+           $response = \Illuminate\Support\Facades\Http::withoutVerifying()
+               ->get("https://oauth2.googleapis.com/tokeninfo?id_token={$token}");
+
+           if ($response->failed()) {
+               return response()->json(['error' => 'Validation failed', 'details' => $response->json()], 401);
+           }
+
+           $googleData = $response->json();
+           $email = $googleData['email'];
+           $googleId = $googleData['sub']; // Google 唯一标识
+
+           // 3. 查找或准备创建用户
+           $user = User::where('google_id', $googleId)->orWhere('email', $email)->first();
+
+           if (!$user) {
+               return response()->json([
+                   'needs_completion' => true,
+                   'user' => [
+                       'email' => $email,
+                       'google_id' => $googleId,
+                       'nickname' => $googleData['name'] ?? null,
+                       'avatar' => $googleData['picture'] ?? null
+                   ]
+               ]);
+           }
+
+           // 4. 发放圣典令牌
+           $sanctumToken = $user->createToken('mobile-auth-token')->plainTextToken;
+           return response()->json([
+               'token' => $sanctumToken,
+               'user' => $user,
+               'needs_completion' => false
+           ]);
+
+       } catch (\Exception $e) {
+           return response()->json(['error' => $e->getMessage()], 500);
+       }
+   }
 }
