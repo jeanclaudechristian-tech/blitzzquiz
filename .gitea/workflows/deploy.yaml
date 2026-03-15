@@ -16,6 +16,8 @@ jobs:
             --exclude='vendor' \
             --exclude='.git' \
             --exclude='.env' \
+            --exclude='Dockerfile' \
+            --exclude='docker-compose.yml' \
             ./backend/ /DevMultiRuntime/BlizzQuiz/backend/
           
           echo "✅ Backend files synced to /DevMultiRuntime/BlizzQuiz/backend/"
