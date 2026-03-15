@@ -8,9 +8,10 @@ RUN apk add --no-cache \
     unzip \
     oniguruma-dev \
     curl-dev \
-    icu-dev
+    icu-dev \
+    postgresql-dev
 
-RUN docker-php-ext-install pdo_mysql mbstring zip pcntl bcmath intl
+RUN docker-php-ext-install pdo_pgsql mbstring zip pcntl bcmath intl
 
 # 1. 开启 Apache 的 Rewrite 模块（Laravel 路由必须）
 RUN cp /etc/apache2/httpd.conf /etc/apache2/httpd.conf.bak \
