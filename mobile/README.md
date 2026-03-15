@@ -28,8 +28,14 @@ L'application s'exécute via **Expo Go**, évitant ainsi l'installation fastidie
 2. Scannez le **QR Code de Production** ci-dessous (généré via EAS).
 3. L'application se chargera automatiquement depuis les serveurs d'Expo.
 > ✨ **Astuce :** Le premier chargement peut prendre quelques secondes le temps de récupérer le dernier "Bundle" depuis les serveurs d'Expo. Une fois chargé, le logo **Eclaire** s'affichera sur l'écran de démarrage.
-![QR Code de Production](https://qr.expo.dev/eas-update?slug=exp&projectId=97e152af-4bb5-42a9-af37-b8464bf15ea8&groupId=527f53cc-e6ea-4f8c-8d3b-bfc344563b84&host=u.expo.dev)
+![QR Code de Production](https://qr.expo.dev/eas-update?slug=exp&projectId=97e152af-4bb5-42a9-af37-b8464bf15ea8&groupId=f9d0fcf3-81a1-43e4-b76f-ec5254d13339&host=u.expo.dev)
+>
+> [!IMPORTANT]
+> **Avis pour l'aperçu Expo Go**：
+> En raison des restrictions techniques de l'environnement Expo Go, l'authentification native Google a été désactivée dans cette version d'aperçu. Cette fonctionnalité nécessite un build autonome (.ipa/.apk) pour fonctionner.
 
+---
+* Note : En raison de l'utilisation de forfaits gratuits (Free Tier) pour les différents services (Vercel, EAS, Railway, Supabase, ect.), des quotas de consommation s'appliquent. Si l'accès est impossible, il est probable que la limite soit atteinte ou que le service ait été suspendu.
 ---
 
 ## 🛠️ Stack Technique
@@ -42,6 +48,7 @@ L'application s'exécute via **Expo Go**, évitant ainsi l'installation fastidie
 | **Compatibilité Android** | Android 6.0+                      | API Level 23+                        |
 | **Compatibilité iOS** | iOS 15.1+                         | -                                    |
 
-
 ---
-*Dernière mise à jour : 13/03/2026*
+* Pour code source de version ExpoGO, consulte branche `expogo-mobile`
+---
+*Dernière mise à jour : 15 Mars 2026*

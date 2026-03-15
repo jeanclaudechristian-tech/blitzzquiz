@@ -7,24 +7,31 @@
 
 ## 📖 À propos du Projet
 
-Ce dépôt contient le cœur du système **BlizzQuiz**, une API RESTful haute performance conçue avec **Laravel 12**. Le projet est structuré pour un environnement conteneurisé via **Docker**, garantissant une isolation optimale.
+Ce dépôt contient l'API RESTful de BlizzQuiz, le moteur haute performance conçu sous Laravel 12. Ce noyau gère l'authentification, la logique des quiz et la synchronisation entre le module Web (Vercel) et le module Mobile (Expo).
+
+---
+* Le service API est présentement disponible sur https://laravel-production-da37.up.railway.app/api
+---
 
 ## 🛠 Spécifications Techniques
 
 * **Architecture** : Basée sur Docker (Laravel, PostgreSQL, Redis).
 * **Backend** : Laravel 12.49.0 (PHP 8.2.12 ZTS).
-* **Base de données** : PostgreSQL 16+ avec contraintes d'unicité pour Google/Apple ID.
-* **Sécurité** : Validation des Tokens JWT pour l'authentification tierce.
+* **Base de données** : PostgreSQL 16+.
+* **Sécurité** : Validation des Tokens Sanctum pour l'authentification tierce.
 
 ## 🚀 Guide de Démarrage (Environnement de Développement)
 
-### 1. Configuration Initiale
+## A. Configuration Manuel d'Environnement de Développement
+
+### 1. Configuration des Variables d'Environnement
 * **Clonage** : 
 ```markdown
 git clone https://github.com/jeanclaudechristian-tech/BlitzzQuiz.git
 ```
 * **Variables d'environnement** : Copier `.env.example` et le renommer en `.env`.
 * **Ajustement** : Configurer les accès PostgreSQL dans le fichier `.env`.
+* **Variables de mail, de frontend et de Google Auth**
 #### example：
 ```markdown
 DB_CONNECTION=pgsql
@@ -33,6 +40,20 @@ DB_PORT=5432
 DB_DATABASE=blizzquiz
 DB_USERNAME=postgres
 DB_PASSWORD=blizzPassword
+
+# URL de votre frontend
+FRONTEND_URL=http://localhost:3000
+
+# Mail service avec resend
+MAIL_MAILER=resend
+RESEND_API_KEY=Your_Resend_API_Key
+MAIL_FROM_ADDRESS=no-reply@Your_Domaine.com
+MAIL_FROM_NAME=Your_Mail_Name
+
+# Google Authentication
+GOOGLE_CLIENT_ID=Your_Web_Client_ID
+GOOGLE_CLIENT_SECRET=Your_web_Client_Secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/auth/callback
 ```
 
 ### 2. Configuration de PHP
@@ -57,6 +78,7 @@ DB_PASSWORD=blizzPassword
 
 ### 3. Gestionnaire de Dépendances (Composer)
 Si la commande n'est pas reconnue, installer via https://getcomposer.org/download/
+
 ```bash 
 # Vérifier si Composer est installé
 composer -v
@@ -88,6 +110,82 @@ dans `.env`***
 ## démarrage
 php artisan serve
 ```
-* **Accès** : L'API est disponible sur `http://127.0.0.1:8000`.
+* **Accès** : L'API est disponible sur `http://127.0.0.1:8000` ou `http://localhost:8000`.
 ---
-*Si il y a des question contacter Siyuan(Contributeur DDdemonG) via Email(voir profile), Mio, teams(rarement présent) ou discord(DDdemonG#4483)*
+## B. Déploiement via Docker (Méthode recommandée)
+Le projet est optimisé pour être déployé instantanément sur Railway ou localement via Docker Compose. 
+#### ajouter ces deux documents:
+docker-compose.yml
+```yaml
+services:
+    backend:
+        container_name: blizzquiz-backend
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: always
+        ports:
+            - "8001:80" 
+        volumes:
+            - ./:/var/www
+            - ./.env:/var/www/.env
+        networks:
+            - blizzquiz-network
+
+networks:
+    blizzquiz-network:
+        driver: bridge
+
+```
+dockerfile:
+```bash 
+FROM php:8.2-apache-alpine
+
+RUN apk add --no-cache \
+    libpng-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    oniguruma-dev \
+    curl-dev \
+    icu-dev \
+    postgresql-dev
+
+RUN docker-php-ext-install pdo_pgsql mbstring zip pcntl bcmath intl
+
+RUN cp /etc/apache2/httpd.conf /etc/apache2/httpd.conf.bak \
+    && sed -i 's/#LoadModule rewrite_module/LoadModule rewrite_module/' /etc/apache2/httpd.conf \
+    && sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/httpd.conf
+
+ENV APACHE_DOCUMENT_ROOT /var/www/public
+RUN sed -ri -e 's!/var/www/localhost/htdocs!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/httpd.conf
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+COPY . .
+
+RUN chown -R apache:apache storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+EXPOSE 80
+
+CMD ["httpd", "-D", "FOREGROUND"]
+```
+Ensuite dans la terminale
+```bash
+# Lancer l'environnement complet
+docker-compose up -d --build
+```
+* Note : L'image Docker utilise PHP 8.2 Apach pour une performance maximale et une compatibilité avec les extensions requises (pdo_pgsql, openssl, mbstring).
+---
+
+## 🔒 Spécifications de Sécurité
+
+* **CORS :** Les en-têtes sont configurés pour accepter les requêtes provenant de l'interface Web hébergée sur Vercel。
+
+* **Sanctum :** Validation des jetons d'authentification pour les utilisateurs.
+
+---
+* Note : En raison de l'utilisation de forfaits gratuits (Free Tier) pour les différents services (Vercel, EAS, Railway, Supabase, ect.), des quotas de consommation s'appliquent. Si l'accès est impossible, il est probable que la limite soit atteinte ou que le service ait été suspendu.
+---
