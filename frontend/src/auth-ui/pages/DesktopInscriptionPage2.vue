@@ -81,10 +81,10 @@ export default {
   },
   methods: {
     async goToValidation() {
-      // 1. 防止重复提交 [cite: 2026-03-15]
       if (this.isSubmitting) return
 
-      // 2. 前端表单预验证
+      console.log('API URL =', import.meta.env.VITE_API_URL)
+
       if (this.registrationStore.isGoogleFlow) {
         if (!this.formData.email || !this.formData.username) {
           alert('Veuillez remplir l\'email et le nom d\'utilisateur')
@@ -95,82 +95,87 @@ export default {
           return
         }
       } else {
-        if (!this.formData.email || !this.formData.username ||
+        if (!this.formData.email || !this.formData.username || 
             !this.formData.password || !this.formData.confirmPassword) {
           alert('Veuillez remplir tous les champs')
           return
         }
-
+        
         if (this.formData.password !== this.formData.confirmPassword) {
           alert('Les mots de passe ne correspondent pas')
           return
         }
       }
 
-      // 3. 开启加载状态
       this.loading = true
       this.isSubmitting = true
       this.error = null
 
       try {
-        // 同步 Store 数据
         this.registrationStore.setCredentials(
-            this.formData.email,
-            this.formData.username,
-            this.formData.password,
-            this.formData.confirmPassword,
-            this.registrationStore.niveauEtude
+          this.formData.email,
+          this.formData.username,
+          this.formData.password,
+          this.formData.confirmPassword,
+          this.registrationStore.niveauEtude
         )
+
+        console.log("Données complètes d'inscription:", {
+          role: this.registrationStore.role,
+          niveauEtude: this.registrationStore.niveauEtude,
+          email: this.formData.email,
+          username: this.formData.username,
+          isGoogleFlow: this.registrationStore.isGoogleFlow
+        })
 
         let data
         if (this.registrationStore.isGoogleFlow) {
-          // --- 流程 A: 谷歌注册 ---
           const gid = this.registrationStore.googleUser?.googleId;
+
+          if (!gid) {
+            console.error("Erreur: google_id est manquant!");
+          }
 
           data = await authService.registerGoogleFinal({
             email: this.formData.email,
             username: this.formData.username,
-            google_id: gid,
+            google_id: gid, // 传给后端的字段名要对应
             role: this.registrationStore.role,
             education_level: this.registrationStore.niveauEtude,
             avatar: this.registrationStore.googleUser?.avatar
           });
-
-          // 谷歌用户已自动验证，直接存入 Token 登录
-          localStorage.setItem('token', data.token)
-          localStorage.setItem('user', JSON.stringify(data.user))
-
-          // 根据角色跳转主页
-          if (data.user.role === 'TEACHER') {
-            this.$router.push('/enseignant')
-          } else {
-            this.$router.push('/etudiant')
-          }
-
         } else {
-          // --- 流程 B: 普通邮件注册 ---
           data = await authService.register(
-              this.formData.email,
-              this.formData.username,
-              this.formData.password,
-              this.formData.confirmPassword,
-              this.registrationStore.role,
-              this.registrationStore.niveauEtude
+            this.formData.email,
+            this.formData.username,
+            this.formData.password,
+            this.formData.confirmPassword,
+            this.registrationStore.role,
+            this.registrationStore.niveauEtude
           )
+        }
 
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
 
-          this.$router.push('/inscription/success')
+        console.log('Inscription réussie:', data.user)
+
+        if (data.user.role === 'TEACHER') {
+          this.$router.push('/enseignant')
+        } else if (data.user.role === 'STUDENT') {
+          this.$router.push('/etudiant')
+        } else {
+          this.$router.push('/')
         }
 
       } catch (error) {
         console.error("Erreur inscription:", error)
-        // 捕获后端返回的错误信息（如邮箱已存在）
         alert(error.response?.data?.message || "Erreur lors de l'inscription")
       } finally {
         this.loading = false
         this.isSubmitting = false
       }
-    }
+    },
   },
 }
 </script>

@@ -8,10 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Support\Facades\URL;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -25,7 +23,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'apple_id',
         'supabase_id',
-        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -76,22 +73,5 @@ class User extends Authenticatable implements MustVerifyEmail
 
         // 2. 触发自定义通知类 [cite: 2026-03-15]
         $this->notify(new \App\Notifications\ResetPasswordNotification($url));
-    }
-
-    public function sendEmailVerificationNotification()
-    {
-        // 1. 生成带签名的后端验证 URL（临时有效）
-        $temporarySignedUrl = URL::temporarySignedRoute(
-            'verification.verify', // 对应 routes/api.php 里的路由名
-            now()->addMinutes(60),
-            ['id' => $this->getKey(), 'hash' => sha1($this->getEmailForVerification())]
-        );
-
-        // 2. 将后端链接作为参数，拼接到 Vercel 的前端页面地址上
-        // 最终效果：https://blitzzquiz.vercel.app/verify-email?queryURL=...
-        $url = env('FRONTEND_URL') . '/verify-email?queryURL=' . urlencode($temporarySignedUrl);
-
-        // 3. 触发异步通知（确保你已经创建了这个通知类，见第三步） [cite: 1, 2026-03-15]
-        $this->notify(new \App\Notifications\CustomVerifyEmailNotification($url));
     }
 }
