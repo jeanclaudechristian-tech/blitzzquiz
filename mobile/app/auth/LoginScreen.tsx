@@ -10,23 +10,14 @@ import { PrimaryButton } from "../../components/blitzz/PrimaryButton";
 import { DarkButton } from "../../components/blitzz/DarkButton";
 import { Divider } from "../../components/blitzz/Divider";
 import { TextLink } from "../../components/blitzz/TextLink";
-import { AppleIcon } from "../../components/blitzz/AppleIcon";
-import { GoogleIcon } from "../../components/blitzz/GoogleIcon";
 import { IconSvg } from "../../components/blitzz/IconSvg";
 import { assets } from "../../components/blitzz/assets";
 import { colors, fonts } from "../../components/blitzz/tokens";
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-
-GoogleSignin.configure({
-    webClientId: "851398001859-dad9lrj36rlh23pvknltls5mmgolh90t.apps.googleusercontent.com",
-    iosClientId: "851398001859-vtiht025g0u89bsfh1jasok9f15nuu9u.apps.googleusercontent.com",
-    scopes: ['profile', 'email', 'openid'],
-});
 
 export default function LoginScreen() {
     const router = useRouter();
     // 1. 获取登录方法
-    const { login, googleLogin, resendVerification } = useAuth();
+    const { login, resendVerification } = useAuth();
 
     // 2. 定义输入框状态
     const [email, setEmail] = useState("");
@@ -44,14 +35,6 @@ export default function LoginScreen() {
         }, [])
     );
 
-    const handleBackendGoogleLogin = async (token: string) => {
-        setIsLoggingInGoogle(true); // 👈 修改这里
-        try {
-            await googleLogin(token);
-        } catch (e) {
-            setIsLoggingInGoogle(false); // 👈 修改这里，报错时停掉 Google 的转圈
-        }
-    };
 
     // 3. 真实登录逻辑
     const handleLogin = async () => {
@@ -84,42 +67,6 @@ export default function LoginScreen() {
                 const msg = errorResponse?.data?.message || "Échec de la connexion.";
                 Alert.alert("Erreur", msg);
             }
-        }
-    };
-
-    const handleGoogleSignIn = async () => {
-        console.log("🚀 战车启动：呼叫系统原生 Google 服务...");
-        setIsLoggingInGoogle(true);
-        try {
-            // 1. 检查手机（愚者）是否安装了 Google Play 基础服务
-            await GoogleSignin.hasPlayServices();
-
-            // 2. 唤起丝滑的原生底部弹窗！
-            const userInfo = await GoogleSignin.signIn();
-
-            // 3. 拿到纯正的 idToken
-            const idToken = userInfo.data?.idToken;
-
-            if (idToken) {
-                console.log("✅ 拿到原生 idToken，准备送往移动端神道...");
-                // 调用你写好的后端对接方法
-                await handleBackendGoogleLogin(idToken);
-            } else {
-                throw new Error("Google 未返回 idToken");
-            }
-        } catch (error: any) {
-            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-                console.log("🚫 用户主动取消了登录弹窗");
-            } else if (error.code === statusCodes.IN_PROGRESS) {
-                console.log("⏳ 登录正在进行中...");
-            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                Alert.alert("Erreur", "Google Play Services non disponible sur cet appareil");
-            } else {
-                console.error("❌ 原生登录遭遇未知错误: ", error);
-                Alert.alert("Erreur", "Échec de la connexion Google");
-            }
-        } finally {
-            setIsLoggingInGoogle(false);
         }
     };
 
@@ -226,18 +173,6 @@ export default function LoginScreen() {
 
                                 <View style={{ height: 10 }} />
 
-                                <Animated.View
-                                    entering={SlideInUp.delay(50).springify()}
-                                    exiting={SlideOutDown.delay(0).duration(500)}
-                                >
-                                    <DarkButton
-                                        label="Inscription with Google"
-                                        icon={<GoogleIcon />}
-                                        onPress={handleGoogleSignIn}
-                                        // 💡 逻辑：只要 request 还没加载出来，或者正在登录中，就转圈
-                                        isLoading={isLoggingInGoogle}
-                                    />
-                                </Animated.View>
                             </View>
                         </>
                     )}

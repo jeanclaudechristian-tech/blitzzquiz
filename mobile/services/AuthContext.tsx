@@ -12,7 +12,6 @@ type AuthContextType = {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, nickname: string, password: string, education_level: string, role?: string) => Promise<void>;
-    googleLogin: (token: string) => Promise<void>; // ✅ 修复 2：加上 Google 登录定义
     logout: () => Promise<void>;
     results: Result[]; // ✅ 新增：全局成绩状态
     refreshResults: () => Promise<void>; // ✅ 新增：刷新方法
@@ -96,8 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             console.log("💥 [AuthContext] 登录失败:", error);
-            const message = error.response?.data?.message || 'Login failed';
-            Alert.alert('Erreur', message);
             throw error;
         }
     };
@@ -127,55 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const message = error.response?.data?.message || 'Échec de l\'inscription.';
             Alert.alert('Erreur', message);
             throw error; // 抛出错误以便 UI 停止转圈
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    // ✅ 修复 3：补上 Google 登录实现
-    const googleLogin = async (token: string) => {
-        setIsLoading(true);
-        try {
-            console.log("🧐 [Debug] 准备发给后端的 AccessToken:", token.substring(0, 20) + "...");
-
-            // 1. 修改请求路径为我们刚加的 google-mobile
-            // 2. 修改参数名为 'token'，以匹配后端 AuthController 里的接收字段
-            const response = await api.post('/auth/google-mobile', { token: token });
-
-            console.log("✅ [AuthContext] 后端返回成功:", response.data);
-
-            const { user, token: jwt, needs_completion } = response.data;
-
-            // 处理注册未完成的情况（如果后端返回需要补全信息）
-            if (needs_completion) {
-                console.log("📝 用户需补充信息，前往完善页面...");
-                // 假设你有这个路径，或者根据你的逻辑跳转
-                // router.push({ pathname: "/auth/EducationLevelScreen", params: { email: user.email, google_id: user.google_id } });
-                return;
-            }
-
-            // 正常登录流程
-            await SecureStore.setItemAsync('auth_token', jwt);
-            setUser(user);
-
-            console.log("🚀 登录成功，正在进入 Home...");
-            router.replace('/(tabs)/Home');
-
-        } catch (error: any) {
-            // 🛑 这里保留你原来的错误解密代码，非常有用
-            console.log("\n💥 ----------------- 移动端 Google 登录错误 ----------------- 💥");
-            if (error.response) {
-                console.log("🔥 HTTP 状态码:", error.response.status);
-                console.log("🔥 后端报错详情:", JSON.stringify(error.response.data, null, 2));
-            } else {
-                console.log("💥 错误消息:", error.message);
-            }
-            console.log("💥 -------------------------------------------------------- 💥\n");
-
-            Alert.alert(
-                '🔥 后端报错了',
-                `错误详情:\n${error.response?.data ? JSON.stringify(error.response.data) : error.message}`
-            );;
-            throw error;
         } finally {
             setIsLoading(false);
         }
@@ -216,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout, results, refreshResults, loadingResults, forgotPassword, resendVerification }}>
+        <AuthContext.Provider value={{ user, isLoading, login, register, logout, results, refreshResults, loadingResults, forgotPassword, resendVerification }}>
             {children}
         </AuthContext.Provider>
     );
