@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
+import {View, Text, StyleSheet, ScrollView, Platform, Alert} from "react-native";
 import { useRouter, useNavigation, Stack, useFocusEffect } from "expo-router";
 import Animated, {
   SlideInLeft,
@@ -13,11 +13,15 @@ import { TextLink } from "../../components/blitzz/TextLink";
 import { IconSvg } from "../../components/blitzz/IconSvg";
 import { assets } from "../../components/blitzz/assets";
 import { colors, fonts } from "../../components/blitzz/tokens";
+import {useAuth} from "@/services/AuthContext";
 
 export default function ForgotPasswordEmail() {
   const router = useRouter();
   const navigation = useNavigation();
   const [isVisible, setIsVisible] = useState(true);
+  const { forgotPassword } = useAuth();
+  const [email, setEmail] = useState(""); // 绑定邮箱状态
+  const [isLoading, setIsLoading] = useState(false); // 本地提交状态
 
   // 1. 拦截器：防止手滑导致动画崩坏
   useEffect(() => {
@@ -56,6 +60,26 @@ export default function ForgotPasswordEmail() {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!email || !email.includes('@')) {
+      Alert.alert("Erreur", "Veuillez entrer une adresse courriel valide.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await forgotPassword(email);
+      // API 成功后，执行跳转逻辑
+      handleNav("/auth/EmailSentVerification");
+    } catch (error: any) {
+      // 这里的错误通常已经在 AuthContext 里处理过了，
+      // 但你可以在这里根据业务需求做额外的 UI 提示
+      console.error("Forgot password flow error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
       // 4. 关键修复：移除了 layout={Layout.springify()}，避免吞掉子组件的 entering 动画
       <Animated.View style={{ flex: 1 }}>
@@ -84,6 +108,10 @@ export default function ForgotPasswordEmail() {
                     >
                       <InputField
                           placeholder="Courriel"
+                          value={email}
+                          onChangeText={setEmail} // 绑定输入
+                          keyboardType="email-address"
+                          autoCapitalize="none"
                           leftIcon={<IconSvg uri={assets.emailIcon} width={24} height={24} />}
                       />
                     </Animated.View>
@@ -108,7 +136,8 @@ export default function ForgotPasswordEmail() {
                       {/* 这里传入路径现在安全了 */}
                       <DarkButton
                           label="Suivant"
-                          onPress={() => handleNav("/auth/EmailSentVerification")}
+                          onPress={handleSubmit}
+                          isLoading={isLoading}
                       />
                     </Animated.View>
                   </View>

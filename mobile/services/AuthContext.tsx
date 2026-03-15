@@ -17,6 +17,7 @@ type AuthContextType = {
     results: Result[]; // ✅ 新增：全局成绩状态
     refreshResults: () => Promise<void>; // ✅ 新增：刷新方法
     loadingResults: boolean;
+    forgotPassword: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -209,8 +210,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/auth/LoginScreen');
     };
 
+    const forgotPassword = async (email: string) => {
+        try {
+            // 这里的 api 实例应该已经配置好了 baseURL (http://192.168.1.108:8000/api)
+            await api.post('/forgot-password', { email });
+        } catch (error: any) {
+            console.error("Erreur forgotPassword:", error.response?.data);
+            throw error; // 抛出错误让 UI 层处理
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout, results, refreshResults, loadingResults }}>
+        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout, results, refreshResults, loadingResults, forgotPassword }}>
             {children}
         </AuthContext.Provider>
     );
