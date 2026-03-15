@@ -380,7 +380,7 @@ class QuizController extends Controller
     public function publicIndex(Request $request): JsonResponse
     {
         $quizzes = Quiz::withCount('questions')
-            ->where('is_public', true)
+            ->whereRaw('is_public IS TRUE')
             ->latest()
             ->get();
 
