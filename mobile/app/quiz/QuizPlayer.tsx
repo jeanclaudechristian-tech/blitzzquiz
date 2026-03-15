@@ -69,10 +69,6 @@ export default function QuizPlayer() {
             const success = await submitScore(currentQuestion.quiz_id, finalPercentage);
 
             if (success) {
-                // ✅ 1. 成功后务必解除加载状态，防止幽灵残留
-                setIsSubmitting(false);
-
-                // ✅ 2. 废弃 handleNav 的 push，直接使用 router.replace 斩断退路！
                 router.replace({
                     pathname: "/quiz/Result",
                     params: {

@@ -88,10 +88,24 @@ export default function HomeScreen() {
                         setIsSearching(expanded);
                         if (!expanded) setSearchText(''); // 关闭搜索时重置文字
                     }}
-                    onSearchResults={(results, query) => {
+                    onSearchResults={async (results, query) => {
+                        const trimmedQuery = query?.trim().toUpperCase() || '';
+                        setSearchText(trimmedQuery);
+
+                        // 🎯 自动弹出逻辑
+                        // 如果结果只有一个，且用户输入的正好是 6 位代码
+                        if (results && results.length === 1 && trimmedQuery.length === 6) {
+                            const potentialQuiz = results[0];
+
+                            // 验证这个结果的 code 是否真的匹配（防止误伤普通搜索结果）
+                            if (potentialQuiz.code_quiz?.toUpperCase() === trimmedQuery) {
+                                setSearchResults(results);
+                                handleOpenDetail(potentialQuiz); // 直接开启 Modal 位面
+                                return;
+                            }
+                        }
+
                         setSearchResults(results);
-                        // ✅ 确保即使 query 为 undefined 也有兜底的空字符串
-                        setSearchText(query || '');
                     }}
                 />
 

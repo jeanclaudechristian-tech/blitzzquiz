@@ -26,7 +26,7 @@ GoogleSignin.configure({
 export default function LoginScreen() {
     const router = useRouter();
     // 1. 获取登录方法
-    const { login, googleLogin } = useAuth();
+    const { login, googleLogin, resendVerification } = useAuth();
 
     // 2. 定义输入框状态
     const [email, setEmail] = useState("");
@@ -65,8 +65,25 @@ export default function LoginScreen() {
             // 调用 API，AuthContext 会处理成功后的跳转
             await login(email, password);
         } catch (e) {
-            // 失败只停止转圈，AuthContext 已经弹窗提示错误了
             setIsLoggingIn(false);
+
+            // @ts-ignore
+            const errorResponse = e.response;
+
+            if (errorResponse?.status === 403 && errorResponse?.data?.needs_verification) {
+                try {
+                    // 默默发送，不需要等它返回再跳转，提高流畅度 [cite: 1, 2026-03-15]
+                    await resendVerification(email);
+                } catch (resendError) {
+                    console.log("自动重发神谕失败");
+                }
+                handleNav('/auth/EmailSentVerification');
+                return;
+            } else {
+                // 这里可以加一个普通的报错提示，防止用户不知道发生了什么
+                const msg = errorResponse?.data?.message || "Échec de la connexion.";
+                Alert.alert("Erreur", msg);
+            }
         }
     };
 

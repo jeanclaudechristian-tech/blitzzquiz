@@ -39,10 +39,6 @@ export default function EmailSentVerification() {
     }, 600);
   };
 
-  const handleBack = () => {
-    router.back();
-  };
-
   return (
       <Animated.View style={{ flex: 1 }} layout={Layout.springify()}>
         <Stack.Screen options={{ gestureEnabled: false }} />
@@ -89,7 +85,6 @@ export default function EmailSentVerification() {
                         entering={SlideInRight.delay(500).duration(600).springify()}
                         exiting={SlideOutLeft.delay(200).duration(500)}
                     >
-                      <TextLink label="Retour" onPress={handleBack} />
                     </Animated.View>
                   </View>
                 </>

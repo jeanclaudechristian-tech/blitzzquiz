@@ -86,9 +86,19 @@ export function QuizProvider({ children }: { children: ReactNode }) {
 
     // 5. 发现页：全文搜索
     const searchQuizzes = async (query: string): Promise<Quiz[]> => {
+        const trimmedQuery = query.trim().toUpperCase();
         if (query.length < 2) return [];
         try {
-            // 对接 QuizController::search
+            // 🎯 逻辑位面 A：如果长度看起来像 Code (比如 6 位)，先尝试精确查找
+            if (trimmedQuery.length === 6) {
+                const exactQuiz = await findQuizByCode(trimmedQuery);
+                if (exactQuiz) {
+                    // 如果找到了匹配 Code 的测验，直接返回包含它的数组
+                    return [exactQuiz];
+                }
+            }
+
+            // 🎯 逻辑位面 B：常规搜索
             const response = await api.get(`/quizzes/search?q=${query}`);
             return response.data;
         } catch (error) {

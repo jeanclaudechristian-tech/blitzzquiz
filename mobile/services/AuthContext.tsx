@@ -18,6 +18,7 @@ type AuthContextType = {
     refreshResults: () => Promise<void>; // ✅ 新增：刷新方法
     loadingResults: boolean;
     forgotPassword: (email: string) => Promise<void>;
+    resendVerification: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -76,40 +77,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const login = async (email: string, password: string) => {
-        console.log("🔥 [1] AuthContext: login 被调用了！");
-        setIsLoading(true);
         try {
-            console.log("🔥 [2] AuthContext: 准备调用 api.post");
             const response = await api.post('/login', { email, password });
-            console.log("🔥 [3] AuthContext: api.post 返回了，后端验证通过！");
-
-            // 1. 打印看看后端到底给了什么
-            console.log("📦 后端数据:", response.data);
-
             const { user, token } = response.data;
 
-            // 2. 检查 Token 是否存在
-            if (!token) {
-                throw new Error("后端没返回 Token！");
+            // 🛡️ 物理屏障检查：如果后端没有拦截，这里做最后的保险
+            if (!user.email_verified_at) {
+                throw { response: { status: 403, data: { needs_verification: true } } };
             }
 
-            console.log("💾 正在保存 Token...");
             await SecureStore.setItemAsync('auth_token', token);
-            console.log("✅ Token 保存完毕");
-
             setUser(user);
-
-            // 3. 关键修改：尝试跳转到根路径 '/'，而不是 '(tabs)'
-            // 因为我怀疑你可能还没有写好 (tabs) 页面，导致导航失败
-            console.log("🚗 准备跳转到首页...");
             router.replace('/(tabs)/Home');
-
         } catch (error: any) {
-            console.log("💥 [AuthContext] 登录后续处理失败:", error);
-            Alert.alert('Erreur', error.message || 'Login failed');
+            // 关键：如果状态码是 403，不要在这里 Alert，把控制权交给 LoginScreen.tsx
+            if (error.response?.status === 403 && error.response?.data?.needs_verification) {
+                throw error;
+            }
+
+            console.log("💥 [AuthContext] 登录失败:", error);
+            const message = error.response?.data?.message || 'Login failed';
+            Alert.alert('Erreur', message);
             throw error;
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -128,14 +117,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 role: role,  // 将角色传给后端
             });
 
-            console.log("✅ [AuthContext] 注册成功!");
-            const { user, token } = response.data;
+            console.log("✅ [AuthContext] 注册物理存库成功，准备引导验证");
 
-            await SecureStore.setItemAsync('auth_token', token);
-            setUser(user);
-
-            // 注册成功直接进首页
-            router.replace('/(tabs)/Home');
+            // 注册成功验证邮箱
+            router.replace('/auth/EmailSentVerification');
 
         } catch (error: any) {
             console.log("❌ [AuthContext] 注册失败:", error.response?.data);
@@ -220,8 +205,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const resendVerification = async (email: string) => {
+        try {
+            // 对应我们之前在 api.php 定义的公开接口 [cite: 1, 2026-03-15]
+            await api.post('/email/resend-verification', { email });
+        } catch (error: any) {
+            console.error("❌ [AuthContext] 重发邮件失败:", error.response?.data);
+            throw error;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout, results, refreshResults, loadingResults, forgotPassword }}>
+        <AuthContext.Provider value={{ user, isLoading, login, register, googleLogin, logout, results, refreshResults, loadingResults, forgotPassword, resendVerification }}>
             {children}
         </AuthContext.Provider>
     );
