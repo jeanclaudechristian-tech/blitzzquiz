@@ -64,4 +64,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Result::class, 'user_id');
     }
+
+    public function sendPasswordResetNotification($token)
+    {
+        // 1. 获取你在 .env 中定义的 Vercel 前端地址 [cite: 1, 2026-03-15]
+        // 确保链接格式为：https://your-vercel-app.com/reset-password?token=xxx&email=xxx
+        $url = env('FRONTEND_URL') . '/reset-password?token=' . $token . '&email=' . $this->email;
+
+        // 2. 触发自定义通知类 [cite: 2026-03-15]
+        $this->notify(new \App\Notifications\ResetPasswordNotification($url));
+    }
 }
