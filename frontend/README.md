@@ -4,7 +4,7 @@
 [![Vite](https://img.shields.io/badge/Build_Tool-Vite_7.3.1-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Node](https://img.shields.io/badge/Runtime-Node.js_v22.16-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Vercel](https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel&logoColor=white)](https://vercel.com/)
-[![Docker](https://img.shields.io/badge/Environment-Docker_Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Docker](https://img.shields.io/badge/Environment-Docker_Compatible-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
 
 ## 🚀 Présentation du Déploiement

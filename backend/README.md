@@ -1,6 +1,6 @@
 # ⚡ BlizzQuiz - Noyau Backend
 
-[![Docker](https://img.shields.io/badge/Déploiement-Docker_Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Docker](https://img.shields.io/badge/Déploiement-Docker_Compatible-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 ![Laravel](https://img.shields.io/badge/Laravel-12.49.0-FF2D20?style=flat&logo=laravel)
 ![PHP](https://img.shields.io/badge/PHP-8.2.12-777BB4?style=flat&logo=php)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Connecté-4169E1?style=flat&logo=postgresql)

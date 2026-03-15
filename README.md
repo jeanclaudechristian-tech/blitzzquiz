@@ -5,8 +5,9 @@
 [![Web](https://img.shields.io/badge/Web-Vercel--Ready-black?style=flat&logo=vercel)](https://blizzquiz.vercel.app)
 [![API](https://img.shields.io/badge/API-Railway--Ready-0B0D0E?style=flat&logo=railway)](https://laravel-production-da37.up.railway.app/api)
 [![Mobile](https://img.shields.io/badge/Mobile-EAS--Ready-000000?style=flat&logo=expo&logoColor=white)](https://expo.dev/)
-[![Env](https://img.shields.io/badge/Env-Docker--Ready-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Env](https://img.shields.io/badge/Env-Docker--Compatible-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
+[![React Native](https://img.shields.io/badge/React_Native-20232A?logo=react&logoColor=61DAFB)](https://reactnative.dev/)
 [![Vue.js 3](https://img.shields.io/badge/Vue.js_3-4FC08D?style=flat&logo=vue.js&logoColor=white)](https://vuejs.org/)
 [![Vite 7](https://img.shields.io/badge/Vite_7-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Laravel 12](https://img.shields.io/badge/Laravel_12-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com/)
