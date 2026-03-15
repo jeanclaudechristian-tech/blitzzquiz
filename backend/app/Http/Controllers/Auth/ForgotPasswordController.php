@@ -29,4 +29,13 @@ class ForgotPasswordController extends Controller
             'message' => 'Reset password email sent.',
         ]);
     }
+
+    public function sendPasswordResetNotification($token)
+    {
+        // 1. 手动拼接指向 Vercel 的前端链接 [cite: 1, 2026-03-15]
+        $url = env('FRONTEND_URL') . '/reset-password?token=' . $token . '&email=' . $this->email;
+
+        // 2. 触发异步通知（需创建自定义 Notification 并实现 ShouldQueue） [cite: 2026-03-15]
+        $this->notify(new \App\Notifications\ResetPasswordNotification($url));
+    }
 }
