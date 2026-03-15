@@ -50,20 +50,22 @@ class QuizController extends Controller
         // 1. 初始化基础查询
         $query = Quiz::withCount('questions');
 
+        $weakCategories = [];
+
         // 2. 权限与等级过滤
-        if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
-            $query->where(function ($q) use ($user) {
-                $q->where('owner_id', $user->id)
-                  ->orWhere('is_public', true);
-            });
-        } elseif ($user->role === 'STUDENT') {
-            $query->where('is_public', true)
-                  ->when($user->education_level, function ($q) use ($user) {
-                      $q->where(function ($sub) use ($user) {
-                          $sub->whereNull('education_level')
-                              ->orWhere('education_level', $user->education_level);
-                      });
-                  });
+       if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
+           $query->where(function ($q) use ($user) {
+               $q->where('owner_id', $user->id)
+                 ->orWhereRaw('is_public = true');
+           });
+       } elseif ($user->role === 'STUDENT') {
+           $query->whereRaw('is_public = true')
+                 ->when($user->education_level, function ($q) use ($user) {
+                     $q->where(function ($sub) use ($user) {
+                         $sub->whereNull('education_level')
+                             ->orWhere('education_level', $user->education_level);
+                     });
+                 });
 
             // --- 核心：更安全的权重计算 ---
 
