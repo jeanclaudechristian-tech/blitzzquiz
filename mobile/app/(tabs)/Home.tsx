@@ -63,7 +63,7 @@ export default function HomeScreen() {
 
     // @ts-ignore
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container]}>
             <Animated.View
                 entering={FadeIn.duration(600)}
                 style={{ flex: 1}}
@@ -71,9 +71,10 @@ export default function HomeScreen() {
                 <View style={[
                     styles.content,
                     {
-                        // 动态计算顶部留白：insets.top 是状态栏高度，再加 20 像素的呼吸感
-                        paddingTop: Platform.OS === 'android' ? insets.top + 40 : 30,
-                        paddingBottom: Platform.OS === 'android' ? insets.bottom : 0
+                        // ✅ 顶部：只在 Android 下给一个微调，iOS 保持逻辑一致
+                        paddingTop: insets.top + (Platform.OS === 'android' ? 10 : 40),
+                        // ✅ 底部：确保内容到底，不留死角
+                        paddingBottom: insets.bottom > 0 ? insets.bottom : 20
                     }
                 ]}>
                 {/* Header 逻辑：当在 groups 时，Header 应该显示为 profile 选中状态或根据你设计调整 */}
@@ -174,7 +175,7 @@ export default function HomeScreen() {
                     <LoadingScreen />
                 </View>
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 

@@ -1,6 +1,6 @@
 // components/blitzz/QuizDetailModal.tsx
 import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, ActivityIndicator, Platform} from 'react-native';
 import { colors } from '@/components/blitzz/tokens';
 import { Quiz } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         // 限制最大高度，防止排名太长超出屏幕
         maxHeight: '90%',
+        paddingBottom: Platform.OS === 'ios' ? 40 : 30,
     },
     handle: { width: 40, height: 5, backgroundColor: '#EEE', borderRadius: 3, marginBottom: 25 },
     category: { color: colors.primary, fontWeight: '700', fontSize: 14, marginBottom: 8, textTransform: 'uppercase', textAlign: 'center' },
