@@ -34,6 +34,7 @@ export default function HomeScreen() {
     const [isStarting, setIsStarting] = useState(false);
 
     const handleStartQuiz = async (quiz: Quiz) => {
+        if (isSearching) return;
         setIsStarting(true);
         try {
             const questions = await fetchQuestions(quiz.id);
@@ -164,6 +165,7 @@ export default function HomeScreen() {
                 onClose={() => setIsModalVisible(false)}
                 onStart={handleStartQuiz} // ✅ 绑定这个仪式
                 groupId={(!isSearching && currentTab === 'group-detail') ? selectedGroup?.id : undefined}
+                isStarting={isStarting}
             />
 
             {/* 如果正在加载题目，可以加个全局加载状态 */}
