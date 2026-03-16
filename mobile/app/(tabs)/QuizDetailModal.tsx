@@ -14,9 +14,10 @@ interface QuizDetailModalProps {
     onClose: () => void;
     onStart: (quiz: Quiz) => void;
     groupId?: number;
+    isStarting?: boolean;
 }
 
-export const QuizDetailModal = ({ quiz, isVisible, onClose, onStart, groupId }: QuizDetailModalProps) => {
+export const QuizDetailModal = ({ quiz, isVisible, onClose, onStart, groupId, isStarting }: QuizDetailModalProps) => {
     const { fetchRanking } = useGroups();
     const { user } = useAuth(); // 获取当前用户，用来找自己的排名
     const [ranking, setRanking] = useState<any[]>([]);
@@ -118,9 +119,17 @@ export const QuizDetailModal = ({ quiz, isVisible, onClose, onStart, groupId }: 
                         <TouchableOpacity
                             style={styles.startButton}
                             onPress={() => onStart(quiz)}
+                            disabled={isStarting}
                         >
-                            <Text style={styles.startText}>Lancer le Quiz</Text>
-                            <Ionicons name="flash" size={20} color="#FFF" />
+                            {isStarting ? (
+                                // 5. 显示白色转圈动画
+                                <ActivityIndicator color={colors.light} />
+                            ) : (
+                                <>
+                                    <Text style={styles.startText}>Lancer le Quiz</Text>
+                                    <Ionicons name="flash" size={20} color="#FFF"/>
+                                </>
+                            )}
                         </TouchableOpacity>
                     </Pressable>
                 </Animated.View>
