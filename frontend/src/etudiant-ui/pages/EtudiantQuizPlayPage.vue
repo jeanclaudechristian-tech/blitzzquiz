@@ -19,44 +19,53 @@
             </div>
           </div>
           <div class="timer">
-            ⏱️ {{ remainingSeconds }}s
+            {{ remainingSeconds }}s
           </div>
         </header>
 
         <section class="play-body">
-          <h1 class="question-text">{{ currentQuestion.texte }}</h1>
+          <h1 class="question-text">
+            {{ currentQuestion.texte || 'Question introuvable' }}
+          </h1>
 
           <div class="choices-grid">
             <button
               v-for="opt in ['A','B','C','D']"
               :key="opt"
               type="button"
+              :disabled="!choiceText(opt) || lockedChoice || finishing"
               :class="[
                 'choice-btn',
                 {
                   selected: selectedChoice === opt,
                   correct:
                     showFeedback &&
-                    opt === (currentQuestion.metadata?.bonneReponse),
+                    currentQuestion.metadata &&
+                    opt === currentQuestion.metadata.bonneReponse,
                   wrong:
                     showFeedback &&
+                    currentQuestion.metadata &&
                     selectedChoice === opt &&
-                    opt !== (currentQuestion.metadata?.bonneReponse),
+                    opt !== currentQuestion.metadata.bonneReponse,
                 },
               ]"
               @click="selectChoice(opt)"
             >
               <span class="choice-label">{{ opt }}</span>
-              <span class="choice-text">{{ choiceText(opt) }}</span>
+              <span class="choice-text">
+                {{ choiceText(opt) || '(aucun texte)' }}
+              </span>
             </button>
           </div>
         </section>
 
         <footer class="play-footer">
           <CallToActionBtn
-            text="Suivant"
+            :text="inReview ? 'Continuer' : 'Valider la réponse'"
             variant="blue"
-            :class="{ disabled: !selectedChoice }"
+            :class="{
+              disabled: (!selectedChoice && !inReview) || finishing,
+            }"
             @click="nextQuestion"
           />
         </footer>
@@ -90,12 +99,15 @@ export default {
       questions: [],
       currentIndex: 0,
       selectedChoice: '',
+      lockedChoice: false,
       showFeedback: false,
+      inReview: false,
       remainingSeconds: 60,
       timerId: null,
       answers: [],
       loading: false,
       error: '',
+      finishing: false, // <--- nouveau flag
     }
   },
   computed: {
@@ -153,24 +165,40 @@ export default {
       return q.metadata[`choix${opt}`] || ''
     },
     selectChoice(opt) {
+      if (!this.choiceText(opt)) return
+      if (this.lockedChoice || this.finishing) return
       this.selectedChoice = opt
-      this.showFeedback = false
     },
     nextQuestion() {
-      if (!this.selectedChoice) return
+      if (this.finishing) return
 
-      this.answers[this.currentIndex] = this.selectedChoice
-      this.showFeedback = true
+      // rien choisi et pas en review → on ne fait rien
+      if (!this.selectedChoice && !this.inReview) return
 
+      // 1er clic après le choix → verrouiller la réponse + montrer le feedback
+      if (!this.inReview) {
+        this.answers[this.currentIndex] = this.selectedChoice
+        this.lockedChoice = true
+        this.showFeedback = true
+        this.inReview = true
+        return
+      }
+
+      // 2e clic → question suivante ou fin
       if (this.currentIndex < this.questions.length - 1) {
         this.currentIndex += 1
         this.selectedChoice = ''
+        this.lockedChoice = false
         this.showFeedback = false
+        this.inReview = false
       } else {
         this.finishQuiz()
       }
     },
     async finishQuiz() {
+      if (this.finishing) return
+      this.finishing = true
+
       this.stopTimer()
       const total = this.questions.length
       let correct = 0
@@ -193,7 +221,6 @@ export default {
         temps_ecoule: tempsEcoule,
       }
 
-      // Sauvegarde en DB : score = pourcentage
       try {
         await api.post(`/quizzes/${quizId}/results`, {
           score: percent,
@@ -204,6 +231,7 @@ export default {
 
       const key = `etudiant_quiz_result_${quizId}`
       sessionStorage.setItem(key, JSON.stringify(result))
+
       this.$router.push(`/etudiant/quiz/${quizId}/loading`)
     },
     goBack() {
