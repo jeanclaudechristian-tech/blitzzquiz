@@ -1,12 +1,13 @@
 // components/blitzz/QuizDetailModal.tsx
 import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, ActivityIndicator, Platform} from 'react-native';
 import { colors } from '@/components/blitzz/tokens';
 import { Quiz } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import {useGroups} from "@/services/GroupContext";
 import {useAuth} from "@/services/AuthContext";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface QuizDetailModalProps {
     quiz: Quiz | null;
@@ -17,11 +18,16 @@ interface QuizDetailModalProps {
     isStarting?: boolean;
 }
 
+
 export const QuizDetailModal = ({ quiz, isVisible, onClose, onStart, groupId, isStarting }: QuizDetailModalProps) => {
     const { fetchRanking } = useGroups();
     const { user } = useAuth(); // 获取当前用户，用来找自己的排名
     const [ranking, setRanking] = useState<any[]>([]);
     const [isLoadingRank, setIsLoadingRank] = useState(false);
+    const insets = useSafeAreaInsets();
+    const dynamicPaddingBottom = Platform.OS === 'android'
+        ? (insets.bottom > 0 ? insets.bottom + 20 : 30)
+        : (insets.bottom > 0 ? insets.bottom + 10 : 40);
 
     // ✅ 当弹窗打开且存在 groupId 时，拉取排行榜
     useEffect(() => {
@@ -50,7 +56,7 @@ export const QuizDetailModal = ({ quiz, isVisible, onClose, onStart, groupId, is
                 <Animated.View
                     entering={SlideInDown}
                     exiting={SlideOutDown}
-                    style={styles.sheet}
+                    style={[styles.sheet, { paddingBottom: dynamicPaddingBottom }]}
                 >
                     <Pressable style={{ width: '100%' }}>
                         <View style={styles.handle} />
