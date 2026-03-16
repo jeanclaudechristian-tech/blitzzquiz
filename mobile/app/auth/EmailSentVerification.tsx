@@ -11,6 +11,7 @@ import { IconSvg } from "../../components/blitzz/IconSvg";
 import { TextLink } from "../../components/blitzz/TextLink"; // 加个返回按钮方便测试
 import { assets } from "../../components/blitzz/assets";
 import { colors, fonts } from "../../components/blitzz/tokens";
+import {DarkButton} from "@/components/blitzz/DarkButton";
 
 export default function EmailSentVerification() {
   const router = useRouter();
@@ -30,8 +31,12 @@ export default function EmailSentVerification() {
     return unsubscribe;
   }, [navigation, isVisible]);
 
-  const handleBack = () => {
-    router.back();
+  const handleGoToLogin = () => {
+    setIsVisible(false);
+    setTimeout(() => {
+      // 使用 replace 防止用户返回到这个“已发送”页面
+      router.replace("/auth/LoginScreen");
+    }, 600);
   };
 
   return (
@@ -68,9 +73,18 @@ export default function EmailSentVerification() {
                   <View style={styles.buttonSection}>
                     <Animated.View
                         entering={SlideInRight.delay(500).duration(600).springify()}
+                        exiting={SlideOutLeft.delay(150).duration(500)}
+                        style={{ width: '100%', marginBottom: 20 }}
+                    >
+                      <DarkButton
+                          label="Retour à la connexion"
+                          onPress={handleGoToLogin}
+                      />
+                    </Animated.View>
+                    <Animated.View
+                        entering={SlideInRight.delay(500).duration(600).springify()}
                         exiting={SlideOutLeft.delay(200).duration(500)}
                     >
-                      <TextLink label="Retour" onPress={handleBack} />
                     </Animated.View>
                   </View>
                 </>

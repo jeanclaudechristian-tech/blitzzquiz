@@ -15,16 +15,24 @@ type SelectFieldProps = {
   icon?: React.ReactNode;
   options?: string[];
   onSelect?: (value: string) => void;
+  isOpenExternal?: boolean;
+  onToggle?: () => void;
 };
 
 export function SelectField({
                               label,
                               icon,
                               options = ["Secondaire", "Cégep", "Université"],
-                              onSelect
+                              onSelect,
+                              isOpenExternal, // ✅ 接收外部状态
+                              onToggle
                             }: SelectFieldProps) {
 
   const isOpen = useSharedValue(false);
+  React.useEffect(() => {
+    isOpen.value = !!isOpenExternal;
+  }, [isOpenExternal]);
+
   const [selected, setSelected] = React.useState<string | null>(null);
 
   const toggleDropdown = () => {
@@ -33,7 +41,7 @@ export function SelectField({
 
   const handleSelect = (option: string) => {
     setSelected(option);
-    isOpen.value = false;
+    if (onToggle) onToggle(); // 关闭
     if (onSelect) onSelect(option);
   };
 
@@ -59,7 +67,7 @@ export function SelectField({
         {/* 按钮部分保持不变 */}
         <TouchableOpacity
             style={styles.container}
-            onPress={toggleDropdown}
+            onPress={onToggle}
             activeOpacity={0.8}
         >
           <Text style={[styles.text, selected && styles.selectedText]}>

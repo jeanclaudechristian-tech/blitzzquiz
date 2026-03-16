@@ -60,13 +60,23 @@ const routes = [
     component: DesktopInscriptionPage2,
   },
   {
+    path: "/inscription/success",
+    name: "InscriptionSuccess",
+    component: () => import("../auth-ui/pages/InscriptionSuccess.vue"),
+  },
+  {
+    path: "/verify-email",
+    name: "VerifyEmail",
+    component: () => import("../auth-ui/pages/DesktopEmailVerify.vue"),
+  },
+  {
     path: "/reset-courriel",
     name: "ResetCourriel",
     component: DesktopCourriel,
   },
   {
-    path: "/reset-mot-de-passe",
-    name: "ResetMotDePasse",
+    path: "/reset-password",
+    name: "ResetPassword",
     component: DesktopResetMotDePasse,
   },
   {

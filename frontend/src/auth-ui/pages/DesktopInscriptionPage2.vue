@@ -155,18 +155,12 @@ export default {
           )
         }
 
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
+        console.log('Inscription réussie, attente de vérification:', data.user);
 
-        console.log('Inscription réussie:', data.user)
-
-        if (data.user.role === 'TEACHER') {
-          this.$router.push('/enseignant')
-        } else if (data.user.role === 'STUDENT') {
-          this.$router.push('/etudiant')
-        } else {
-          this.$router.push('/')
-        }
+        this.$router.push({
+          path: '/inscription/success',
+          query: { email: this.formData.email }
+        });
 
       } catch (error) {
         console.error("Erreur inscription:", error)

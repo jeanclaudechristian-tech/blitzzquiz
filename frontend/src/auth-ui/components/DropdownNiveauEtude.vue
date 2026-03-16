@@ -44,7 +44,7 @@ export default {
       options: [
         { value: '', label: 'Choisir' },
         { value: 'universitaire', label: 'Universitaire' },
-        { value: 'collegial', label: 'Collegial' },
+        { value: 'collégiale', label: 'Collegial' },
         { value: 'secondaire', label: 'Secondaire' },
         { value: 'primaire', label: 'Primaire' }
       ]

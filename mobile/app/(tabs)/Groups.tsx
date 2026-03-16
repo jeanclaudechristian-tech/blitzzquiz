@@ -40,6 +40,11 @@ export default function Groups({ onBack, onSelectGroup }: { onBack: () => void, 
 
             <FlatList
                 data={groups} //
+                style={{ marginHorizontal: -15 }}
+                contentContainerStyle={{
+                    paddingHorizontal: 15, // 给阴影留出绝对安全的渲染区
+                    paddingBottom: 20
+                }}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => {
                     const isOwner = user?.id === item.owner_id; // 比对数据库里的 owner_id
@@ -65,7 +70,7 @@ export default function Groups({ onBack, onSelectGroup }: { onBack: () => void, 
                     );
                 }}
                 ListEmptyComponent={
-                    <Text style={styles.emptyText}>Vous n'avez rejoint aucun groupe.</Text>
+                    <Text style={styles.emptyText}>Vous n&#39;avez rejoint aucun groupe.</Text>
                 }
             />
 
@@ -118,7 +123,7 @@ const styles = StyleSheet.create({
     groupName: { fontSize: 18, fontWeight: '600', color: colors.dark },
     memberCount: { fontSize: 14, color: colors.secondaryText, marginTop: 4 },
     codeHint: { fontFamily: fonts.inter, color: colors.primary, fontWeight: 'bold' },
-    footerBtn: { marginTop: 20 },
+    footerBtn: { marginTop: 20, marginBottom: 20 },
     modalOverlay: { flex: 1, justifyContent: 'center', padding: 20 },
     modalContent: { backgroundColor: '#FFF', borderRadius: 20, padding: 30, borderWidth: 1, borderColor: "black" },
     modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 20, textAlign: 'center' },

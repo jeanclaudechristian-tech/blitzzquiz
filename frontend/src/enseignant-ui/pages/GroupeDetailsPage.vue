@@ -164,6 +164,7 @@
 </template>
 
 <script>
+import api from '../../api/Axios'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 import { groupService } from '../../api/groups'
 
@@ -211,17 +212,23 @@ export default {
         this.$router.push('/enseignant/groupes')
       }
     },
-    loadQuizzes() {
-      // tu gardes ton mock ou tu brancheras plus tard sur /api/quizzes
-      const storageKey = 'enseignant_quizzes'
+    async loadQuizzes() {
+      // Charge les vrais quiz de l'enseignant depuis l'API (/quizzes)
       try {
-        const saved = localStorage.getItem(storageKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          this.allQuizzes = parsed
-        }
-      } catch {
+        const user = JSON.parse(localStorage.getItem('user') || 'null')
+        const userId = user?.id ?? null
+
+        const { data } = await api.get('/quizzes')
+
+        this.allQuizzes = data
+          .filter((q) => !userId || q.owner_id === userId)
+          .map((q) => ({
+            id: q.id,
+            titre: q.titre,
+            nbQuestions: q.questions_count ?? 0,
+          }))
+      } catch (e) {
+        console.error('Erreur chargement quiz pour association groupe', e)
         this.allQuizzes = []
       }
     },
@@ -248,21 +255,30 @@ export default {
         console.error(e)
       }
     },
-    assignQuiz() {
-      // inchangé (mock), tu brancheras ensuite sur l’API
+    async assignQuiz() {
+      // Envoie l'info au backend pour créer une ligne dans assignments
       if (!this.selectedQuizId) return
-      const newAssignment = {
-        quizId: this.selectedQuizId,
-        statut: 'actif',
-        dateAssignation: new Date().toISOString(),
+      try {
+        const { data } = await groupService.assignQuizToGroup(
+          this.groupe.id,
+          this.selectedQuizId,
+        )
+        // data ressemble à { quizId, statut, dateAssignation }
+        this.groupe.quizAssignes.push(data)
+        this.selectedQuizId = ''
+      } catch (e) {
+        console.error('Erreur lors de lassociation du quiz au groupe', e)
       }
-      this.groupe.quizAssignes.push(newAssignment)
-      this.selectedQuizId = ''
     },
-    removeQuizAssignment(quizId) {
-      this.groupe.quizAssignes = this.groupe.quizAssignes.filter(
-        (qa) => qa.quizId !== quizId,
-      )
+    async removeQuizAssignment(quizId) {
+      try {
+        await groupService.removeQuizFromGroup(this.groupe.id, quizId)
+        this.groupe.quizAssignes = this.groupe.quizAssignes.filter(
+          (qa) => qa.quizId !== quizId,
+        )
+      } catch (e) {
+        console.error('Erreur lors du retrait du quiz du groupe', e)
+      }
     },
     inviteMembre() {
       // pour l’instant mock; tu brancheras plus tard
