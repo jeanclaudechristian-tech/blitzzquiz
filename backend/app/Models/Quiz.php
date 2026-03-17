@@ -6,10 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\User;
-use App\Models\Question;
-use App\Models\Assignment;
-use App\Models\Result;
 
 class Quiz extends Model
 {
@@ -18,16 +14,22 @@ class Quiz extends Model
     protected $fillable = [
         'titre',
         'description',
-        'category',   // ou 'categorie' si ta colonne s'appelle comme ça
+        'category_id',
         'is_public',
         'code_quiz',
         'owner_id',
         'education_level',
+        'plays_count'
     ];
+
     protected $casts = [
         'is_public' => 'boolean',
     ];
 
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     public function owner(): BelongsTo
     {
@@ -39,15 +41,11 @@ class Quiz extends Model
         return $this->hasMany(Question::class, 'quiz_id');
     }
 
-    public function assignments(): HasMany
-    {
-        return $this->hasMany(Assignment::class, 'quiz_id');
-    }
-
     public function results(): HasMany
     {
         return $this->hasMany(Result::class, 'quiz_id');
     }
+
     public function scopeSearch($query, string $term)
     {
         if (blank($term)) {
@@ -56,11 +54,11 @@ class Quiz extends Model
 
         return $query
             ->whereRaw(
-                "search_vector @@ plainto_tsquery('french', ?)",
+                "search_vector @@ websearch_to_tsquery('french', ?)",
                 [$term]
             )
             ->orderByRaw(
-                "ts_rank(search_vector, plainto_tsquery('french', ?)) DESC",
+                "ts_rank(search_vector, websearch_to_tsquery('french', ?)) DESC",
                 [$term]
             );
     }
