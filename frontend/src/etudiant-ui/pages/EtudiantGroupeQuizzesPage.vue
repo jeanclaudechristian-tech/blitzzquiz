@@ -8,13 +8,34 @@
         </button>
 
         <h1>{{ groupeNom }}</h1>
-        <p class="subtitle">Quiz associés à ce groupe</p>
 
-        <div v-if="loading" class="loading-msg">Chargement des quiz...</div>
-        <div v-else-if="quizzes.length === 0" class="empty-msg">
-          Aucun quiz associé à ce groupe pour le moment.
-        </div>
-        <div v-else class="quizzes-grid">
+        <!-- Liens de navigation en haut de la card -->
+        <nav class="card-nav">
+          <button
+            type="button"
+            :class="['nav-link', { 'nav-link--active': activeTab === 'quiz' }]"
+            @click="activeTab = 'quiz'"
+          >
+            Voir quiz
+          </button>
+          <button
+            type="button"
+            :class="['nav-link', { 'nav-link--active': activeTab === 'membres' }]"
+            @click="activeTab = 'membres'"
+          >
+            Voir membres
+          </button>
+          <router-link to="/historique" class="nav-link">Voir historique</router-link>
+        </nav>
+
+        <!-- Contenu : quiz -->
+        <template v-if="activeTab === 'quiz'">
+          <p class="subtitle">Quiz associés à ce groupe</p>
+          <div v-if="loading" class="loading-msg">Chargement des quiz...</div>
+          <div v-else-if="quizzes.length === 0" class="empty-msg">
+            Aucun quiz associé à ce groupe pour le moment.
+          </div>
+          <div v-else class="quizzes-grid">
           <div
             v-for="quiz in quizzes"
             :key="quiz.id"
@@ -25,7 +46,23 @@
             <p>{{ quiz.categorie }} • {{ quiz.nbQuestions }} questions</p>
             <button type="button" class="voir-btn">Jouer</button>
           </div>
-        </div>
+          </div>
+        </template>
+
+        <!-- Contenu : membres -->
+        <template v-else-if="activeTab === 'membres'">
+          <p class="subtitle">Membres du groupe</p>
+          <div v-if="loading" class="loading-msg">Chargement des membres...</div>
+          <div v-else-if="membres.length === 0" class="empty-msg">
+            Aucun membre dans ce groupe.
+          </div>
+          <div v-else class="membres-list">
+            <div v-for="m in membres" :key="m.id" class="membre-item">
+              <span class="membre-name">{{ m.nickname || m.name || m.email || 'Membre' }}</span>
+              <span v-if="m.email" class="membre-email">{{ m.email }}</span>
+            </div>
+          </div>
+        </template>
       </section>
     </main>
   </div>
@@ -44,6 +81,8 @@ export default {
     return {
       groupeNom: 'Groupe',
       quizzes: [],
+      membres: [],
+      activeTab: 'quiz',
       loading: true
     }
   },
@@ -67,6 +106,7 @@ export default {
         // Récupère les infos du groupe (nom, etc.)
         const { data: groupe } = await groupService.show(groupeId)
         this.groupeNom = groupe.nom
+        this.membres = groupe.members || []
 
         // Récupère les quiz assignés au groupe via GET /api/groups/{id}/quizzes
         const { data: quizzesData } = await groupService.getQuizzes(groupeId)

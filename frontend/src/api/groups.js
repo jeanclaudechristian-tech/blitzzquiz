@@ -55,4 +55,12 @@ export const groupService = {
   removeQuizFromGroup(groupId, quizId) {
     return api.delete(`/groups/${groupId}/assignments/${quizId}`);
   },
+
+  /**
+   * Inviter un membre par email (enseignant owner).
+   * POST /api/groups/{id}/members/invite avec { email }
+   */
+  inviteMemberByEmail(groupId, email) {
+    return api.post(`/groups/${groupId}/members/invite`, { email });
+  },
 };
