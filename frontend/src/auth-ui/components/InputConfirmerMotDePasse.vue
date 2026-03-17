@@ -7,7 +7,7 @@
       :type="showPassword ? 'text' : 'password'"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
-      placeholder="Confirmer mot de passe"
+      :placeholder="placeholder"
       class="input-field"
       :disabled="disabled"
     />
@@ -24,6 +24,10 @@ export default {
     modelValue: {
       type: String,
       default: ''
+    },
+    placeholder: {
+      type: String,
+      default: 'Confirmer mot de passe'
     },
     disabled: {
       type: Boolean,

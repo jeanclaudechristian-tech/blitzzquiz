@@ -18,15 +18,14 @@ export default {
     return {
       activeIndex: 0,
       isMobile: false,
-      // La liste de TOUTES les sections possibles
       allDots: [
         { id: 'section-hero',        label: 'Accueil' },
         { id: 'section-suggestions', label: 'Quiz suggérés' },
         { id: 'section-categories',  label: 'Catégories' },
-        { id: 'section-cta',         label: 'Rejoignez-nous' }, /* Le nouveau point ! */
+        { id: 'section-cta',         label: 'Rejoignez-nous' },
         { id: 'section-footer',      label: 'À propos' },
       ],
-      visibleDots: [] // Les points qui sont réellement affichés
+      visibleDots: []
     }
   },
   mounted() {
@@ -36,7 +35,6 @@ export default {
     window.addEventListener('scroll', this.onScroll, { passive: true });
   },
   updated() {
-    // Si l'utilisateur se connecte/déconnecte, on met à jour les points
     this.updateVisibleDots();
   },
   beforeUnmount() {
@@ -48,8 +46,17 @@ export default {
       this.isMobile = window.innerWidth <= 768;
     },
     updateVisibleDots() {
-      // On ne garde que les points dont la section existe sur la page
-      this.visibleDots = this.allDots.filter(dot => document.getElementById(dot.id));
+      // 1. On calcule la nouvelle liste théorique
+      const newDots = this.allDots.filter(dot => document.getElementById(dot.id));
+
+      // 2. 🎯 LE FIX EST ICI : On vérifie si la liste a vraiment changé
+      const hasChanged = newDots.length !== this.visibleDots.length ||
+                         !newDots.every((dot, i) => dot.id === this.visibleDots[i].id);
+
+      // 3. On ne met à jour Vue que si c'est nécessaire (casse la boucle infinie)
+      if (hasChanged) {
+        this.visibleDots = newDots;
+      }
     },
     scrollTo(id) {
       const el = document.getElementById(id);
