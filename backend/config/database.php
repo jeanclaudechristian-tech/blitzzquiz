@@ -96,19 +96,12 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
-<<<<<<< HEAD
-
-            'options' => [
-                \PDO::ATTR_EMULATE_PREPARES => true,
-            ],
-=======
             'options' => [
                 PDO::ATTR_PERSISTENT => false,
                 PDO::ATTR_TIMEOUT => 5,
                 PDO::ATTR_EMULATE_PREPARES => true,
             ],
             'prepared_statements' => false,
->>>>>>> 8538e52f890c2dc7834fa6b072a2e846bcd0d56b
         ],
 
         'sqlsrv' => [
