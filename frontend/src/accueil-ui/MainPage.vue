@@ -129,7 +129,6 @@ export default {
     }
   },
   methods: {
-    // 🎯 Ta logique d'origine, extraite pour être réutilisée
     checkUserAuth() {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
@@ -140,7 +139,9 @@ export default {
           try {
             const userObj = JSON.parse(userStr);
             this.userName = userObj.username || userObj.email?.split('@')[0] || 'Étudiant';
-          } catch (e) { this.userName = 'Étudiant'; }
+          } catch (e) { 
+            this.userName = 'Étudiant'; 
+          }
         }
       } else {
         this.isLoggedIn = false;
@@ -151,7 +152,7 @@ export default {
   mounted() {
     this.checkUserAuth();
   },
-  // 🎯 L'UNIQUE AJOUT : Cela mettra à jour la page dès que tu reviens de "/connexion"
+  // 🎯 L'UNIQUE AJOUT : Met à jour "Bonjour X" dès que tu reviens de la page de connexion
   watch: {
     '$route'() {
       this.checkUserAuth();

@@ -3,78 +3,151 @@
     <AppHeader />
 
     <main class="etudiant-main">
-      <!-- Hero -->
-      <section class="etudiant-hero">
-        <div class="etudiant-hero-left">
-          <h1>Profil</h1>
+      <section class="profil-hero panel-surface">
+        <div class="hero-copy">
+          <p class="hero-kicker">Espace etudiant</p>
+          <h1>Mon profil</h1>
+          <p class="hero-subtitle">
+            Gere ton compte, mets a jour tes informations et garde un acces
+            propre a ton espace BlitzzQuiz.
+          </p>
 
-          <div class="etudiant-hero-actions">
-            <button class="btn-primary" @click="goBackToDashboard">
-              Retour au tableau de bord
+          <div class="hero-actions">
+            <button class="btn-secondary" type="button" @click="goBack">
+              Retour
             </button>
           </div>
         </div>
 
+        <aside class="hero-summary">
+          <div class="hero-avatar">{{ initials }}</div>
+
+          <div class="hero-summary-copy">
+            <span class="summary-overline">Compte actif</span>
+            <strong>{{ displayName }}</strong>
+            <span>{{ form.email || 'Courriel non renseigne' }}</span>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-label">Niveau</span>
+              <strong>{{ educationLevelLabel }}</strong>
+            </div>
+
+            <div class="summary-item">
+              <span class="summary-label">Securite</span>
+              <strong>{{ passwordStatusLabel }}</strong>
+            </div>
+          </div>
+        </aside>
       </section>
 
-      <!-- Carte profil -->
-      <section class="profil-card">
-        <h2>Informations du compte</h2>
-
-        <div class="profil-fields">
-          <label class="field-label">Courriel</label>
-          <InputCourriel v-model="form.email" />
-
-          <label class="field-label">Nom d’utilisateur</label>
-          <InputNomUtilisateur v-model="form.username" />
-
-          <label class="field-label">Niveau d’étude</label>
-          <DropdownNiveauEtude v-model="form.education_level" />
-        </div>
-
-        <button
-          class="btn-primary"
-          :disabled="savingProfile"
-          @click="updateProfile"
-        >
-          {{ savingProfile ? 'Sauvegarde...' : 'Mettre à jour le profil' }}
-        </button>
+      <section v-if="message || error" class="feedback-stack">
+        <p v-if="message" class="profil-message">{{ message }}</p>
+        <p v-if="error" class="profil-error">{{ error }}</p>
       </section>
 
-      <!-- Carte mot de passe -->
-      <section class="profil-card">
-        <h2>Changer le mot de passe</h2>
+      <div class="profil-layout">
+        <section class="profil-card panel-surface">
+          <header class="card-header">
+            <p class="card-kicker">Compte</p>
+            <h2>Informations du compte</h2>
+            <p class="card-description">
+              Modifie ton courriel, ton nom visible et ton niveau d'etude.
+            </p>
+          </header>
 
-        <div class="profil-fields">
-          <label class="field-label">Mot de passe actuel</label>
-          <InputMotDePasse
-            v-model="passwordForm.current_password"
-            placeholder="Mot de passe actuel"
-          />
+          <div class="profil-fields">
+            <div class="field-group">
+              <label class="field-label">Courriel</label>
+              <InputCourriel
+                v-model="form.email"
+                :placeholder="form.email || 'Courriel (personnel ou scolaire)'"
+              />
+            </div>
 
-          <label class="field-label">Nouveau mot de passe</label>
-          <InputMotDePasse
-            v-model="passwordForm.new_password"
-            placeholder="Nouveau mot de passe"
-          />
+            <div class="field-group">
+              <label class="field-label">Nom d'utilisateur</label>
+              <InputNomUtilisateur
+                v-model="form.username"
+                :placeholder="form.username || 'Nom d\'utilisateur'"
+              />
+            </div>
 
-          <label class="field-label">Confirmer le nouveau mot de passe</label>
-          <InputConfirmerMotDePasse
-            v-model="passwordForm.new_password_confirmation"
-          />
-        </div>
+            <div class="field-group">
+              <label class="field-label">Niveau d'etude</label>
+              <DropdownNiveauEtude v-model="form.education_level" />
+            </div>
+          </div>
 
-        <button
-          class="btn-primary"
-          :disabled="savingPassword"
-          @click="updatePassword"
-        >
-          {{ savingPassword ? 'Modification...' : 'Mettre à jour le mot de passe' }}
-        </button>
-      </section>
+          <div class="card-actions">
+            <button
+              class="btn-primary"
+              type="button"
+              :disabled="savingProfile"
+              @click="updateProfile"
+            >
+              {{ savingProfile ? 'Sauvegarde...' : 'Mettre a jour le profil' }}
+            </button>
+          </div>
+        </section>
 
-      <p v-if="message" class="profil-message">{{ message }}</p>
-      <p v-if="error" class="profil-error">{{ error }}</p>
+        <section class="profil-card panel-surface">
+          <header class="card-header">
+            <p class="card-kicker">Securite</p>
+            <h2>Changer le mot de passe</h2>
+            <p class="card-description">
+              Utilise un mot de passe unique pour proteger ton compte.
+            </p>
+          </header>
+
+          <div class="profil-fields">
+            <div class="field-group">
+              <label class="field-label">Mot de passe actuel</label>
+              <InputMotDePasse
+                v-model="passwordForm.current_password"
+                placeholder="Mot de passe actuel"
+              />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Nouveau mot de passe</label>
+              <InputMotDePasse
+                v-model="passwordForm.new_password"
+                placeholder="Nouveau mot de passe"
+              />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Confirmer le nouveau mot de passe</label>
+              <InputConfirmerMotDePasse
+                v-model="passwordForm.new_password_confirmation"
+                placeholder="Confirmer le nouveau mot de passe"
+              />
+            </div>
+          </div>
+
+          <p class="security-note">
+            Conseil: evite de reutiliser un mot de passe deja employe sur un
+            autre service.
+          </p>
+
+          <div class="card-actions">
+            <button
+              class="btn-primary"
+              type="button"
+              :disabled="savingPassword"
+              @click="updatePassword"
+            >
+              {{
+                savingPassword
+                  ? 'Modification...'
+                  : 'Mettre a jour le mot de passe'
+              }}
+            </button>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 </template>
@@ -87,6 +160,14 @@ import InputNomUtilisateur from '@/auth-ui/components/InputNomUtilisateur.vue'
 import DropdownNiveauEtude from '@/auth-ui/components/DropdownNiveauEtude.vue'
 import InputMotDePasse from '@/auth-ui/components/InputMotDePasse.vue'
 import InputConfirmerMotDePasse from '@/auth-ui/components/InputConfirmerMotDePasse.vue'
+
+const EDUCATION_LEVEL_LABELS = {
+  universitaire: 'Universitaire',
+  'collégiale': 'Collégial',
+  collegiale: 'Collégial',
+  secondaire: 'Secondaire',
+  primaire: 'Primaire',
+}
 
 export default {
   name: 'EtudiantProfil',
@@ -118,24 +199,42 @@ export default {
   },
   computed: {
     initials() {
-      if (!this.form.username) return '?'
-      return this.form.username
+      if (!this.displayName) return '?'
+
+      return this.displayName
         .split(' ')
-        .map((n) => n[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
         .join('')
         .toUpperCase()
+    },
+    displayName() {
+      if (this.form.username) return this.form.username
+      if (this.form.email) return this.form.email.split('@')[0]
+      return 'Etudiant'
+    },
+    educationLevelLabel() {
+      return EDUCATION_LEVEL_LABELS[this.form.education_level] || 'A definir'
+    },
+    passwordStatusLabel() {
+      if (this.savingPassword) return 'Mise a jour'
+      return 'Active'
     },
   },
   async mounted() {
     try {
-      // API: GET /api/me   (si baseURL = https://.../api)
       const { data } = await axios.get('/me')
-      this.form.email = data.email
-      this.form.username = data.nickname || data.username || ''
-      this.form.education_level = data.education_level || ''
-    } catch (e) {
+      const user = data.user ?? data
+
+      this.form.email = user.email || ''
+      this.form.username = user.nickname || user.username || ''
+      this.form.education_level = this.normalizeEducationLevel(
+        user.education_level || ''
+      )
+    } catch (error) {
       this.error = 'Impossible de charger le profil'
-      console.error(e)
+      console.error(error)
     }
   },
   methods: {
@@ -143,6 +242,7 @@ export default {
       this.savingProfile = true
       this.message = ''
       this.error = ''
+
       try {
         const payload = {
           email: this.form.email,
@@ -150,13 +250,12 @@ export default {
           education_level: this.form.education_level,
         }
 
-        // API: PATCH /api/me
         const { data } = await axios.patch('/me', payload)
-        this.message = data.message || 'Profil mis à jour'
-      } catch (e) {
+        this.message = data.message || 'Profil mis a jour'
+      } catch (error) {
         this.error =
-          e.response?.data?.message ||
-          "Erreur lors de la mise à jour du profil"
+          error.response?.data?.message ||
+          'Erreur lors de la mise a jour du profil'
       } finally {
         this.savingProfile = false
       }
@@ -165,23 +264,44 @@ export default {
       this.savingPassword = true
       this.message = ''
       this.error = ''
+
       try {
-        // API: PATCH /api/me/password
         const { data } = await axios.patch('/me/password', this.passwordForm)
-        this.message = data.message || 'Mot de passe modifié'
+        this.message = data.message || 'Mot de passe modifie'
         this.passwordForm.current_password = ''
         this.passwordForm.new_password = ''
         this.passwordForm.new_password_confirmation = ''
-      } catch (e) {
+      } catch (error) {
         this.error =
-          e.response?.data?.message ||
+          error.response?.data?.message ||
           'Erreur lors du changement de mot de passe'
       } finally {
         this.savingPassword = false
       }
     },
-    goBackToDashboard() {
-      this.$router.push('/etudiant')
+    normalizeEducationLevel(value) {
+      const normalized = String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+
+      const mapping = {
+        universitaire: 'universitaire',
+        collegiale: 'collégiale',
+        secondaire: 'secondaire',
+        primaire: 'primaire',
+      }
+
+      return mapping[normalized] || value || ''
+    },
+    goBack() {
+      if (window.history.length > 1) {
+        this.$router.back()
+        return
+      }
+
+      this.$router.push('/')
     },
   },
 }
