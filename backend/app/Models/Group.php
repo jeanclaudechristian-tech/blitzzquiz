@@ -34,4 +34,5 @@ class Group extends Model
     {
         return $this->hasMany(Assignment::class, 'group_id');
     }
+    
 }

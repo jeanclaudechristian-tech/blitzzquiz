@@ -14,38 +14,53 @@ class Quiz extends Model
     protected $fillable = [
         'titre',
         'description',
-        'category_id',
+        'category_id',     
         'is_public',
         'code_quiz',
         'owner_id',
         'education_level',
-        'plays_count'
+        'plays_count'      
     ];
 
     protected $casts = [
-        'is_public' => 'boolean',
+        'is_public' => 'boolean', // 🎯 Important pour que Laravel traite la colonne comme un booléen
     ];
 
+    /**
+     * Relation vers la table categories
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
+    /**
+     * Relation vers l'utilisateur (créateur du quiz)
+     */
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    /**
+     * Relation vers les questions
+     */
     public function questions(): HasMany
     {
         return $this->hasMany(Question::class, 'quiz_id');
     }
 
+    /**
+     * Relation vers les résultats (tentatives)
+     */
     public function results(): HasMany
     {
         return $this->hasMany(Result::class, 'quiz_id');
     }
 
+    /**
+     * Scope pour la recherche Full-Text Postgres (tsvector)
+     */
     public function scopeSearch($query, string $term)
     {
         if (blank($term)) {

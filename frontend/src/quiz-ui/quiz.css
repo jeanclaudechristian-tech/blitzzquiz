@@ -1,0 +1,283 @@
+.play-page-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10000; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.back-button-floating {
+  position: absolute;
+  top: 30px;
+  left: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: 10001;
+  transition: background 0.2s ease;
+}
+
+.back-button-floating:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.quiz-3d-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 1500px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quiz-stack-track {
+  position: relative;
+  width: 870px;  
+  height: 500px; 
+  transform-style: preserve-3d;
+}
+
+.play-card-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.empty-state-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.2rem;
+  color: #1a1a1a;
+}
+
+.error-text {
+  color: #e74c3c;
+}
+
+.play-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 60%;
+}
+
+.progress-info span {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #00A3FF;
+  transition: width 0.3s ease;
+}
+
+.timer {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: #f3f4f6;
+  padding: 8px 16px;
+  border-radius: 20px;
+}
+
+.play-body {
+  flex-grow: 1;
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.question-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.choices-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.choice-btn:hover:not(.selected):not(.correct):not(.wrong) {
+  border-color: #00A3FF;
+  background: #f0f9ff;
+}
+
+.choice-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #f3f4f6;
+  color: #4b5563;
+  border-radius: 8px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+}
+
+.choice-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.choice-btn.selected {
+  border-color: #00A3FF;
+  background: #f0f9ff;
+}
+
+.choice-btn.selected .choice-label {
+  background: #00A3FF;
+  color: #ffffff;
+}
+
+.choice-btn.correct {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.choice-btn.correct .choice-label {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.choice-btn.wrong {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.choice-btn.wrong .choice-label {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.play-footer {
+  padding: 20px 40px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #f0f0f0;
+}
+@media (max-width: 768px) {
+  /* On ajuste le conteneur principal pour qu'il s'adapte à l'écran */
+  .quiz-stack-track {
+    width: 92vw;
+    height: 75vh; /* Prend 75% de l'écran, peu importe le téléphone */
+    max-height: 650px;
+    min-height: 480px;
+  }
+  
+  /* On réduit les paddings globaux pour gagner de la place */
+  .play-header {
+    padding: 15px 20px;
+  }
+
+  .play-body {
+    padding: 15px 20px;
+    overflow-y: auto; /* CRUCIAL : permet de scroller les choix si l'écran est tout petit */
+  }
+
+  .play-footer {
+    padding: 15px 20px;
+  }
+  
+  /* On réduit la taille du texte et les marges */
+  .question-text {
+    font-size: 1.25rem;
+    margin-bottom: 20px;
+  }
+
+  .choices-grid {
+    grid-template-columns: 1fr;
+    gap: 10px; /* Moins d'espace entre les choix */
+  }
+  
+  /* On affine les boutons pour qu'ils prennent moins de hauteur */
+  .choice-btn {
+    padding: 12px 15px;
+  }
+
+  .choice-label {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .choice-text {
+    font-size: 1rem;
+  }
+  
+  /* On ajuste le bouton "Abandonner" pour éviter qu'il touche la carte */
+  .back-button-floating {
+    top: 15px;
+    left: 15px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+}

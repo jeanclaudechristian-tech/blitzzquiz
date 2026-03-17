@@ -1,10 +1,11 @@
-
-
-Modifier `src/App.vue`:
-
-```vue
 <template>
-  <router-view />
+  <router-view v-slot="{ Component, route }">
+    
+    <keep-alive :exclude="['QuizModal', 'QuizOverlay']">
+      <component :is="Component" :key="route.fullPath" />
+    </keep-alive>
+
+  </router-view>
 </template>
 
 <script>
@@ -22,7 +23,9 @@ export default {
 
 html, body, #app {
   width: 100%;
-  height: 100%;
+  /* LA CORRECTION EST ICI : on utilise min-height au lieu de height fixe */
+  min-height: 100vh; 
   overflow-x: hidden;
+  background-color: #f3f4f6; /* Petite couleur de fond neutre quand le quiz est actif */
 }
 </style>

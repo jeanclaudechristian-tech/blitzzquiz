@@ -16,11 +16,7 @@
           <p>compte</p>
         </div>
 
-        <InputCourriel
-            v-model="formData.email"
-            placeholder="Courriel"
-            :disabled="registrationStore.isGoogleFlow"
-        />
+        <InputCourriel v-model="formData.email" placeholder="Courriel" :disabled="registrationStore.isGoogleFlow" />
 
         <InputNomUtilisateur v-model="formData.username" />
 
@@ -67,11 +63,11 @@ export default {
       formData: {
         email: this.registrationStore.email || '',
         username: this.registrationStore.username || '',
-        password: this.registrationStore.isGoogleFlow 
-          ? 'GoogleAuthSecure!' 
+        password: this.registrationStore.isGoogleFlow
+          ? 'GoogleAuthSecure!'
           : (this.registrationStore.password || ''),
-        confirmPassword: this.registrationStore.isGoogleFlow 
-          ? 'GoogleAuthSecure!' 
+        confirmPassword: this.registrationStore.isGoogleFlow
+          ? 'GoogleAuthSecure!'
           : (this.registrationStore.confirmPassword || ''),
       },
       loading: false,
@@ -95,12 +91,12 @@ export default {
           return
         }
       } else {
-        if (!this.formData.email || !this.formData.username || 
-            !this.formData.password || !this.formData.confirmPassword) {
+        if (!this.formData.email || !this.formData.username ||
+          !this.formData.password || !this.formData.confirmPassword) {
           alert('Veuillez remplir tous les champs')
           return
         }
-        
+
         if (this.formData.password !== this.formData.confirmPassword) {
           alert('Les mots de passe ne correspondent pas')
           return

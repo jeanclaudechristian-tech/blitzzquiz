@@ -9,16 +9,29 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 
-// Routes Google existantes
+// Routes Google
 Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
 Route::post('auth/google/callback', [AuthController::class, 'googleCallback']);
 Route::post('auth/google-register', [AuthController::class, 'registerGoogleFinal']);
+<<<<<<< HEAD
+=======
 Route::post('auth/google-mobile', [AuthController::class, 'googleMobileLogin']);
+>>>>>>> 8538e52f890c2dc7834fa6b072a2e846bcd0d56b
 
 // Auth publiques
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
+<<<<<<< HEAD
+// Quizzes publiques et Recherche
+Route::get('/quizzes/public', [QuizController::class, 'publicIndex']);
+Route::get('/quizzes/search', [QuizController::class, 'search']);
+Route::get('/categories', function () {
+    return response()->json(\App\Models\Category::all());
+});
+
+// Routes protégées (API)
+=======
 // Reset password publiques
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
 Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
@@ -30,6 +43,7 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
 Route::post('/email/resend-verification', [AuthController::class, 'resendVerificationByEmail']);
 
 // Routes protégées
+>>>>>>> 8538e52f890c2dc7834fa6b072a2e846bcd0d56b
 Route::middleware('auth:sanctum')->group(function () {
 
     // Auth
@@ -42,23 +56,62 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/me/password', [ProfileController::class, 'password']);
     Route::put('/auth/password', [ProfileController::class, 'password']);
 
+<<<<<<< HEAD
+    // Quizzes & Questions
+    Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::post('/quizzes', [QuizController::class, 'store']);
+=======
     // Quizzes
     Route::get('/quizzes', [QuizController::class, 'index']);
     Route::post('/quizzes', [QuizController::class, 'store']);
     Route::get('/quizzes/search', [QuizController::class, 'search']);
     Route::get('/quizzes/public', [QuizController::class, 'publicIndex']);
+>>>>>>> 8538e52f890c2dc7834fa6b072a2e846bcd0d56b
     Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
     Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
     Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
 
+<<<<<<< HEAD
+=======
+    Route::get('/groups', [GroupController::class, 'index']);
+    Route::post('/groups/join', [GroupController::class, 'join']);
+    Route::get('/groups/{group}/quizzes', [GroupController::class, 'quizzes']);
+    Route::post('/groups/{group}/assignments', [GroupController::class, 'assignQuiz']);
+    Route::delete('/groups/{group}/assignments/{quiz}', [GroupController::class, 'unassignQuiz']);
+    Route::get('/groups/{group}', [GroupController::class, 'show']);
+    Route::put('/groups/{group}', [GroupController::class, 'update']);
+    Route::post('/groups', [GroupController::class, 'store']);
+    Route::post('/groups/{group}/members/invite', [GroupController::class, 'inviteByEmail']);
+    Route::post('/groups/{group}/members', [GroupController::class, 'addMember']);
+    Route::delete('groups/{group}/leave', [GroupController::class, 'leave']);
+    Route::delete('groups/{group}/destroy', [GroupController::class, 'destroy']);
+    Route::delete('groups/{group}', [GroupController::class, 'destroy']);
+
+>>>>>>> 8538e52f890c2dc7834fa6b072a2e846bcd0d56b
     Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
     Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
     Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
     Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
+    
     Route::get('/quizzes/code/{code}', [QuizController::class, 'findByCode']);
     Route::post('/quizzes/{quiz}/results', [QuizController::class, 'storeResult']);
     Route::get('/me/results', [QuizController::class, 'myResults']);
 
+<<<<<<< HEAD
+    // Groupes
+    Route::get('/groups', [GroupController::class, 'index']);
+    Route::post('/groups/join', [GroupController::class, 'join']);
+    
+    // Route ajoutée pour les quiz du groupe
+    Route::get('/groups/{group}/quizzes', [GroupController::class, 'getQuizzes']);
+    
+    Route::get('/groups/{group}', [GroupController::class, 'show']);
+    Route::put('/groups/{group}', [GroupController::class, 'update']);
+    Route::post('/groups', [GroupController::class, 'store']);
+    Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
+    Route::delete('groups/{group}/leave', [GroupController::class, 'leave']);
+    Route::delete('groups/{group}/destroy', [GroupController::class, 'destroy']);
+=======
     // Groups
     Route::get('/groups', [GroupController::class, 'index']);
     Route::post('/groups', [GroupController::class, 'store']);
@@ -72,6 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/groups/{group}/assignments', [GroupController::class, 'assignQuiz']);
     Route::delete('/groups/{group}/assignments/{quiz}', [GroupController::class, 'unassignQuiz']);
     Route::get('/groups/{group}/quizzes/{quiz}/ranking', [GroupController::class, 'quizRanking']);
+>>>>>>> 8538e52f890c2dc7834fa6b072a2e846bcd0d56b
 
     // Admin
     Route::middleware('admin')->prefix('admin')->group(function () {

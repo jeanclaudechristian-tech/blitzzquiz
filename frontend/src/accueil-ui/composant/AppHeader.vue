@@ -1,217 +1,295 @@
 <template>
-  <header class="app-header">
+  <div class="header-container" :class="{ 'header-hidden': isHidden }">
     <div class="header-content">
 
-      <a :href="logoHref" class="header-logo" aria-label="Blitzz Quiz">
-        <img src="/images/Eclaire.svg" alt="Blitzz Quiz" class="header-logo-img" />
-      </a>
+      <div class="header-left">
+        <div class="logo-wrapper" :class="{ 'hide-on-mobile': (isSearchOpen || isExpanded) && isMobile }"
+          @click="$router.push('/')">
+          <img src="/images/Black_BlitzzQuiz 1.png" alt="Blitzz Logo" class="logo-img" />
+        </div>
 
-      <!-- Nav normale (non connecté) -->
-      <nav v-if="!isLoggedIn && !showSearch" class="navigation">
-        <NavLink text="Jouer" :active="activeSection === 'section-jouer'" @click="scrollToSection('section-jouer')" />
-        <NavLink text="Community" :active="activeSection === 'section-community'" @click="scrollToSection('section-community')" />
-        <NavLink text="Resources" :active="activeSection === 'section-resources'" @click="scrollToSection('section-resources')" />
-        <NavLink text="Contact" :active="activeSection === 'section-contact'" @click="scrollToSection('section-contact')" />
-      </nav>
+        <nav class="nav-links-wrapper" :class="{ 'is-expanded': isExpanded }">
+          <div class="nav-links">
+            <a class="btn-code" @click.prevent="isCodeModalOpen = true" style="cursor: pointer;">CODE</a>
+            <router-link to="/#section-hero" class="nav-link">Accueil</router-link>
+            <router-link to="/catalogue" class="nav-link">Explorer</router-link> 
+            <router-link to="/#section-footer" class="nav-link">Aide</router-link>
 
-      <!-- Barre de recherche étendue dans le header -->
-      <transition name="search-expand">
-        <div v-if="showSearch" class="header-search-bar" @click.stop>
-          <span class="material-icons search-bar-icon">search</span>
-          <input
-            ref="searchInput"
-            v-model="searchQuery"
-            class="search-bar-input"
-            type="text"
-            placeholder="Rechercher un quiz..."
-            @input="onSearchInput"
-          />
-          <button class="search-bar-close" @click="closeSearch">
-            <span class="material-icons">close</span>
+            <template v-if="isLoggedIn">
+              <router-link :to="userRole === 'TEACHER' ? '/enseignant/groupes' : '/etudiant/mes-groupes'"
+                class="nav-link">
+                Groupe
+              </router-link>
+              <router-link to="/historique" class="nav-link">Historique</router-link>
+              <router-link v-if="userRole === 'TEACHER'" to="/enseignant/quiz/nouveau" class="nav-link link-creer">
+                Créer
+              </router-link>
+            </template>
+
+            <router-link to="/#section-footer" class="nav-link">FAQ</router-link>
+          </div>
+        </nav>
+
+        <div class="menu-btn-wrapper" :class="{ 'hide-on-mobile': isSearchOpen && isMobile }">
+          <button class="icon-btn" @click.stop="toggleMenu">
+            <Transition name="icon-swap">
+              <i v-if="isExpanded && isMobile" class="mdi mdi-close absolute-icon"></i>
+              <div v-else-if="isExpanded" class="vertical-bar absolute-icon"></div>
+              <i v-else class="mdi mdi-menu absolute-icon"></i>
+            </Transition>
+          </button>
+        </div>
+
+        <div class="search-wrapper" :class="{ 'hide-on-mobile': isExpanded && isMobile }">
+          <button class="icon-btn search-trigger" @click.stop="toggleSearch">
+            <Transition name="icon-swap">
+              <i v-if="isSearchOpen" class="mdi mdi-close absolute-icon"></i>
+              <i v-else class="mdi mdi-magnify absolute-icon"></i>
+            </Transition>
           </button>
 
-          <!-- Résultats inline sous la barre -->
-          <div v-if="searchResults.length || searchNoResults" class="search-bar-results" @click.stop>
-            <p v-if="searchNoResults" class="search-no-results">
-              Aucun quiz trouvé pour <strong>{{ searchQuery }}</strong>
-            </p>
-            <ul v-else class="search-results-list">
-              <li
-                v-for="quiz in searchResults"
-                :key="quiz.id"
-                class="search-result-item"
-                @click="goToQuiz(quiz)"
-              >
-                <div class="result-header">
-                  <span class="result-titre">{{ quiz.titre }}</span>
-                  <span class="result-category">{{ quiz.category }}</span>
+          <div class="search-input-container" :class="{ 'is-open': isSearchOpen }">
+            <input v-model="searchQuery" type="text" class="search-input" placeholder="Rechercher un quiz..."
+              @input="onSearchInput" @click.stop />
+            <div class="search-underline"></div>
+
+            <Transition name="fade-slide">
+              <div v-if="searchQuery.length >= 2 && isSearchOpen" class="search-results-dropdown">
+                <template v-if="searchResults.length > 0">
+                  <div v-for="quiz in searchResults" :key="quiz.id" class="search-result-item" @click="goToQuiz(quiz)">
+                    <div class="result-text">
+                      <span class="result-title">{{ quiz.titre }}</span>
+                      <span class="result-category">
+                        {{ (quiz.category && typeof quiz.category === 'object') ? (quiz.category.name ||
+                          quiz.category.NAME) : (quiz.category || 'Général') }}
+                      </span>
+                    </div>
+                    <span class="material-symbols-outlined result-icon">chevron_right</span>
+                  </div>
+                </template>
+                <div v-else-if="!loadingSearch" class="no-results-msg">
+                  Aucun quiz trouvé pour "{{ searchQuery }}"
                 </div>
-                <p class="result-description" v-html="quiz.description_highlight"></p>
-              </li>
-            </ul>
+              </div>
+            </Transition>
+            <div v-if="loadingSearch" class="search-loader">
+              <div class="mini-spinner"></div>
+            </div>
           </div>
-        </div>
-      </transition>
-
-      <!-- Icône loupe (connecté, barre fermée) -->
-      <button v-if="canSearch && !showSearch" class="search-icon-btn" @click.stop="toggleSearch" aria-label="Rechercher un quiz">
-        <span class="material-icons">search</span>
-      </button>
-
-      <!-- Avatar connecté -->
-      <div v-if="showUserAvatar" class="header-user-menu">
-        <div class="header-user-avatar" aria-label="Menu utilisateur" @click.stop="toggleUserMenu">
-          <svg class="header-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="8" r="3" />
-            <path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
-          </svg>
-        </div>
-        <div v-if="showUserDropdown" class="user-dropdown" @click.stop>
-          <button type="button" class="logout-button" @click="goToProfile">Mon profil</button>
-          <button type="button" class="logout-button" @click="handleLogout">Se déconnecter</button>
         </div>
       </div>
 
-      <AuthButtons v-else-if="!isLoggedIn" @login="handleLogin" @signup="handleSignup" />
+      <div class="header-right auth-container" :class="{ 'hide-on-mobile': (isSearchOpen || isExpanded) && isMobile }">
+        <template v-if="!isLoggedIn">
+          <button class="auth-link" @click="$router.push('/connexion')">Connexion</button>
+          <button class="auth-link" @click="$router.push('/inscription')">S'inscrire</button>
+        </template>
+        <template v-else>
+          <div class="avatar" @click="$router.push('/etudiant/profil')" style="cursor: pointer;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <button class="auth-link" @click="handleLogout">Déconnexion</button>
+        </template>
+      </div>
     </div>
-  </header>
+    <GuestModal v-if="showGuestModal" @close="showGuestModal = false" />
+    <CodeModal v-if="isCodeModalOpen" @close="isCodeModalOpen = false" @show-guest-modal="showGuestModal = true" />
+  </div>
 </template>
 
-<script>
-import NavLink from './NavLink.vue'
-import AuthButtons from './AuthButtons.vue'
-import axios from 'axios'
+<script setup>
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import axios from 'axios';
+import './AppHeader.css';
+import GuestModal from '../composant/GuestModal.vue';
+import CodeModal from './CodeModal.vue';
 
-export default {
-  name: 'AppHeader',
-  components: { NavLink, AuthButtons },
-  data() {
-    return {
-      activeSection: 'section-jouer',
-      showUserDropdown: false,
-      showSearch: false,
-      isLoggedIn: false,
-      userRole: null,
-      searchQuery: '',
-      searchResults: [],
-      searchNoResults: false,
-      debounceTimer: null,
-    }
-  },
-  computed: {
-    showUserAvatar() {
-      return this.isLoggedIn
-    },
-    canSearch() {
-      return this.isLoggedIn && ['TEACHER', 'ADMIN', 'STUDENT'].includes(this.userRole)
-    },
-    logoHref() {
-      if (!this.isLoggedIn) return '/'
-      if (this.userRole === 'STUDENT') return '/etudiant'
-      if (this.userRole === 'TEACHER') return '/enseignant'
-      if (this.userRole === 'ADMIN') return '/admin'
-      return '/'
-    }
-  },
-  mounted() {
-    const user = JSON.parse(localStorage.getItem('user') || 'null')
-    this.isLoggedIn = !!localStorage.getItem('token')
-    this.userRole = user?.role ?? null
-    window.addEventListener('scroll', this.onScroll)
-    window.addEventListener('click', this.closeAll)
-  },
-  beforeUnmount() {
-    window.removeEventListener('scroll', this.onScroll)
-    window.removeEventListener('click', this.closeAll)
-  },
-  methods: {
-    toggleSearch() {
-      this.showSearch = true
-      this.showUserDropdown = false
-      this.$nextTick(() => this.$refs.searchInput?.focus())
-    },
-    closeSearch() {
-      this.showSearch = false
-      this.searchQuery = ''
-      this.searchResults = []
-      this.searchNoResults = false
-    },
-    closeAll() {
-      this.closeSearch()
-      this.showUserDropdown = false
-    },
-    onSearchInput() {
-      this.searchNoResults = false
-      clearTimeout(this.debounceTimer)
-      if (this.searchQuery.length < 2) {
-        this.searchResults = []
-        return
-      }
-      this.debounceTimer = setTimeout(this.fetchResults, 350)
-    },
-    async fetchResults() {
-      try {
-        const token = localStorage.getItem('token')
-        const { data } = await axios.get('/api/quizzes/search', {
-          params: { q: this.searchQuery },
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        this.searchResults = data
-        this.searchNoResults = data.length === 0
-      } catch (err) {
-        console.error('Erreur recherche:', err)
-      }
-    },
-    goToQuiz(quiz) {
-      const role = this.userRole
-      if (role === 'STUDENT') {
-        this.$router.push(`/etudiant/quiz/${quiz.id}`)
-      } else if (role === 'TEACHER' || role === 'ADMIN') {
-        this.$router.push(`/enseignant/quiz/${quiz.id}/editer`)
-      }
-      this.closeSearch()
-    },
-    scrollToSection(sectionId) {
-      const el = document.getElementById(sectionId)
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        this.activeSection = sectionId
-      }
-    },
-    onScroll() {
-      const sections = ['section-jouer', 'section-community', 'section-contact', 'section-resources']
-      const headerHeight = 80
-      let current = ''
-      for (const id of sections) {
-        const el = document.getElementById(id)
-        if (!el) continue
-        const rect = el.getBoundingClientRect()
-        if (rect.top <= headerHeight + 50) current = id
-      }
-      if (current) this.activeSection = current
-    },
-    handleLogin()  { this.$router.push('/connexion') },
-    handleSignup() { this.$router.push('/inscription') },
-    toggleUserMenu() {
-      this.showUserDropdown = !this.showUserDropdown
-      this.showSearch = false
-    },
-    goToProfile() {
-      this.$router.push('/etudiant/profil')
-      this.showUserDropdown = false
-    },
-    handleLogout() {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      this.isLoggedIn = false
-      this.userRole = null
-      this.showUserDropdown = false
-      this.$router.push('/')
+const router = useRouter();
+const route = useRoute();
+
+const isExpanded = ref(false);
+const isSearchOpen = ref(false);
+const isHidden = ref(false);
+const isMobile = ref(false);
+const isLoggedIn = ref(false);
+const userRole = ref('');
+const showGuestModal = ref(false);
+const isCodeModalOpen = ref(false);
+
+const searchQuery = ref('');
+const searchResults = ref([]);
+const loadingSearch = ref(false);
+let debounceTimer = null;
+const searchCache = new Map();
+let abortController = null;
+
+const onSearchInput = () => {
+  clearTimeout(debounceTimer);
+  const trimmedQuery = searchQuery.value.trim().toLowerCase();
+  if (trimmedQuery.length < 2) {
+    searchResults.value = [];
+    return;
+  }
+  if (searchCache.has(trimmedQuery)) {
+    searchResults.value = searchCache.get(trimmedQuery);
+    return;
+  }
+  debounceTimer = setTimeout(fetchQuizzes, 300);
+};
+
+const fetchQuizzes = async () => {
+  const trimmedQuery = searchQuery.value.trim().toLowerCase();
+  if (abortController) abortController.abort();
+  abortController = new AbortController();
+  loadingSearch.value = true;
+  try {
+    const token = localStorage.getItem('token');
+    const headers = { signal: abortController.signal };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const { data } = await axios.get('http://127.0.0.1:8000/api/quizzes/search', {
+      params: { q: trimmedQuery },
+      headers
+    });
+    searchCache.set(trimmedQuery, data);
+    searchResults.value = data;
+  } catch (error) {
+    if (axios.isCancel(error)) return;
+    console.error("Erreur recherche:", error);
+  } finally {
+    loadingSearch.value = false;
+  }
+};
+
+const goToQuiz = (quiz) => {
+  isSearchOpen.value = false;
+  searchQuery.value = '';
+  searchResults.value = [];
+  if (!isLoggedIn.value) {
+    showGuestModal.value = true;
+    return;
+  }
+  if (userRole.value === 'TEACHER' || userRole.value === 'ADMIN') {
+    router.push(`/enseignant/quiz/${quiz.id}/editer`);
+  } else {
+    // 🎯 FIX : On ajoute /jouer pour la route correcte
+    router.push(`/etudiant/quiz/${quiz.id}/jouer`);
+  }
+};
+
+const checkAuthStatus = () => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  isLoggedIn.value = !!token;
+  if (userStr) {
+    try {
+      const userObj = JSON.parse(userStr);
+      userRole.value = userObj.role;
+    } catch (e) {
+      userRole.value = '';
     }
   }
-}
+};
+
+const handleLogout = async () => {
+  const token = localStorage.getItem('token');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  isLoggedIn.value = false;
+  userRole.value = '';
+  try {
+    if (token) {
+      axios.post('http://127.0.0.1:8000/api/logout', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }
+  } catch (error) {
+    console.error("Erreur logout:", error);
+  } finally {
+    window.location.href = '/';
+  }
+};
+
+// 🎯 REFRESH AUTH : On re-vérifie dès que la route change (ex: retour de login)
+watch(() => route.path, () => {
+  checkAuthStatus();
+  isSearchOpen.value = false;
+  showGuestModal.value = false;
+});
+
+const checkMobile = () => { isMobile.value = window.innerWidth < 768; };
+const toggleMenu = () => { if (isSearchOpen.value) isSearchOpen.value = false; isExpanded.value = !isExpanded.value; };
+const toggleSearch = () => { if (isExpanded.value) isExpanded.value = false; isSearchOpen.value = !isSearchOpen.value; };
+const closeAll = () => { isExpanded.value = false; isSearchOpen.value = false; searchResults.value = []; };
+
+let lastScrollY = 0;
+let isScrollingDown = false;
+
+const handleScroll = () => {
+  const currentScrollY = window.scrollY;
+  isScrollingDown = currentScrollY > lastScrollY;
+  if (currentScrollY < 20) {
+    isHidden.value = false;
+  } else {
+    if (isMobile.value) {
+      if (currentScrollY > lastScrollY) { isHidden.value = true; closeAll(); }
+      else { isHidden.value = false; }
+    } else {
+      if (currentScrollY > lastScrollY && !isSearchOpen.value && !isExpanded.value) {
+        isHidden.value = true;
+      } else if (currentScrollY < lastScrollY) {
+        isHidden.value = false;
+      }
+    }
+  }
+  lastScrollY = currentScrollY;
+};
+
+// 🎯 RESTAURÉ : Comportement souris original
+const handleMouseMove = (event) => {
+  if (event.clientY <= 80) {
+    isHidden.value = false;
+  } else if (isScrollingDown && window.scrollY > 20 && !isSearchOpen.value && !isExpanded.value) {
+    isHidden.value = true;
+  }
+};
+
+onMounted(() => {
+  checkAuthStatus();
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('click', closeAll);
+  window.addEventListener('mousemove', handleMouseMove);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile);
+  window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('click', closeAll);
+  window.removeEventListener('mousemove', handleMouseMove);
+});
 </script>
 
 <style scoped>
-@import './AppHeader.css';
+.link-creer { color: #00A3FF !important; font-weight: 700 !important; text-decoration: underline !important; text-underline-offset: 4px; }
+.link-creer:hover { color: #0082cc !important; }
+.search-results-dropdown { position: absolute; top: calc(100% + 15px); left: 0; width: 100%; min-width: 300px; background: rgba(0, 163, 255, 0.95); backdrop-filter: blur(15px); border-radius: 12px; box-shadow: 0 15px 35px rgba(0, 163, 255, 0.3); z-index: 99999; max-height: 400px; overflow-y: auto; }
+@media (max-width: 768px) { .search-results-dropdown { left: 50% !important; transform: translateX(-50%) !important; width: 92%; } }
+.search-result-item { padding: 16px 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.15); transition: background 0.2s ease; }
+.search-result-item:hover { background: rgba(255, 255, 255, 0.15); }
+.result-text { display: flex; flex-direction: column; gap: 4px; }
+.result-title { font-family: var(--font-base, 'Inter', sans-serif); font-weight: 600; color: #ffffff; font-size: 1rem; }
+.result-category { font-family: var(--font-base, 'Inter', sans-serif); font-weight: 800; font-size: 0.75rem; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; letter-spacing: 0.5px; }
+.result-icon { color: rgba(255, 255, 255, 0.8); font-size: 20px; }
+.no-results-msg { padding: 20px; text-align: center; color: #ffffff; font-family: var(--font-base, 'Inter', sans-serif); font-size: 0.95rem; font-weight: 500; }
+.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.3s ease; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateY(-10px); }
+.search-loader { position: absolute; right: 0; top: 10px; }
+.mini-spinner { width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.5); border-top-color: #00A3FF; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

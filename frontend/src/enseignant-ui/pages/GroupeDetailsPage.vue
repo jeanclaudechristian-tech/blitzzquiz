@@ -154,7 +154,7 @@
               Annuler
             </button>
             <button type="button" class="action-button" @click="inviteMembre">
-              Envoyer l'invitation
+             Ajouter un membre
             </button>
           </div>
         </div>
@@ -280,18 +280,19 @@ export default {
         console.error('Erreur lors du retrait du quiz du groupe', e)
       }
     },
-    inviteMembre() {
+    async inviteMembre() {
       // pour l’instant mock; tu brancheras plus tard
-      if (!this.inviteEmail) return
-      const newMembre = {
-        id: Date.now(),
-        nom: this.inviteEmail.split('@')[0],
-        email: this.inviteEmail,
+      if (!this.inviteEmail?.trim()) return
+      try {
+        await groupService.inviteMemberByEmail(this.groupe.id, this.inviteEmail.trim())
+        await this.loadGroupe()
+        this.inviteEmail = ''
+        this.showInviteModal = false
+      } catch (e) {
+        console.error('Erreur invitation membre', e)
+        const msg = e.response?.data?.error || "Erreur lors de l'invitation."
+        alert(msg)
       }
-      this.groupe.membres.push(newMembre)
-      this.groupe.nbMembres = this.groupe.membres.length
-      this.inviteEmail = ''
-      this.showInviteModal = false
     },
     requestDelete() {
       this.showDeleteModal = true

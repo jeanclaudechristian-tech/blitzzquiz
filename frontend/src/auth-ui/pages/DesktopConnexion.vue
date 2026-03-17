@@ -16,10 +16,7 @@
           <p>compte</p>
         </div>
         <InputNomUtilisateur v-model="formData.username" />
-        <InputMotDePasse
-          v-model="formData.password"
-          placeholder="Mot de passe"
-        />
+        <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" />
         <BoutonMdpOublie />
         <BoutonConnexion :disabled="loading" @click="handleConnexion" />
         <Diviseur />
@@ -32,7 +29,7 @@
 
 <script>
 import BlackBlitzzQuiz from '../components/BlackBlitzzQuiz.vue'
-import InputNomUtilisateur from '../components/InputNomUtilisateur.vue'
+import InputNomUtilisateur from '../components//InputCourriel.vue'
 import InputMotDePasse from '../components/InputMotDePasse.vue'
 import BoutonMdpOublie from '../components/BoutonMdpOublie.vue'
 import BoutonConnexion from '../components/BoutonConnexion.vue'

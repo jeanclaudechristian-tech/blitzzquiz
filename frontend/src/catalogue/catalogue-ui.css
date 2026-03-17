@@ -1,0 +1,149 @@
+.catalogue-page-wrapper {
+    background-color: #ffffff;
+    min-height: 100vh;
+    padding-top: 140px;
+}
+
+.catalogue-main-layout {
+    display: flex;
+    gap: 50px;
+    align-items: flex-start;
+}
+
+/* SIDEBAR FILTRES */
+.catalogue-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 140px;
+}
+
+.sidebar-group {
+    margin-bottom: 35px;
+}
+
+.group-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #999;
+    letter-spacing: 1.2px;
+    margin-bottom: 15px;
+}
+
+.options-row {
+    display: flex;
+    gap: 8px;
+}
+
+.options-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.catalogue-sidebar button {
+    background: none;
+    border: none;
+    padding: 8px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    text-align: left;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.catalogue-sidebar button:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.catalogue-sidebar button.active {
+    background: #00A3FF;
+    color: #ffffff;
+}
+
+/* GRILLE ET CONTENU */
+.catalogue-grid-content {
+    flex-grow: 1;
+}
+
+.grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 35px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 20px;
+}
+
+.catalogue-main-title {
+    font-family: 'Anton', sans-serif;
+    font-size: 2.8rem;
+    text-transform: uppercase;
+    line-height: 1;
+    margin: 0;
+}
+
+.quiz-counter {
+    font-size: 0.9rem;
+    color: #888;
+    font-weight: 500;
+}
+
+.catalogue-quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    padding-bottom: 80px;
+}
+
+/* Re-définition pour la grille (format rectangulaire sur PC) */
+.catalogue-quiz-grid .mini-quiz-card {
+    width: 100% !important;
+    height: 200px;
+    border-radius: 8px; /* Border radius aligné */
+}
+
+/* RESPONSIVE MOBILE */
+@media (max-width: 768px) {
+    .catalogue-main-layout {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .catalogue-sidebar {
+        width: 100%;
+        position: relative;
+        top: 0;
+    }
+
+    .options-vertical {
+        flex-direction: row;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 10px;
+    }
+
+    .options-vertical::-webkit-scrollbar {
+        display: none;
+    }
+
+    .catalogue-main-title {
+        font-size: 2rem;
+    }
+
+    /* CARRES SUR MOBILE */
+    .catalogue-quiz-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .catalogue-quiz-grid .mini-quiz-card {
+        height: 180px;
+        width: 100% !important;
+    }
+}
