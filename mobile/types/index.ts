@@ -22,19 +22,22 @@ export interface Quiz {
     code_quiz: string;
     created_at: string;
     updated_at: string;
+    titre_highlight?: string;
+    description_highlight?: string;
 
     // 关联关系 (可选，因为 API 不一定每次都把这些带回来)
     owner?: User;
     questions?: Question[];
     results?: Result[];
     category?: string | null;
+    questions_count?: number;
 }
 
 // 3. 问题 (对应 Question.php)
 export interface Question {
     id: number;
     quiz_id: number;
-    type: 'multiple_choice' | 'true_false' | string; // 题目类型
+    type: 'QCM' | string; // 题目类型
     texte: string;
     explanation?: string | null;
     metadata: any; // PHP 里 casts 为 array，这里可以是任意 JSON 结构
@@ -81,4 +84,10 @@ export interface Result {
     updated_at: string;
 
     quiz?: Quiz;
+}
+
+export interface QuestionModuleProps {
+    question: Question;
+    onAnswer: (answer: any, isCorrect: boolean) => void;
+    disabled?: boolean; // 答完后禁用，防止重复点击
 }

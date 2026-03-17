@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\Assignment;
+use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -166,8 +168,128 @@ class GroupController extends Controller
 
         return response()->json([
             'message' => 'Tu as rejoint le groupe',
-            'group_id' => $group->id,
+            'id' => $group->id,
+            'nom' => $group->nom,
         ]);
+    }
+
+    /**
+     * Associer un quiz à un groupe (enseignant owner).
+     * Insère une ligne dans la table assignments.
+     */
+    public function assignQuiz(Request $request, Group $group)
+    {
+        // Seul le propriétaire du groupe peut associer des quiz
+        if (Auth::id() !== $group->owner_id) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        $validated = $request->validate([
+            'quiz_id' => 'required|exists:quizzes,id',
+        ]);
+
+        $quizId = (int) $validated['quiz_id'];
+
+        // Crée l'assignation si elle n'existe pas encore
+        $assignment = Assignment::firstOrCreate(
+            [
+                'quiz_id' => $quizId,
+                'group_id' => $group->id,
+            ],
+            [
+                'assigned_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'quizId' => $assignment->quiz_id,
+            'statut' => 'actif',
+            'dateAssignation' => $assignment->assigned_at,
+        ], 201);
+    }
+
+    /**
+     * Retirer un quiz assigné d'un groupe (enseignant owner).
+     */
+    public function unassignQuiz(Group $group, Quiz $quiz)
+    {
+        if (Auth::id() !== $group->owner_id) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        Assignment::where('group_id', $group->id)
+            ->where('quiz_id', $quiz->id)
+            ->delete();
+
+        return response()->json(['message' => 'Quiz retiré du groupe']);
+    }
+
+    /**
+     * Liste des quiz assignés au groupe (accès membre ou owner).
+     */
+    public function quizzes(Group $group)
+    {
+        $userId = Auth::id();
+        $isOwner = ($userId === $group->owner_id);
+        $isMember = $group->members()->where('user_id', $userId)->exists();
+
+        if (!$isOwner && !$isMember) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        // Récupère les quiz via la table assignments
+        $assignments = $group->assignments()->with(['quiz' => fn ($q) => $q->withCount('questions')])->get();
+
+        $quizzes = $assignments->map(function ($a) {
+            $quiz = $a->quiz;
+            return [
+                'id' => $quiz->id,
+                'titre' => $quiz->titre,
+                'category' => $quiz->category ?? '',
+                'questions_count' => $quiz->questions_count ?? 0,
+                'is_public' => $quiz->is_public,
+                'code_quiz' => $quiz->code_quiz,
+                'description' => $quiz->description,
+            ];
+        });
+
+        return response()->json($quizzes);
+    }
+
+    /**
+     * Inviter un membre par email (owner seulement).
+     * Cherche l'utilisateur par email, l'ajoute au groupe (table user_groups).
+     */
+    public function inviteByEmail(Request $request, Group $group)
+    {
+        if (Auth::id() !== $group->owner_id) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Aucun utilisateur trouvé avec cet email'], 404);
+        }
+
+        if ($group->members()->where('user_id', $user->id)->exists()) {
+            return response()->json(['error' => 'Cette personne est déjà membre du groupe'], 409);
+        }
+
+        $group->members()->attach($user->id);
+
+        return response()->json([
+            'message' => 'Membre ajouté au groupe',
+            'member' => [
+                'id' => $user->id,
+                'nickname' => $user->nickname,
+                'email' => $user->email,
+            ],
+        ], 201);
     }
 
     /**
@@ -238,4 +360,40 @@ class GroupController extends Controller
             ], 500);
         }
     }
+    /**
+     * Classement
+     */
+    public function quizRanking(Group $group, \App\Models\Quiz $quiz)
+    {
+        $userId = Auth::id();
+
+        // 1. 权限鉴定：只有 Owner 和 Member 可以看排名
+        $isOwner = ($userId === $group->owner_id);
+        $isMember = $group->members()->where('user_id', $userId)->exists();
+
+        if (!$isOwner && !$isMember) {
+            return response()->json(['error' => 'Accès refusé'], 403);
+        }
+
+        // 2. 收集有资格参与排名的人员名单（群成员 + 也许还有群主）
+        $memberIds = $group->members()->pluck('users.id')->push($group->owner_id)->unique();
+
+        // 3. 查询 Result 表，获取最高分排名
+        // 假设你的 Result 模型里有 public function user() 关联
+        $results = \App\Models\Result::with('user:id,nickname,avatar')
+            ->where('quiz_id', $quiz->id)
+            ->whereIn('user_id', $memberIds)
+            ->get();
+
+        // 4. 数据清洗：如果学生可以多次答题，我们只取他分数最高的那一次作为排名依据
+        $ranking = $results->groupBy('user_id')->map(function ($userResults) {
+            // 选出该用户分数最高的那条记录
+            return $userResults->sortByDesc('score')->first();
+        })
+        ->sortByDesc('score') // 全局按最高分降序
+        ->values(); // 重置数组索引
+
+        return response()->json($ranking);
+    }
+
 }

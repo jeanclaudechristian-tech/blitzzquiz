@@ -151,12 +151,12 @@ export default {
           )
         }
 
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
+        console.log('Inscription réussie, attente de vérification:', data.user);
 
-        console.log('Inscription réussie:', data.user)
-
-        this.$router.push('/')
+        this.$router.push({
+          path: '/inscription/success',
+          query: { email: this.formData.email }
+        });
 
       } catch (error) {
         console.error("Erreur inscription:", error)

@@ -6,6 +6,7 @@ import { LoadingScreen } from "@/components/blitzz/LoadingScreen"; // 我们刚�
 import { colors, fonts } from "@/components/blitzz/tokens";
 import {GroupProvider} from "@/services/GroupContext";
 import {GroupDetailProvider} from "@/services/GroupDetailContext";
+import { QuizProvider } from "@/services/QuizContext";
 
 function RootLayoutNav() {
     const { isLoading } = useAuth();
@@ -26,6 +27,7 @@ function RootLayoutNav() {
             >
                 <Stack.Screen name="index" />
                 <Stack.Screen name="auth/LoginScreen" />
+                <Stack.Screen name="(tabs)/Home" />
                 {/* 你的其他路由 */}
             </Stack>
         </GestureHandlerRootView>
@@ -35,9 +37,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
     return (
         <AuthProvider>
-            <GroupProvider>
-                <RootLayoutNav/>
-            </GroupProvider>
+            <QuizProvider>
+                <GroupProvider>
+                    <RootLayoutNav/>
+                </GroupProvider>
+            </QuizProvider>
         </AuthProvider>
     );
 }

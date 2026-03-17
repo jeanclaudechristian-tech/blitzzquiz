@@ -37,4 +37,30 @@ export const groupService = {
   getQuizzes(groupId) {
     return api.get(`/groups/${groupId}/quizzes`);
   },
+
+  /**
+   * Associer un quiz à un groupe (enseignant).
+   * POST /api/groups/{group}/assignments avec { quiz_id }
+   */
+  assignQuizToGroup(groupId, quizId) {
+    return api.post(`/groups/${groupId}/assignments`, {
+      quiz_id: quizId,
+    });
+  },
+
+  /**
+   * Retirer un quiz associé d'un groupe (enseignant).
+   * DELETE /api/groups/{group}/assignments/{quiz}
+   */
+  removeQuizFromGroup(groupId, quizId) {
+    return api.delete(`/groups/${groupId}/assignments/${quizId}`);
+  },
+
+  /**
+   * Inviter un membre par email (enseignant owner).
+   * POST /api/groups/{id}/members/invite avec { email }
+   */
+  inviteMemberByEmail(groupId, email) {
+    return api.post(`/groups/${groupId}/members/invite`, { email });
+  },
 };

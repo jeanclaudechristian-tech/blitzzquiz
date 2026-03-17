@@ -7,16 +7,20 @@ import Animated, {
 } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
 import { colors, fonts } from './tokens'; // 确保路径正确
+import { useQuizzes } from '@/services/QuizContext';
+import {Quiz} from "@/types";
 
 interface SearchIconProps {
     isExpanded: boolean;
     onToggle: (expanded: boolean) => void;
+    onResults?: (results: Quiz[], query: string) => void;
 }
 
-export const SearchIcon = ({ isExpanded, onToggle }: SearchIconProps) => {
+export const SearchIcon = ({ isExpanded, onToggle, onResults }: SearchIconProps) => {
     const inputRef = useRef<TextInput>(null);
     const lottieRef = useRef<LottieView>(null);
     const [searchText, setSearchText] = useState('');
+    const { searchQuizzes } = useQuizzes();
 
     // 监听安卓物理返回键
     useEffect(() => {
@@ -30,6 +34,24 @@ export const SearchIcon = ({ isExpanded, onToggle }: SearchIconProps) => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
         return () => backHandler.remove();
     }, [isExpanded]);
+
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (searchText.length >= 2) {
+                handleSearch(searchText);
+            }
+        }, 500); // 500ms 防抖
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchText]);
+
+    const handleSearch = async (query: string) => {
+        console.log("🔍 正在搜索神谕:", query);
+        const results = await searchQuizzes(query);
+        if (onResults) {
+            onResults(results, query); // ✅ 将结果通过回调传给父组件（DashboardHeader -> Home -> Dashboard）
+        }
+    };
 
     const handlePress = () => {
         if (!isExpanded) {

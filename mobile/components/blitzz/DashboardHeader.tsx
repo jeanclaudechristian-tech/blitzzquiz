@@ -14,16 +14,27 @@ import {ProfilIcon} from './ProfilIcon';
 import {HomeIcon} from './HomeIcon';
 import {SearchIcon} from './SearchIcon';
 import { useAuth } from '@/services/AuthContext';
-import {Result} from "@/types/index";
+import {Quiz, Result} from "@/types/index";
 import {colors} from "@/components/blitzz/tokens";
 
 // @ts-ignore
 interface DashboardHeaderProps {
-    averageScore?: number
+    currentTab?: 'dashboard' | 'profile' | 'groups' | 'group-detail';
+    onProfil: () => void;
+    onHome: () => void;
+    // ✅ 新增这两个属性定义
+    onSearchStateChange?: (expanded: boolean) => void;
+    onSearchResults?: (results: Quiz[] | null, query?: string) => void;
 }
 
 // @ts-ignore
-export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) => {
+export const DashboardHeader = ({
+                                    onProfil,
+                                    onHome,
+                                    currentTab = 'dashboard',
+                                    onSearchStateChange, // ✅ 领出这两个神谕
+                                    onSearchResults
+                                }: DashboardHeaderProps) => {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [isIslandExpanded, setIsIslandExpanded] = useState(false);
 
@@ -41,6 +52,21 @@ export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) =>
         acc[catName].count += 1;
         return acc;
     }, {} as Record<string, { sum: number; count: number }>);
+
+    const toggleSearch = (expanded: boolean) => {
+        setIsSearchExpanded(expanded);
+        setIsIslandExpanded(false);
+
+        // ✅ 触发回调通知 Home 切换位面
+        if (onSearchStateChange) {
+            onSearchStateChange(expanded);
+        }
+
+        // 如果关闭搜索，清空结果
+        if (!expanded && onSearchResults) {
+            onSearchResults(null);
+        }
+    };
 
     const categories = Object.keys(categoryMap).map((name, index) => ({
         id: index,
@@ -63,10 +89,6 @@ export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) =>
         setIsIslandExpanded(!isIslandExpanded);
     };
 
-    const toggleSearch = (expanded: boolean) => {
-        setIsSearchExpanded(expanded);
-        if (expanded) setIsIslandExpanded(false);
-    };
 
     // 1. Island 容器：移除 width: '100%'，改用 flex 扩张
     const leftContainerStyle = useAnimatedStyle(() => {
@@ -151,7 +173,11 @@ export const DashboardHeader = ({onProfil, onHome, currentTab = 'dashboard'}) =>
             <Animated.View style={spacerStyle}/>
 
             <Animated.View style={searchWrapperStyle}>
-                <SearchIcon isExpanded={isSearchExpanded} onToggle={toggleSearch}/>
+                <SearchIcon
+                    isExpanded={isSearchExpanded}
+                    onToggle={toggleSearch}
+                    onResults={(res, q) => onSearchResults?.(res, q)}
+                />
             </Animated.View>
 
             <Animated.View
