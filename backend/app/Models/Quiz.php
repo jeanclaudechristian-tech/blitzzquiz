@@ -14,13 +14,21 @@ class Quiz extends Model
     protected $fillable = [
         'titre',
         'description',
-        'category_id',     
+        'category_id',
         'is_public',
         'code_quiz',
         'owner_id',
         'education_level',
-        'plays_count'      
+        'plays_count'
     ];
+
+    protected $appends = ['category'];
+
+    public function getCategoryAttribute()
+    {
+        // 访问下面的关联关系，获取分类名称，如果没有则返回默认值
+        return $this->categoryRelation ? $this->categoryRelation->name : 'Général';
+    }
 
     protected $casts = [
         'is_public' => 'boolean', // 🎯 Important pour que Laravel traite la colonne comme un booléen
@@ -29,9 +37,13 @@ class Quiz extends Model
     /**
      * Relation vers la table categories
      */
+    public function categoryRelation(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->categoryRelation();
     }
 
     /**

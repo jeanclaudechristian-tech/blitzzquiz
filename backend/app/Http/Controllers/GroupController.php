@@ -237,21 +237,27 @@ class GroupController extends Controller
             return response()->json(['error' => 'Accès refusé'], 403);
         }
 
-        // Récupère les quiz via la table assignments
-        $assignments = $group->assignments()->with(['quiz' => fn ($q) => $q->withCount('questions')])->get();
+        // 🎯 关键改动：预加载 categoryRelation
+        // 只有加载了它，模型里的 $quiz->category 访问器才能拿到分类名字
+        $assignments = $group->assignments()->with([
+            'quiz' => fn ($q) => $q->with(['categoryRelation'])->withCount('questions')
+        ])->get();
 
         $quizzes = $assignments->map(function ($a) {
             $quiz = $a->quiz;
+            if (!$quiz) return null;
+
             return [
                 'id' => $quiz->id,
                 'titre' => $quiz->titre,
-                'category' => $quiz->category ?? '',
+                'category' => $quiz->category,
                 'questions_count' => $quiz->questions_count ?? 0,
-                'is_public' => $quiz->is_public,
+                'is_public' => (bool)$quiz->is_public,
                 'code_quiz' => $quiz->code_quiz,
                 'description' => $quiz->description,
+                'is_recommended' => false,
             ];
-        });
+        })->filter()->values();
 
         return response()->json($quizzes);
     }
@@ -349,7 +355,7 @@ class GroupController extends Controller
                 return $quiz;
             })->filter()->values(); // values() pour remettre les index de l'array à zéro
 
-            // 🎯 On renvoie un tableau d'objets Quiz. 
+            // 🎯 On renvoie un tableau d'objets Quiz.
             // C'est la structure la plus standard pour un endpoint qui finit par /quizzes
             return response()->json($quizzes);
 

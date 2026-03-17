@@ -35,7 +35,7 @@ export const groupService = {
    * GET /api/groups/{id}/quizzes
    */
   getQuizzes(groupId) {
-    return api.get(`/groups/${groupId}/quizzes`);
+    return api.get(`/groups/${groupId}/getQuizzes`);
   },
 
   /**

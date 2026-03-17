@@ -51,36 +51,56 @@ class QuizController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        // 游客位面
         if (!$user) {
             return $this->publicIndex($request);
         }
 
         try {
-            $query = Quiz::with('category')->withCount('questions');
+            // 1. 初始化查询：使用 categoryRelation 确保触发 Accessor
+            $query = Quiz::with('categoryRelation')->withCount('questions');
 
-            // 🎯 FIX POSTGRES: Utilisation de whereRaw pour les booléens
+            $weakCategories = [];
+
+            // 2. 权限过滤
             if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
                 $query->where(function ($q) use ($user) {
                     $q->where('owner_id', $user->id)
                       ->orWhereRaw('is_public IS TRUE');
                 });
             } else {
+                // STUDENT 权限：只能看公开的
                 $query->whereRaw('is_public IS TRUE');
 
+                // 自动筛选符合等级的内容
                 if (!$request->filled('category_id') && $user->education_level) {
                     $query->where(function ($sub) use ($user) {
                         $sub->whereNull('education_level')
                             ->orWhere('education_level', $user->education_level);
                     });
                 }
+
+                // 🎯 核心回归：计算弱点类别 (平均分 < 70)
+                // 这里使用 Result 关联查询，通过 categoryRelation 拿到名字
+                $weakCategories = Result::where('user_id', $user->id)
+                    ->with('quiz.categoryRelation')
+                    ->get()
+                    ->groupBy(fn($r) => $r->quiz->category ?? 'Général')
+                    ->map(fn($group) => $group->avg('score'))
+                    ->filter(fn($score) => $score < 70)
+                    ->keys()
+                    ->toArray();
             }
 
+            // 3. 动态过滤
             if ($request->filled('category_id')) {
                 $val = $request->category_id;
                 if (is_numeric($val)) {
                     $query->where('category_id', '=', (int)$val);
                 } else {
-                    $query->whereHas('category', function($q) use ($val) {
+                    // 如果传的是字符串名字，去关联表里搜
+                    $query->whereHas('categoryRelation', function($q) use ($val) {
                         $q->where('name', 'ILIKE', $val);
                     });
                 }
@@ -90,18 +110,33 @@ class QuizController extends Controller
                 $query->where('education_level', $request->education_level);
             }
 
+            // 4. 排序逻辑
             if ($request->get('sort') === 'populaire') {
                 $query->orderBy('plays_count', 'desc');
             } else {
                 $query->latest();
             }
 
-            return response()->json($query->get());
+            // 5. 分页支持
+            if ($request->has(['offset', 'limit'])) {
+                $query->offset((int)$request->query('offset'))->limit((int)$request->query('limit'));
+            }
+
+            $quizzes = $query->get();
+
+            // 6. 🎯 注入推荐属性：确保前端渲染不红屏，推荐位面正常开启
+            $quizzes->transform(function ($q) use ($weakCategories) {
+                $q->is_recommended = in_array($q->category, $weakCategories);
+                return $q;
+            });
+
+            return response()->json($quizzes);
 
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur SQL',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTrace() : null // 生产环境记得关掉 trace
             ], 500);
         }
     }
@@ -119,7 +154,7 @@ class QuizController extends Controller
             }
         }
 
-        $quiz->load(['questions', 'category']);
+        $quiz->load(['questions', 'categoryRelation']);
         $quiz->loadCount('questions');
 
         return response()->json($quiz);
@@ -279,7 +314,7 @@ class QuizController extends Controller
                     'quizzes.code_quiz', 'quizzes.education_level', 'quizzes.is_public', 'quizzes.created_at'
                 ])
                 ->selectRaw("ts_headline('french', coalesce(quizzes.description, ''), websearch_to_tsquery('french', ?), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as description_highlight", [$term])
-                ->with(['category:id,name'])
+                ->with(['categoryRelation:id,name'])
                 ->withCount('questions')
                 ->limit(20)
                 ->get();

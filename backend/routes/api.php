@@ -61,13 +61,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
     Route::get('/quizzes/code/{code}', [QuizController::class, 'findByCode']);
     Route::post('/quizzes/{quiz}/results', [QuizController::class, 'storeResult']);
-    
+
     // --- Questions ---
     Route::get('/quizzes/{quiz}/questions', [QuizController::class, 'questionsIndex']);
     Route::post('/quizzes/{quiz}/questions', [QuizController::class, 'questionsStore']);
     Route::put('/questions/{question}', [QuizController::class, 'questionsUpdate']);
     Route::delete('/questions/{question}', [QuizController::class, 'questionsDestroy']);
-    
+
     // --- Résultats Utilisateur ---
     Route::get('/me/results', [QuizController::class, 'myResults']);
 
@@ -78,14 +78,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/groups/{group}', [GroupController::class, 'show']);
     Route::put('/groups/{group}', [GroupController::class, 'update']);
     Route::delete('/groups/{group}', [GroupController::class, 'destroy']);
-    
+
     // Membres du groupe
     Route::post('/groups/{group}/members/invite', [GroupController::class, 'inviteByEmail']);
     Route::post('/groups/{group}/members', [GroupController::class, 'addMember']);
     Route::delete('/groups/{group}/leave', [GroupController::class, 'leave']);
-    
+
     // Assignments & Quiz du groupe
-    Route::get('/groups/{group}/quizzes', [GroupController::class, 'getQuizzes']); 
+    Route::get('/groups/{group}/quizzes', [GroupController::class, 'quizzes']);
+    Route::get('/groups/{group}/getQuizzes', [GroupController::class, 'getQuizzes']);
     Route::post('/groups/{group}/assignments', [GroupController::class, 'assignQuiz']);
     Route::delete('/groups/{group}/assignments/{quiz}', [GroupController::class, 'unassignQuiz']);
     Route::get('/groups/{group}/quizzes/{quiz}/ranking', [GroupController::class, 'quizRanking']);
