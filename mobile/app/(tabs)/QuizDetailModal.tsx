@@ -116,9 +116,9 @@ export const QuizDetailModal = ({ quiz, isVisible, onClose, onStart, groupId, is
                                 <Text style={styles.infoLabel}>Questions</Text>
                             </View>
                             <View style={styles.infoBox}>
-                                <Ionicons name="time-outline" size={20} color={colors.primary} />
-                                <Text style={styles.infoValue}>5 min</Text>
-                                <Text style={styles.infoLabel}>Estimation</Text>
+                                <Ionicons name="people-outline" size={20} color={colors.primary} />
+                                <Text style={styles.infoValue}>{quiz.plays_count || 0}</Text>
+                                <Text style={styles.infoLabel}>Tentatives</Text>
                             </View>
                         </View>
 

@@ -84,12 +84,12 @@ export default function Dashboard({ onSelectQuiz }: DashboardProps) {
                 keyExtractor={(item) => item.id.toString()}
                 ListHeaderComponent={renderHeader}
                 renderItem={({ item, index }) => (
-                    // 使用 Reanimated 增加进入位面的仪式感
-                    <Animated.View entering={FadeInDown.delay(index * 100).duration(600)}>
-                        <QuizCard
-                            quiz={item}
-                            onPress={() => onSelectQuiz(item)}
-                        />
+                    // 为动画容器指定 key，确保它能感知到 item 的变化并重新触发动画
+                    <Animated.View
+                        key={item.id}
+                        entering={FadeInDown.delay(index * 100).duration(600)}
+                    >
+                        <QuizCard quiz={item} onPress={() => onSelectQuiz(item)} />
                     </Animated.View>
                 )}
                 contentContainerStyle={styles.listContent}

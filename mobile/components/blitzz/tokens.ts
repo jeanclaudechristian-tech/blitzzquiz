@@ -7,6 +7,7 @@ export const colors = {
   grayBg: "#D6D6D6",
   successBlue: "#269AFF",
   white: "#FFFFFF",
+  GOLD_COLOR: '#FFF9C4'
 };
 
 export const sizes = {

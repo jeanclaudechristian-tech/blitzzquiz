@@ -26,6 +26,8 @@ export interface Quiz {
     description_highlight?: string;
 
     // 关联关系 (可选，因为 API 不一定每次都把这些带回来)
+    is_recommended?: boolean;
+    plays_count?: number;
     owner?: User;
     questions?: Question[];
     results?: Result[];
