@@ -6,7 +6,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000'],
+    'allowed_origins' => ['https://blitzzquiz.vercel.app', 'http://localhost:3000'],
 
     'allowed_origins_patterns' => [],
 
@@ -17,6 +17,6 @@ return [
     'max_age' => 0,
 
     'supports_credentials' => true,
-    
+
 ];
 
