@@ -31,7 +31,7 @@ class Quiz extends Model
     }
 
     protected $casts = [
-        'is_public' => 'boolean', // 🎯 Important pour que Laravel traite la colonne comme un booléen
+        'is_public' => 'boolean', // Important pour que Laravel traite la colonne comme un booléen
     ];
 
     /**

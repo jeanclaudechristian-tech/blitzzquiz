@@ -37,7 +37,6 @@ import Diviseur from '../components/Diviseur.vue'
 import BoutonCreerUnCompte from '../components/BoutonCreerUnCompte.vue'
 import BoutonGoogle from '../components/BoutonGoogle.vue'
 import { authService } from '../../api/auth'
-import api from '../../api/Axios'
 
 export default {
   name: 'DesktopConnexion',
@@ -69,22 +68,21 @@ export default {
 
       try {
         const data = await authService.login(
-            this.formData.username, // 确保这里传的是 Email
+            this.formData.username, 
             this.formData.password
         )
 
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
 
-        const role = data.user.role
-        this.$router.push(role === 'TEACHER' ? '/enseignant' : (role === 'STUDENT' ? '/etudiant' : '/'))
+        // 🎯 MODIFICATION : On envoie tout le monde vers la page Main (/)
+        this.$router.push('/')
 
       } catch (error) {
         const status = error.response?.status
         const message = error.response?.data?.message
 
         if (status === 403 && error.response?.data?.needs_verification) {
-          // --- 核心：拦截未验证用户并提示重发 --- [cite: 1, 2026-03-15]
           const confirmResend = confirm("Votre compte n'est pas activé. Voulez-vous renvoyer l'email de vérification ?")
           if (confirmResend) {
             await this.handleResendEmail()
@@ -100,7 +98,6 @@ export default {
     },
     async handleResendEmail() {
       try {
-        // 调用 authService 里的新接口
         await authService.resendVerification(this.formData.username)
         alert("Un nouveau lien a été envoyé à votre adresse courriel.")
       } catch (e) {

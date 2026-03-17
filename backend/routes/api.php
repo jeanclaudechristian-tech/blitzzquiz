@@ -10,7 +10,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 
 // ==========================================
-// 🔓 ROUTES PUBLIQUES
+//  ROUTES PUBLIQUES
 // ==========================================
 
 // Auth Google
@@ -41,7 +41,7 @@ Route::get('/categories', function () {
 });
 
 // ==========================================
-// 🔒 ROUTES PROTÉGÉES (Connexion requise)
+// ROUTES PROTÉGÉES (Connexion requise)
 // ==========================================
 Route::middleware('auth:sanctum')->group(function () {
 

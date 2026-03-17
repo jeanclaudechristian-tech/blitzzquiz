@@ -129,7 +129,7 @@ export default {
     }
   },
   methods: {
-    // 🎯 Logique extraite pour être appelée plusieurs fois
+    // 🎯 Ta logique d'origine, extraite pour être réutilisée
     checkUserAuth() {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
@@ -151,7 +151,7 @@ export default {
   mounted() {
     this.checkUserAuth();
   },
-  // 🎯 WATCHER : Si l'utilisateur revient sur la home, on re-vérifie le token
+  // 🎯 L'UNIQUE AJOUT : Cela mettra à jour la page dès que tu reviens de "/connexion"
   watch: {
     '$route'() {
       this.checkUserAuth();
@@ -159,10 +159,6 @@ export default {
   }
 }
 </script>
-<style>
-@import './accueil-ui.css';
-/* Tes styles restent identiques, ils sont corrects */
-</style>
 
 <style>
 @import './accueil-ui.css';
