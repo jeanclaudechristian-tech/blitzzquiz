@@ -2,14 +2,12 @@
   <div class="admin-dashboard">
     <AppHeader />
     <main class="admin-main">
-      <!-- Header avec badge admin -->
       <header class="admin-header">
         <span class="super-admin-badge">🛡️ Super Admin Mode</span>
         <h1>Dashboard Administrateur</h1>
         <p class="subtitle">Vue d'ensemble de la plateforme BlitzzQuiz</p>
       </header>
 
-      <!-- Statistiques globales -->
       <section class="stats-grid">
         <div class="stat-card" :style="{ animationDelay: '0s' }">
           <div class="stat-icon users">
@@ -70,7 +68,6 @@
         </div>
       </section>
 
-      <!-- Actions rapides -->
       <section class="quick-actions">
         <h2>⚡ Actions rapides</h2>
         <div class="actions-grid">
@@ -89,19 +86,16 @@
         </div>
       </section>
     </main>
-    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 
 export default {
   name: 'AdminDashboard',
   components: {
-    AppHeader,
-    AppFooter
+    AppHeader
   },
   data() {
     return {

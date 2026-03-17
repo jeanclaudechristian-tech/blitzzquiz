@@ -2,7 +2,6 @@
   <div class="super-admin-view">
     <AppHeader />
     <main class="super-main">
-      <!-- Header avec badge -->
       <header class="super-header">
         <div class="badge-container">
           <span class="super-badge">🛡️ Mode Super Admin</span>
@@ -11,7 +10,6 @@
         <p class="subtitle">Accès complet et vue de tous les rôles</p>
       </header>
 
-      <!-- Switch de vue -->
       <section class="view-switcher">
         <h2>🔄 Changer de vue</h2>
         <div class="switch-grid">
@@ -33,7 +31,6 @@
         </div>
       </section>
 
-      <!-- Accès complet -->
       <section class="full-access">
         <h2>🔓 Accès complet</h2>
         <div class="access-list">
@@ -68,7 +65,6 @@
         </div>
       </section>
 
-      <!-- Test rapide -->
       <section class="quick-test">
         <h2>🧪 Test rapide</h2>
         <p>Testez n'importe quel quiz en un clic</p>
@@ -77,19 +73,16 @@
         </button>
       </section>
     </main>
-    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 
 export default {
   name: 'SuperAdminView',
   components: {
-    AppHeader,
-    AppFooter
+    AppHeader
   },
   methods: {
     switchToStudent() {

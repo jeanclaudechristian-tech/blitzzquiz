@@ -2,13 +2,11 @@
   <div class="users-list-page">
     <AppHeader />
     <main class="users-main">
-      <!-- Header -->
       <header class="users-header">
         <h1>👥 Gestion des utilisateurs</h1>
         <p class="subtitle">Liste complète des utilisateurs de la plateforme</p>
       </header>
 
-      <!-- Recherche et filtres -->
       <div class="controls-bar">
         <div class="search-box">
           <span class="search-icon">🔍</span>
@@ -30,7 +28,6 @@
         </div>
       </div>
 
-      <!-- Tableau utilisateurs -->
       <div class="users-table-container">
         <table class="users-table">
           <thead>
@@ -98,13 +95,11 @@
           </tbody>
         </table>
 
-        <!-- Message si aucun utilisateur -->
         <div v-if="!filteredUsers.length" class="empty-state">
           <p>Aucun utilisateur trouvé</p>
         </div>
       </div>
 
-      <!-- Modal de confirmation de suppression -->
       <div v-if="showDeleteModal" class="modal-overlay" @click="cancelDelete">
         <div class="modal-content" @click.stop>
           <h3>⚠️ Confirmer la suppression</h3>
@@ -117,19 +112,16 @@
         </div>
       </div>
     </main>
-    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 
 export default {
   name: 'UsersListPage',
   components: {
-    AppHeader,
-    AppFooter
+    AppHeader
   },
   data() {
     return {

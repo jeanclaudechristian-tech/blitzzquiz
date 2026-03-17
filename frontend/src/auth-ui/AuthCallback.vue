@@ -53,13 +53,14 @@ export default {
         // 4. 根据后端返回的逻辑跳转
         if (data.needs_completion) {
           registrationStore.startGoogleFlow({
-            google_id: data.user.google_id, // 确保字段名与后端 AuthController 返回的一致
+            google_id: data.user.google_id, 
             email: data.user.email,
             avatar: data.user.avatar
           });
           router.push('/inscription');
         } else {
-          router.push(data.user.role === 'TEACHER' ? '/enseignant' : '/etudiant');
+          // REDIRECTION UNIFIÉE VERS LA LANDING PAGE (MainPage)
+          router.push('/');
         }
       } catch (error) {
         console.error('Erreur:', error);

@@ -2,13 +2,11 @@
   <div class="leaderboard-page">
     <AppHeader />
     <main class="leaderboard-main">
-      <!-- Header -->
       <header class="leaderboard-header">
         <h1>🏆 Classement</h1>
         <p class="subtitle">Meilleurs scores du quiz</p>
       </header>
 
-      <!-- Sélection du quiz -->
       <div class="quiz-selector">
         <label for="quiz-select">Choisir un quiz :</label>
         <select id="quiz-select" v-model="selectedQuizId" @change="loadLeaderboard">
@@ -23,9 +21,7 @@
         </select>
       </div>
 
-      <!-- Leaderboard Content -->
       <div v-if="selectedQuizId && leaderboard.length" class="leaderboard-content">
-        <!-- Top 5 joueurs -->
         <section class="top-players-section">
           <h2>🥇 Top 5 Joueurs</h2>
           <div class="players-list">
@@ -51,7 +47,6 @@
           </div>
         </section>
 
-        <!-- Position de l'utilisateur -->
         <section v-if="userPosition" class="user-position-section">
           <h2>📍 Ma Position</h2>
           <div class="user-position-card" :class="{ 'in-top5': userPosition.rank <= 5 }">
@@ -75,7 +70,6 @@
           </p>
         </section>
 
-        <!-- Si l'utilisateur n'a pas joué -->
         <section v-else class="no-user-score">
           <div class="empty-icon">🎯</div>
           <p>Vous n'avez pas encore joué à ce quiz.</p>
@@ -85,7 +79,6 @@
         </section>
       </div>
 
-      <!-- États vides -->
       <div v-else-if="selectedQuizId && !leaderboard.length" class="empty-state">
         <div class="empty-icon">📊</div>
         <p>Aucun score enregistré pour ce quiz.</p>
@@ -97,19 +90,16 @@
         <p>Sélectionnez un quiz pour voir le classement</p>
       </div>
     </main>
-    <AppFooter class="compact-footer" />
   </div>
 </template>
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import AppFooter from '../../accueil-ui/composant/AppFooter.vue'
 
 export default {
   name: 'LeaderboardPage',
   components: {
-    AppHeader,
-    AppFooter
+    AppHeader
   },
   data() {
     return {

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomePage from "../page/HomePage.vue";
+import MainPage from "../accueil-ui/MainPage.vue"; 
 import DesktopConnexion from "../auth-ui/pages/DesktopConnexion.vue";
 import DesktopInscriptionPage1 from "../auth-ui/pages/DesktopInscriptionPage1.vue";
 import DesktopInscriptionPage2 from "../auth-ui/pages/DesktopInscriptionPage2.vue";
@@ -12,13 +12,10 @@ import EditQuizPage from "../enseignant-ui/pages/EditQuizPage.vue";
 import QuizQuestionsPage from "../enseignant-ui/pages/QuizQuestionsPage.vue";
 import PrevisualiserQuestions from "../enseignant-ui/pages/PrevisualiserQuestions.vue";
 import EtudiantDashboard from "../etudiant-ui/pages/EtudiantDashboard.vue";
-import QuizCataloguePage from "../etudiant-ui/pages/QuizCataloguePage.vue";
-import EnterQuizCodePage from "../etudiant-ui/pages/EnterQuizCodePage.vue";
-import EnterGroupCodePage from "../etudiant-ui/pages/EnterGroupCodePage.vue";
+// ❌ Supprimé : QuizCataloguePage (Ancien catalogue)
+// ❌ Supprimé : EnterQuizCodePage (Géré par CodeModal)
+// ❌ Supprimé : EnterGroupCodePage (Géré par CodeModal)
 import EtudiantGroupeQuizzesPage from "../etudiant-ui/pages/EtudiantGroupeQuizzesPage.vue";
-import EtudiantQuizLobbyPage from "../etudiant-ui/pages/EtudiantQuizLobbyPage.vue";
-import EtudiantQuizPlayPage from "../etudiant-ui/pages/EtudiantQuizPlayPage.vue";
-import EtudiantQuizLoadingPage from "../etudiant-ui/pages/EtudiantQuizLoadingPage.vue";
 import EtudiantQuizResultPage from "../etudiant-ui/pages/EtudiantQuizResultPage.vue";
 import LeaderboardPage from "../classement-ui/pages/LeaderboardPage.vue";
 import HistoriquePage from "../historique-ui/pages/HistoriquePage.vue";
@@ -29,16 +26,25 @@ import GroupesListPage from "../enseignant-ui/pages/GroupesListPage.vue";
 import GroupeCreatePage from "../enseignant-ui/pages/GroupeCreatePage.vue";
 import GroupeDetailsPage from "../enseignant-ui/pages/GroupeDetailsPage.vue";
 import EtudiantProfil from "../etudiant-ui/pages/EtudiantProfil.vue";
+
+// ✅ AJOUTÉ : Import pour la page de tes groupes
+import EtudiantGroupesPage from "../etudiant-ui/pages/EtudiantGroupesPage.vue"; 
+
+// === LES DEUX IMPORTS QUIZ ===
+import QuizPlayOverlay from "../quiz-ui/quiz.vue"; 
+import QuizCatalogue from "../catalogue/QuizCatalogue.vue"; 
+
 const routes = [
-  {
-  path: '/etudiant/quiz/code/:code/lobby',
-  name: 'EtudiantQuizLobby',
-  component: EtudiantQuizLobbyPage,
-},
   {
     path: "/",
     name: "Home",
-    component: HomePage,
+    component: MainPage,
+  },
+  {
+    // 🎯 LE CATALOGUE UNIQUE POUR TOUT LE MONDE
+    path: "/catalogue",
+    name: "CataloguePublic",
+    component: QuizCatalogue,
   },
   {
     path: "/home",
@@ -74,7 +80,6 @@ const routes = [
     name: "Succes",
     component: DesktopSucces,
   },
-  // ROUTE CALLBACK ACTIVÉE
   {
     path: "/auth/callback",
     name: "AuthCallback",
@@ -126,19 +131,10 @@ const routes = [
     component: EtudiantDashboard,
   },
   {
-    path: "/etudiant/catalogue",
-    name: "EtudiantCatalogue",
-    component: QuizCataloguePage,
-  },
-  {
-    path: "/etudiant/code",
-    name: "EtudiantEnterCode",
-    component: EnterQuizCodePage,
-  },
-  {
-    path: "/etudiant/rejoindre-groupe",
-    name: "EnterGroupCode",
-    component: EnterGroupCodePage,
+    // ✅ AJOUTÉ : La route pour les groupes de l'étudiant
+    path: "/etudiant/mes-groupes",
+    name: "EtudiantMesGroupes",
+    component: EtudiantGroupesPage,
   },
   {
     path: "/etudiant/groupes/:id/quiz",
@@ -146,19 +142,11 @@ const routes = [
     component: EtudiantGroupeQuizzesPage,
   },
   {
-    path: "/etudiant/quiz/:id",
-    name: "EtudiantQuizLobby",
-    component: EtudiantQuizLobbyPage,
-  },
-  {
+    // 🎯 ROUTE UNIQUE POUR JOUER (MODALE 3D)
     path: "/etudiant/quiz/:id/jouer",
     name: "EtudiantQuizPlay",
-    component: EtudiantQuizPlayPage,
-  },
-  {
-    path: "/etudiant/quiz/:id/loading",
-    name: "EtudiantQuizLoading",
-    component: EtudiantQuizLoadingPage,
+    component: QuizPlayOverlay,
+    props: true,
   },
   {
     path: "/etudiant/quiz/:id/resultat",
@@ -200,6 +188,19 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth',
+      }
+    }
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
+    }
+  },
 });
 
 export default router;

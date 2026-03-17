@@ -16,10 +16,7 @@
           <p>compte</p>
         </div>
         <InputNomUtilisateur v-model="formData.username" />
-        <InputMotDePasse
-          v-model="formData.password"
-          placeholder="Mot de passe"
-        />
+        <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" />
         <BoutonMdpOublie />
         <BoutonConnexion :disabled="loading" @click="handleConnexion" />
         <Diviseur />
@@ -32,7 +29,7 @@
 
 <script>
 import BlackBlitzzQuiz from '../components/BlackBlitzzQuiz.vue'
-import InputNomUtilisateur from '../components/InputNomUtilisateur.vue'
+import InputNomUtilisateur from '../components//InputCourriel.vue'
 import InputMotDePasse from '../components/InputMotDePasse.vue'
 import BoutonMdpOublie from '../components/BoutonMdpOublie.vue'
 import BoutonConnexion from '../components/BoutonConnexion.vue'
@@ -90,15 +87,8 @@ export default {
         // on n’utilise plus axios.defaults ici,
         // c’est ton instance `api` qui gère baseURL + Authorization
         console.log('Connexion réussie:', data.user)
+        this.$router.push('/')
 
-        const role = data.user.role
-        if (role === 'TEACHER') {
-          this.$router.push('/enseignant')
-        } else if (role === 'STUDENT') {
-          this.$router.push('/etudiant')
-        } else {
-          this.$router.push('/')
-        }
       } catch (error) {
         console.error('Erreur de connexion:', error)
         if (error.response?.status === 422) {

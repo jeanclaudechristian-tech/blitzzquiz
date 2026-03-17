@@ -27,7 +27,7 @@ class GroupController extends Controller
             return [
                 'id' => $g->id,
                 'nom' => $g->nom,
-                 'owner_id' => $g->owner_id, // ✅ 别忘了这个，用来判断身份
+                'owner_id' => $g->owner_id, // ✅ 别忘了这个，用来判断身份
                 'code_invitation' => $g->code_invitation, // ✅ 补上这一行！
                 'is_public' => $g->is_public,
                 'nb_membres' => $g->members->count(),
@@ -90,7 +90,7 @@ class GroupController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
 
-        $group -> members()->attach($userID);
+        $group->members()->attach($userID);
         $group->load('owner');
         return response()->json($group, 201);
     }
@@ -157,45 +157,17 @@ class GroupController extends Controller
             return response()->json(['error' => 'Code invalide'], 404);
         }
 
-        // Si déjà membre, on renvoie quand même les infos pour rediriger vers la page quiz
-        if (!$group->members()->where('user_id', $userId)->exists()) {
-            $group->members()->attach($userId);
+        if ($group->members()->where('user_id', $userId)->exists()) {
+            return response()->json(['error' => 'Déjà membre'], 409);
         }
+
+        // user_groups (user_id, group_id)
+        $group->members()->attach($userId);
 
         return response()->json([
             'message' => 'Tu as rejoint le groupe',
-            'id' => $group->id,
-            'nom' => $group->nom,
+            'group_id' => $group->id,
         ]);
-    }
-
-    /**
-     * Liste des quiz assignés au groupe (accès membre ou owner).
-     */
-    public function quizzes(Group $group)
-    {
-        $userId = Auth::id();
-        $isOwner = ($userId === $group->owner_id);
-        $isMember = $group->members()->where('user_id', $userId)->exists();
-
-        if (!$isOwner && !$isMember) {
-            return response()->json(['error' => 'Accès refusé'], 403);
-        }
-
-        // Récupère les quiz via la table assignments
-        $assignments = $group->assignments()->with(['quiz' => fn ($q) => $q->withCount('questions')])->get();
-
-        $quizzes = $assignments->map(function ($a) {
-            $quiz = $a->quiz;
-            return [
-                'id' => $quiz->id,
-                'titre' => $quiz->titre,
-                'category' => $quiz->category ?? '',
-                'questions_count' => $quiz->questions_count ?? 0,
-            ];
-        });
-
-        return response()->json($quizzes);
     }
 
     /**
@@ -229,5 +201,41 @@ class GroupController extends Controller
 
         return response()->json(['message' => 'Groupe quitté']);
     }
+    public function getQuizzes($id)
+    {
+        try {
+            // 1. On récupère le groupe avec ses assignments et les quiz reliés
+            // On charge aussi les catégories et le compte des questions en une seule fois (Eager Loading)
+            $group = Group::with(['assignments.quiz.category', 'assignments.quiz.questions'])
+                ->findOrFail($id);
 
+            // 2. Vérification de sécurité (Owner ou Membre)
+            $userId = Auth::id();
+            if ($userId !== $group->owner_id && !$group->members()->where('user_id', $userId)->exists()) {
+                return response()->json(['error' => 'Accès refusé'], 403);
+            }
+
+            // 3. On extrait uniquement les Quiz des Assignments
+            $quizzes = $group->assignments->map(function ($assignment) {
+                $quiz = $assignment->quiz;
+                if ($quiz) {
+                    // On injecte les infos nécessaires pour le Web et le Mobile
+                    $quiz->questions_count = $quiz->questions->count();
+                    // On garde l'id de l'assignment au cas où le mobile en ait besoin plus tard
+                    $quiz->current_assignment_id = $assignment->id;
+                }
+                return $quiz;
+            })->filter()->values(); // values() pour remettre les index de l'array à zéro
+
+            // 🎯 On renvoie un tableau d'objets Quiz. 
+            // C'est la structure la plus standard pour un endpoint qui finit par /quizzes
+            return response()->json($quizzes);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erreur lors du chargement des quiz',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
