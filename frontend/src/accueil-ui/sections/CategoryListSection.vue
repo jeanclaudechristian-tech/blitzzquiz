@@ -3,34 +3,32 @@ import { useRouter } from 'vue-router';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 
 const router = useRouter();
-const categoryImage = (fileName) =>
-  new URL(`./images/categories/${fileName}`, import.meta.url).href;
 
 // --- DONNÉES SYNCHRONISÉES AVEC LA BDD ---
 // 🎯 Ajout des nouvelles catégories scolaires et professionnelles
 const categories = [
   // SCOLAIRE
-  { id: 1,  slug: 'math',         label: 'Math',               image: categoryImage('math.svg') },
-  { id: 2,  slug: 'francais',     label: 'Français',           image: categoryImage('francais.svg') },
-  { id: 3,  slug: 'sciences',     label: 'Sciences',           image: categoryImage('sciences.svg') },
-  { id: 4,  slug: 'histoire',     label: 'Histoire',           image: categoryImage('histoire.svg') },
-  { id: 5,  slug: 'sport',        label: 'Sport',              image: categoryImage('sport.svg') },
-  { id: 6,  slug: 'trivia',       label: 'Trivia',             image: categoryImage('trivia.svg') },
-  { id: 7,  slug: 'art',          label: 'Art',                image: categoryImage('art.svg') },
+  { id: 1,  slug: 'math',         label: 'Math' },
+  { id: 2,  slug: 'francais',     label: 'Français' },
+  { id: 3,  slug: 'sciences',     label: 'Sciences' },
+  { id: 4,  slug: 'histoire',     label: 'Histoire' },
+  { id: 5,  slug: 'sport',        label: 'Sport' },
+  { id: 6,  slug: 'trivia',       label: 'Trivia' },
+  { id: 7,  slug: 'art',          label: 'Art' },
   
   // PROFESSIONNEL (Nouvelles entrées)
-  { id: 8,  slug: 'ti',           label: 'Technologie Info.',  image: categoryImage('ti.svg') },
-  { id: 9,  slug: 'sante',        label: 'Santé',              image: categoryImage('sante.svg') },
-  { id: 10, slug: 'legal',        label: 'Légal',              image: categoryImage('legal.svg') },
-  { id: 11, slug: 'construction', label: 'Construction',       image: categoryImage('construction.svg') },
-  { id: 12, slug: 'admin',        label: 'Administration',     image: categoryImage('admin.svg') },
-  { id: 13, slug: 'politique',    label: 'Politique',          image: categoryImage('politique.svg') },
-  { id: 14, slug: 'ingenieur',    label: 'Ingénieur',          image: categoryImage('ingenieur.svg') },
+  { id: 8,  slug: 'ti',           label: 'Technologie Info.' },
+  { id: 9,  slug: 'sante',        label: 'Santé' },
+  { id: 10, slug: 'legal',        label: 'Légal' },
+  { id: 11, slug: 'construction', label: 'Construction' },
+  { id: 12, slug: 'admin',        label: 'Administration' },
+  { id: 13, slug: 'politique',    label: 'Politique' },
+  { id: 14, slug: 'ingenieur',    label: 'Ingénieur' },
   
   // AUTRES (Groupes ou Fallback)
-  { id: 15, slug: 'films-series', label: 'Films & Séries',   image: categoryImage('films.svg') },
-  { id: 16, slug: 'monde',        label: 'Monde & Culture',  image: categoryImage('monde.svg') },
-  { id: 17, slug: 'general',      label: 'Général',          image: categoryImage('general.svg') },
+  { id: 15, slug: 'films-series', label: 'Films & Séries' },
+  { id: 16, slug: 'monde',        label: 'Monde & Culture' },
+  { id: 17, slug: 'general',      label: 'Général' },
 ];
 
 // --- MATHÉMATIQUES STRICTES DU CAROUSEL ---
@@ -131,7 +129,6 @@ const handleClick = (label) => {
             :class="{ 'strict-active': i >= currentIndex && i < currentIndex + visibleCount }"
             @click="handleClick(cat.label)"
           >
-            <img :src="cat.image" :alt="cat.label" class="card-bg-img" draggable="false" />
             <div class="category-overlay">
               <span class="category-label">{{ cat.label }}</span>
             </div>
@@ -225,7 +222,6 @@ const handleClick = (label) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
   padding: 22px 18px 20px;
   background: rgba(248, 245, 238, 0.88);
   border: 1px solid rgba(80, 202, 255, 0.18);
@@ -249,14 +245,6 @@ const handleClick = (label) => {
 .category-card.strict-active:hover {
   transform: translateY(-5px) scale(1.02);
   box-shadow: 0 18px 34px rgba(30, 38, 49, 0.16);
-}
-
-.card-bg-img {
-  width: 126px;
-  height: 126px;
-  object-fit: contain;
-  display: block;
-  flex: 0 0 auto;
 }
 
 .category-overlay {

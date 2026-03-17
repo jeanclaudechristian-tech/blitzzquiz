@@ -96,8 +96,16 @@
         </template>
       </div>
     </div>
+
     <GuestModal v-if="showGuestModal" @close="showGuestModal = false" />
     <CodeModal v-if="isCodeModalOpen" @close="isCodeModalOpen = false" @show-guest-modal="showGuestModal = true" />
+
+    <QuizModal 
+      v-if="showQuizModal" 
+      :quizId="selectedQuizId" 
+      @close="showQuizModal = false" 
+    />
+
   </div>
 </template>
 
@@ -108,6 +116,7 @@ import axios from 'axios';
 import './AppHeader.css';
 import GuestModal from '../composant/GuestModal.vue';
 import CodeModal from './CodeModal.vue';
+import QuizModal from '../../quiz-ui/quiz.vue'; // Importation de la modale
 
 const router = useRouter();
 const route = useRoute();
@@ -120,6 +129,9 @@ const isLoggedIn = ref(false);
 const userRole = ref('');
 const showGuestModal = ref(false);
 const isCodeModalOpen = ref(false);
+
+const showQuizModal = ref(false);
+const selectedQuizId = ref(null);
 
 const searchQuery = ref('');
 const searchResults = ref([]);
@@ -173,11 +185,13 @@ const goToQuiz = (quiz) => {
     showGuestModal.value = true;
     return;
   }
+  
   if (userRole.value === 'TEACHER' || userRole.value === 'ADMIN') {
     router.push(`/enseignant/quiz/${quiz.id}/editer`);
   } else {
-    // 🎯 FIX : On ajoute /jouer pour la route correcte
-    router.push(`/etudiant/quiz/${quiz.id}/jouer`);
+    // 🎯 CORRECTION : Ouverture propre de la modale pour l'étudiant
+    selectedQuizId.value = quiz.id;
+    showQuizModal.value = true;
   }
 };
 
@@ -192,6 +206,9 @@ const checkAuthStatus = () => {
     } catch (e) {
       userRole.value = '';
     }
+  } else {
+    // 🎯 SÉCURITÉ : On s'assure de bien vider le rôle si aucun user
+    userRole.value = '';
   }
 };
 
@@ -214,7 +231,7 @@ const handleLogout = async () => {
   }
 };
 
-// 🎯 REFRESH AUTH : On re-vérifie dès que la route change (ex: retour de login)
+// Le header se met à jour en douceur quand la page change (après un login par exemple)
 watch(() => route.path, () => {
   checkAuthStatus();
   isSearchOpen.value = false;
@@ -249,7 +266,6 @@ const handleScroll = () => {
   lastScrollY = currentScrollY;
 };
 
-// 🎯 RESTAURÉ : Comportement souris original
 const handleMouseMove = (event) => {
   if (event.clientY <= 80) {
     isHidden.value = false;

@@ -80,7 +80,7 @@
 </template>
 
 <script>
-import axios from '@/api/axios'
+import axios from '@/api/Axios'
 import AppHeader from '@/accueil-ui/composant/AppHeader.vue'
 import InputCourriel from '@/auth-ui/components/InputCourriel.vue'
 import InputNomUtilisateur from '@/auth-ui/components/InputNomUtilisateur.vue'
