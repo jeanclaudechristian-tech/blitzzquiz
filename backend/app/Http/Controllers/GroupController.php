@@ -255,6 +255,7 @@ class GroupController extends Controller
                 'is_public' => (bool)$quiz->is_public,
                 'code_quiz' => $quiz->code_quiz,
                 'description' => $quiz->description,
+                'plays_count' => $quiz->plays_count ?? 0,
                 'is_recommended' => false,
             ];
         })->filter()->values();

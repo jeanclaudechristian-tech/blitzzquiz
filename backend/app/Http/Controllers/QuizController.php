@@ -52,28 +52,27 @@ class QuizController extends Controller
     {
         $user = $request->user();
 
-        // 游客位面
+        // 游客位面逻辑
         if (!$user) {
             return $this->publicIndex($request);
         }
 
         try {
-            // 1. 初始化查询：使用 categoryRelation 确保触发 Accessor
+            // 1. 初始化查询：预加载关联以支持 Accessor 获取 category 字符串
             $query = Quiz::with('categoryRelation')->withCount('questions');
 
             $weakCategories = [];
 
-            // 2. 权限过滤
+            // 2. 权限与等级过滤
             if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
                 $query->where(function ($q) use ($user) {
                     $q->where('owner_id', $user->id)
                       ->orWhereRaw('is_public IS TRUE');
                 });
-            } else {
-                // STUDENT 权限：只能看公开的
+            } elseif ($user->role === 'STUDENT') {
                 $query->whereRaw('is_public IS TRUE');
 
-                // 自动筛选符合等级的内容
+                // 自动筛选符合用户教育等级的内容
                 if (!$request->filled('category_id') && $user->education_level) {
                     $query->where(function ($sub) use ($user) {
                         $sub->whereNull('education_level')
@@ -81,8 +80,10 @@ class QuizController extends Controller
                     });
                 }
 
-                // 🎯 核心回归：计算弱点类别 (平均分 < 70)
-                // 这里使用 Result 关联查询，通过 categoryRelation 拿到名字
+                // --- 核心：以前的推荐逻辑回归 ---
+
+                // A. 获取弱点类别 (平均分 < 70)
+                // 这里的 quiz.category 会触发 Quiz 模型的 Accessor 得到字符串名字
                 $weakCategories = Result::where('user_id', $user->id)
                     ->with('quiz.categoryRelation')
                     ->get()
@@ -91,42 +92,50 @@ class QuizController extends Controller
                     ->filter(fn($score) => $score < 70)
                     ->keys()
                     ->toArray();
-            }
 
-            // 3. 动态过滤
-            if ($request->filled('category_id')) {
-                $val = $request->category_id;
-                if (is_numeric($val)) {
-                    $query->where('category_id', '=', (int)$val);
-                } else {
-                    // 如果传的是字符串名字，去关联表里搜
-                    $query->whereHas('categoryRelation', function($q) use ($val) {
-                        $q->where('name', 'ILIKE', $val);
-                    });
+                // B. 获取已尝试过的 Quiz ID
+                $attemptedIds = Result::where('user_id', $user->id)->pluck('quiz_id')->unique()->toArray();
+
+                // C. 安全排序：弱点类别的 Quiz 排在最前面
+                if (!empty($weakCategories)) {
+                    $catList = collect($weakCategories)->map(fn($c) => "'".addslashes($c)."'")->implode(',');
+                    $query->orderByRaw("CASE WHEN EXISTS (
+                        SELECT 1 FROM categories
+                        WHERE categories.id = quizzes.category_id
+                        AND categories.name IN ($catList)
+                    ) THEN 0 ELSE 1 END");
                 }
-            }
 
-            if ($request->filled('education_level') && $request->education_level !== 'Tous') {
-                $query->where('education_level', $request->education_level);
-            }
-
-            // 4. 排序逻辑
-            if ($request->get('sort') === 'populaire') {
-                $query->orderBy('plays_count', 'desc');
+                // D. 没做过的排在前面
+                if (!empty($attemptedIds)) {
+                    $idList = implode(',', $attemptedIds);
+                    $query->orderByRaw("CASE WHEN id NOT IN ($idList) THEN 0 ELSE 1 END");
+                }
             } else {
-                $query->latest();
+                return response()->json(['error' => 'Rôle non autorisé'], 403);
             }
 
-            // 5. 分页支持
+            // 3. 基础排序：最新发布
+            $query->latest();
+
+            // 4. 分页逻辑
             if ($request->has(['offset', 'limit'])) {
                 $query->offset((int)$request->query('offset'))->limit((int)$request->query('limit'));
             }
 
             $quizzes = $query->get();
 
-            // 6. 🎯 注入推荐属性：确保前端渲染不红屏，推荐位面正常开启
-            $quizzes->transform(function ($q) use ($weakCategories) {
-                $q->is_recommended = in_array($q->category, $weakCategories);
+            $recommendedCount = 0;
+            $maxRecommended = 3;
+
+            $quizzes->transform(function ($q) use ($weakCategories, &$recommendedCount, $maxRecommended) {
+                // 如果属于弱点分类，且还没达到 3 个名额
+                if ($recommendedCount < $maxRecommended && in_array($q->category, $weakCategories)) {
+                    $q->is_recommended = true;
+                    $recommendedCount++;
+                } else {
+                    $q->is_recommended = false;
+                }
                 return $q;
             });
 
@@ -135,8 +144,7 @@ class QuizController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur SQL',
-                'message' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTrace() : null // 生产环境记得关掉 trace
+                'message' => $e->getMessage()
             ], 500);
         }
     }
@@ -311,7 +319,7 @@ class QuizController extends Controller
                 ->orderByRaw("ts_rank(quizzes.search_vector, websearch_to_tsquery('french', ?)) DESC", [$term])
                 ->select([
                     'quizzes.id', 'quizzes.titre', 'quizzes.description', 'quizzes.category_id',
-                    'quizzes.code_quiz', 'quizzes.education_level', 'quizzes.is_public', 'quizzes.created_at'
+                    'quizzes.code_quiz', 'quizzes.education_level', 'quizzes.is_public', 'quizzes.created_at', 'quizzes.plays_count'
                 ])
                 ->selectRaw("ts_headline('french', coalesce(quizzes.description, ''), websearch_to_tsquery('french', ?), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as description_highlight", [$term])
                 ->with(['categoryRelation:id,name'])
