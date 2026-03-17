@@ -51,67 +51,90 @@ class QuizController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (!$user) return $this->publicIndex($request);
+
+        // 1. 游客逻辑
+        if (!$user) {
+            return $this->publicIndex($request);
+        }
 
         try {
-            // 1. 初始化查询
+            // 初始化基础查询
             $query = Quiz::with('categoryRelation')->withCount('questions');
 
-            // 2. 权限与学生逻辑
+            // 初始化推荐所需的变量
+            $weakCategoryIds = [];
+            $offset = (int)$request->query('offset', 0);
+            $limit = (int)$request->query('limit', 15);
+
+            // 2. 权限与身份逻辑
             if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
                 $query->where(function ($q) use ($user) {
                     $q->where('owner_id', $user->id)
-                      ->orWhereRaw('is_public IS TRUE'); // 遵循你的 Raw 写法
+                      ->orWhereRaw('is_public IS TRUE'); // 保留你的 Raw 写法
                 });
             } elseif ($user->role === 'STUDENT') {
                 $query->whereRaw('is_public IS TRUE');
 
+                // 自动筛选教育等级
                 if (!$request->filled('category_id') && $user->education_level) {
-                    $query->where(fn($sub) => $sub->whereNull('education_level')->orWhere('education_level', $user->education_level));
+                    $query->where(function ($sub) use ($user) {
+                        $sub->whereNull('education_level')
+                            ->orWhere('education_level', $user->education_level);
+                    });
                 }
 
-                // --- 核心：数据库级聚合避免 OOM ---
+                // --- 核心：安全且高性能的推荐算法 ---
 
-                // 获取弱点类别 ID (平均分 < 70)
+                // A. 数据库级聚合：获取平均分 < 70 的分类 ID
                 $weakCategoryIds = Result::join('quizzes', 'results.quiz_id', '=', 'quizzes.id')
                     ->where('results.user_id', $user->id)
+                    ->whereNotNull('quizzes.category_id')
                     ->select('quizzes.category_id')
                     ->groupBy('quizzes.category_id')
                     ->havingRaw('AVG(results.score) < 70')
                     ->pluck('category_id')
                     ->toArray();
 
-                // 获取已尝试过的 Quiz ID
-                $attemptedIds = Result::where('user_id', $user->id)->pluck('quiz_id')->unique()->toArray();
+                // B. 获取已尝试过的 Quiz ID
+                $attemptedIds = Result::where('user_id', $user->id)
+                    ->pluck('quiz_id')
+                    ->unique()
+                    ->toArray();
 
-                // C. 排序：弱点类别优先
+                // C. 安全排序：弱点分类置顶
+                // 只有当数组不为空时才拼接 SQL，防止 IN () 报错导致 App 加载失败
                 if (!empty($weakCategoryIds)) {
-                    $catList = implode(',', $weakCategoryIds);
-                    $query->orderByRaw("CASE WHEN category_id IN ($catList) THEN 0 ELSE 1 END");
+                    $catList = implode(',', array_filter($weakCategoryIds));
+                    if (!empty($catList)) {
+                        $query->orderByRaw("CASE WHEN category_id IN ($catList) THEN 0 ELSE 1 END");
+                    }
                 }
 
-                // D. 没做过的优先
+                // D. 安全排序：没做过的优先
                 if (!empty($attemptedIds)) {
-                    $idList = implode(',', $attemptedIds);
-                    $query->orderByRaw("CASE WHEN id NOT IN ($idList) THEN 0 ELSE 1 END");
+                    $idList = implode(',', array_filter($attemptedIds));
+                    if (!empty($idList)) {
+                        $query->orderByRaw("CASE WHEN id NOT IN ($idList) THEN 0 ELSE 1 END");
+                    }
                 }
+            } else {
+                return response()->json(['error' => 'Rôle non autorisé'], 403);
             }
 
-            // 3. 基础排序与分页
+            // 3. 基础排序：最新发布
             $query->latest();
-            if ($request->has(['offset', 'limit'])) {
-                $query->offset((int)$request->query('offset'))->limit((int)$request->query('limit'));
-            }
 
-            $quizzes = $query->get();
+            // 4. 执行分页获取数据
+            $quizzes = $query->offset($offset)->limit($limit)->get();
 
-            // 4. 标记推荐 (仅针对当前页，性能损耗极小)
+            // 5. 标记推荐逻辑 (核心修复：锁定第一页)
             $recommendedCount = 0;
             $maxRecommended = 3;
-            $weakSet = array_flip($weakCategoryIds); // 使用哈希表提高匹配速度
+            $weakSet = array_flip($weakCategoryIds); // 使用哈希表提高匹配效率
 
-            $quizzes->transform(function ($q) use ($weakSet, &$recommendedCount, $maxRecommended) {
-                if ($recommendedCount < $maxRecommended && isset($weakSet[$q->category_id])) {
+            $quizzes->transform(function ($q) use ($weakSet, &$recommendedCount, $maxRecommended, $offset) {
+                // 只有在第一页 (offset 为 0) 时才尝试打“推荐”标签
+                if ($offset === 0 && $recommendedCount < $maxRecommended && isset($weakSet[$q->category_id])) {
                     $q->is_recommended = true;
                     $recommendedCount++;
                 } else {
@@ -123,7 +146,11 @@ class QuizController extends Controller
             return response()->json($quizzes);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'SQL Error', 'message' => $e->getMessage()], 500);
+            // 如果报错，返回具体信息方便你排查字段名
+            return response()->json([
+                'error' => 'SQL Error',
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
