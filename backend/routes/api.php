@@ -8,6 +8,7 @@ use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Admin\ImpersonationController;
 
 // ==========================================
 //  ROUTES PUBLIQUES
@@ -31,23 +32,26 @@ Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
     ->middleware(['signed', 'throttle:6,1'])
     ->name('verification.verify');
+
 Route::post('/email/resend-verification', [AuthController::class, 'resendVerificationByEmail']);
 
-// Catalogue / Recherche (Accessibles sans être connecté)
+// Catalogue / Recherche
 Route::get('/quizzes/public', [QuizController::class, 'publicIndex']);
 Route::get('/quizzes/search', [QuizController::class, 'search']);
+
 Route::get('/categories', function () {
     return response()->json(\App\Models\Category::all());
 });
 
 // ==========================================
-// ROUTES PROTÉGÉES (Connexion requise)
+// ROUTES PROTÉGÉES (auth:sanctum)
 // ==========================================
 Route::middleware('auth:sanctum')->group(function () {
 
     // --- Profil & Auth ---
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
+
     Route::get('/me', [ProfileController::class, 'me']);
     Route::patch('/me', [ProfileController::class, 'update']);
     Route::patch('/me/password', [ProfileController::class, 'password']);
@@ -91,11 +95,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/groups/{group}/assignments/{quiz}', [GroupController::class, 'unassignQuiz']);
     Route::get('/groups/{group}/quizzes/{quiz}/ranking', [GroupController::class, 'quizRanking']);
 
-    // --- Admin ---
+    // ==========================================
+    // ADMIN (TEACHER ONLY)
+    // ==========================================
     Route::middleware('admin')->prefix('admin')->group(function () {
+
         Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index']);
         Route::patch('/users/{id}/disable', [\App\Http\Controllers\Admin\AdminUserController::class, 'disable']);
         Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy']);
         Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword']);
+
+        // Impersonation
+        Route::post('/impersonate', [ImpersonationController::class, 'impersonate']);
     });
 });
