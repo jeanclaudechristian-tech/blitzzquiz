@@ -1,8 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import api from '../api/Axios';
-import axios from 'axios';
+import { quizService } from '../api/quiz';
 import AppHeader from '../accueil-ui/composant/AppHeader.vue';
 import QuizModal from '../quiz-ui/quiz.vue'; // 🎯 Vérifie bien que le chemin est correct
 // 🎯 1. IMPORT DU MODAL
@@ -100,8 +99,8 @@ const loadQuizzes = async () => {
     try {
         const token = localStorage.getItem('token');
         const response = token
-            ? await api.get('/quizzes')
-            : await axios.get('http://127.0.0.1:8000/api/quizzes/public');
+            ? { data: await quizService.list() }
+            : { data: await quizService.listPublic() };
 
         quizzes.value = response.data.map(q => {
             // 🎯 FIX: Extraction du nom de la catégorie (JSON bleu)

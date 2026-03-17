@@ -16,7 +16,10 @@ const goBack = () => {
 }
 
 const openQuiz = (quizId) => {
-  router.push(`/etudiant/quiz/${quizId}/jouer`)
+  router.push({
+    path: `/etudiant/quiz/${quizId}/jouer`,
+    query: { group: route.params.id },
+  })
 }
 
 const loadGroupeQuizzes = async () => {

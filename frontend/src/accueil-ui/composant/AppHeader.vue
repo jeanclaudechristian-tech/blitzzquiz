@@ -112,7 +112,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import axios from 'axios';
+import { authService } from '@/api/auth';
+import { quizService } from '@/api/quiz';
 import './AppHeader.css';
 import GuestModal from '../composant/GuestModal.vue';
 import CodeModal from './CodeModal.vue';
@@ -160,17 +161,13 @@ const fetchQuizzes = async () => {
   abortController = new AbortController();
   loadingSearch.value = true;
   try {
-    const token = localStorage.getItem('token');
-    const headers = { signal: abortController.signal };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const { data } = await axios.get('http://127.0.0.1:8000/api/quizzes/search', {
-      params: { q: trimmedQuery },
-      headers
+    const data = await quizService.search(trimmedQuery, {
+      signal: abortController.signal
     });
     searchCache.set(trimmedQuery, data);
     searchResults.value = data;
   } catch (error) {
-    if (axios.isCancel(error)) return;
+    if (error?.code === 'ERR_CANCELED') return;
     console.error("Erreur recherche:", error);
   } finally {
     loadingSearch.value = false;
@@ -214,19 +211,17 @@ const checkAuthStatus = () => {
 
 const handleLogout = async () => {
   const token = localStorage.getItem('token');
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  isLoggedIn.value = false;
-  userRole.value = '';
   try {
     if (token) {
-      axios.post('http://127.0.0.1:8000/api/logout', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await authService.logout(token);
     }
   } catch (error) {
     console.error("Erreur logout:", error);
   } finally {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    isLoggedIn.value = false;
+    userRole.value = '';
     window.location.href = '/';
   }
 };

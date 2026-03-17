@@ -45,8 +45,11 @@ export const authService = {
   
   // ---------------------
 
-  async logout() {
-    const response = await api.post("/logout");
+  async logout(tokenOverride = null) {
+    const config = tokenOverride
+      ? { headers: { Authorization: `Bearer ${tokenOverride}` } }
+      : undefined;
+    const response = await api.post("/logout", {}, config);
     return response.data;
   },
 

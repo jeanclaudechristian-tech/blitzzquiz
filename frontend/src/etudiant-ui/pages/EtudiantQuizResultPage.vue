@@ -69,7 +69,12 @@ export default {
       }
     },
     replay() {
-      this.$router.push(`/etudiant/quiz/${this.$route.params.id}/jouer`)
+      this.$router.push({
+        path: `/etudiant/quiz/${this.$route.params.id}/jouer`,
+        query: this.$route.query.group
+          ? { group: this.$route.query.group }
+          : {},
+      })
     },
     goHome() {
       this.$router.push('/etudiant')
@@ -78,7 +83,12 @@ export default {
       this.$router.push('/historique')
     },
     seeLeaderboard() {
-      this.$router.push(`/classement?quiz=${this.$route.params.id}`)
+      this.$router.push({
+        path: '/classement',
+        query: this.$route.query.group
+          ? { quiz: this.$route.params.id, group: this.$route.query.group }
+          : { quiz: this.$route.params.id },
+      })
     }
   },
   mounted() {

@@ -297,9 +297,20 @@ export default {
       this.quizState = 'playing';
       this.startTimer();
     },
-    closeModal() {
+    closeModal(useRouteFallback = true) {
       this.stopTimer();
-      // 🎯 MODIFICATION : On émet close au lieu de reculer dans l'historique
+      if (useRouteFallback && this.$route.name === 'EtudiantQuizPlay') {
+        const groupId = this.$route.query.group;
+
+        if (groupId) {
+          this.$router.push(`/etudiant/groupes/${groupId}/quiz`);
+          return;
+        }
+
+        this.$router.push('/etudiant');
+        return;
+      }
+
       this.$emit('close');
     },
     getCardStyle(index) {
@@ -328,16 +339,20 @@ export default {
       };
     },
     goToHistory() {
-      this.closeModal();
+      this.closeModal(false);
       setTimeout(() => {
         this.$router.push('/historique');
       }, 100);
     },
     goToLeaderboard() {
       const id = this.quizId || this.$route.params.id;
-      this.closeModal();
+      const groupId = this.$route.query.group;
+      this.closeModal(false);
       setTimeout(() => {
-        this.$router.push(`/classement?quiz=${id}`);
+        this.$router.push({
+          path: '/classement',
+          query: groupId ? { quiz: id, group: groupId } : { quiz: id },
+        });
       }, 100);
     }
   },

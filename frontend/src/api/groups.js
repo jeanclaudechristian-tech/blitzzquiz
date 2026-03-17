@@ -57,6 +57,14 @@ export const groupService = {
   },
 
   /**
+   * Classement reel d'un quiz assigne a un groupe.
+   * GET /api/groups/{group}/quizzes/{quiz}/ranking
+   */
+  getQuizRanking(groupId, quizId) {
+    return api.get(`/groups/${groupId}/quizzes/${quizId}/ranking`);
+  },
+
+  /**
    * Inviter un membre par email (enseignant owner).
    * POST /api/groups/{id}/members/invite avec { email }
    */

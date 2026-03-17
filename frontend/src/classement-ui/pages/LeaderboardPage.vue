@@ -1,187 +1,331 @@
 <template>
   <div class="leaderboard-page">
     <AppHeader />
+
     <main class="leaderboard-main">
-      <header class="leaderboard-header">
-        <h1>🏆 Classement</h1>
-        <p class="subtitle">Meilleurs scores du quiz</p>
-      </header>
+      <section class="leaderboard-hero panel-surface">
+        <div class="hero-copy">
+          <p class="hero-kicker">Classement de groupe</p>
+          <h1>{{ quizTitle || 'Classement' }}</h1>
+          <p class="hero-subtitle">
+            {{
+              groupName
+                ? `Scores reels du groupe ${groupName}`
+                : 'Consulte les meilleurs scores de ton groupe pour ce quiz.'
+            }}
+          </p>
 
-      <div class="quiz-selector">
-        <label for="quiz-select">Choisir un quiz :</label>
-        <select id="quiz-select" v-model="selectedQuizId" @change="loadLeaderboard">
-          <option value="">-- Sélectionner un quiz --</option>
-          <option
-            v-for="quiz in availableQuizzes"
-            :key="quiz.id"
-            :value="quiz.id"
-          >
-            {{ quiz.titre }}
-          </option>
-        </select>
-      </div>
-
-      <div v-if="selectedQuizId && leaderboard.length" class="leaderboard-content">
-        <section class="top-players-section">
-          <h2>🥇 Top 5 Joueurs</h2>
-          <div class="players-list">
-            <div
-              v-for="(player, index) in topPlayers"
-              :key="player.id"
-              :class="['player-card', `rank-${index + 1}`]"
-              :style="{ animationDelay: `${index * 0.1}s` }"
+          <div class="hero-actions">
+            <button type="button" class="btn-secondary" @click="goBack">
+              Retour au groupe
+            </button>
+            <button
+              v-if="hasRequiredContext"
+              type="button"
+              class="btn-primary"
+              @click="playQuizAgain"
             >
-              <div class="player-rank">
-                <span class="rank-badge">{{ index + 1 }}</span>
-                <span class="rank-medal">{{ getRankMedal(index + 1) }}</span>
-              </div>
-              <div class="player-info">
-                <h3 class="player-name">{{ player.nom }}</h3>
-                <p class="player-date">{{ formatDate(player.date) }}</p>
-              </div>
-              <div class="player-score">
-                <span class="score-value">{{ player.score }}</span>
-                <span class="score-label">pts</span>
-              </div>
+              Rejouer le quiz
+            </button>
+          </div>
+        </div>
+
+        <aside class="hero-stats">
+          <div class="stat-card">
+            <span class="stat-label">Participants</span>
+            <strong>{{ leaderboard.length }}</strong>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-label">Ma place</span>
+            <strong>{{ userPosition ? `#${userPosition.rank}` : '--' }}</strong>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-label">Mon score</span>
+            <strong>{{ userPosition ? `${userPosition.score} pts` : '--' }}</strong>
+          </div>
+        </aside>
+      </section>
+
+      <section v-if="loading" class="state-card panel-surface">
+        <div class="state-icon">...</div>
+        <h2>Chargement du classement</h2>
+        <p>Recuperation des meilleurs scores du groupe.</p>
+      </section>
+
+      <section v-else-if="error" class="state-card panel-surface error-state">
+        <div class="state-icon">!</div>
+        <h2>Classement indisponible</h2>
+        <p>{{ error }}</p>
+      </section>
+
+      <section v-else-if="!hasRequiredContext" class="state-card panel-surface">
+        <div class="state-icon">#</div>
+        <h2>Classement de groupe seulement</h2>
+        <p>
+          Ce classement compare seulement les membres d'un groupe pour ce quiz.
+          Il ne montre pas tous les joueurs de la plateforme.
+        </p>
+      </section>
+
+      <section
+        v-else-if="hasRequiredContext && rankedPlayers.length === 0"
+        class="state-card panel-surface"
+      >
+        <div class="state-icon">0</div>
+        <h2>Aucun score pour le moment</h2>
+        <p>Soyez le premier membre du groupe a enregistrer un resultat.</p>
+      </section>
+
+      <template v-else>
+        <section class="podium-grid">
+          <article
+            v-for="player in podiumPlayers"
+            :key="player.id"
+            :class="['podium-card', `rank-${player.rank}`, { 'is-current-user': isCurrentUser(player) }]"
+          >
+            <div class="podium-rank">
+              <span class="podium-place">#{{ player.rank }}</span>
+              <span class="podium-medal">{{ getRankMedal(player.rank) }}</span>
             </div>
+
+            <div class="podium-info">
+              <h2>{{ player.nom }}</h2>
+              <p>{{ formatDate(player.date) }}</p>
+            </div>
+
+            <div class="podium-score">
+              <strong>{{ player.score }}</strong>
+              <span>pts</span>
+            </div>
+          </article>
+        </section>
+
+        <section class="ranking-panel panel-surface">
+          <header class="panel-header">
+            <div>
+              <p class="panel-kicker">Classement complet</p>
+              <h2>{{ rankedPlayers.length }} joueur(s) classes</h2>
+            </div>
+            <p class="panel-copy">
+              Le classement garde le meilleur score de chaque membre du groupe.
+            </p>
+          </header>
+
+          <div class="ranking-list">
+            <article
+              v-for="player in rankedPlayers"
+              :key="player.id"
+              :class="['ranking-row', `rank-tone-${Math.min(player.rank, 4)}`, { 'is-current-user': isCurrentUser(player) }]"
+            >
+              <div class="ranking-rank">
+                <span class="ranking-rank-value">#{{ player.rank }}</span>
+              </div>
+
+              <div class="ranking-body">
+                <div class="ranking-copy">
+                  <h3>
+                    {{ player.nom }}
+                    <span v-if="isCurrentUser(player)" class="you-badge">Vous</span>
+                  </h3>
+                  <p>{{ formatDate(player.date) }}</p>
+                </div>
+
+                <div class="ranking-score">
+                  <strong>{{ player.score }}</strong>
+                  <span>pts</span>
+                </div>
+              </div>
+            </article>
           </div>
         </section>
-
-        <section v-if="userPosition" class="user-position-section">
-          <h2>📍 Ma Position</h2>
-          <div class="user-position-card" :class="{ 'in-top5': userPosition.rank <= 5 }">
-            <div class="user-rank">
-              <span class="rank-badge">{{ userPosition.rank }}</span>
-            </div>
-            <div class="user-info">
-              <h3 class="user-name">{{ userPosition.nom }} <span class="you-badge">(Vous)</span></h3>
-              <p class="user-date">{{ formatDate(userPosition.date) }}</p>
-            </div>
-            <div class="user-score">
-              <span class="score-value">{{ userPosition.score }}</span>
-              <span class="score-label">pts</span>
-            </div>
-          </div>
-          <p v-if="userPosition.rank > 5" class="rank-message">
-            💪 Plus que {{ userPosition.rank - 5 }} place(s) pour atteindre le top 5 !
-          </p>
-          <p v-else class="rank-message celebration">
-            🎉 Félicitations ! Vous êtes dans le top 5 !
-          </p>
-        </section>
-
-        <section v-else class="no-user-score">
-          <div class="empty-icon">🎯</div>
-          <p>Vous n'avez pas encore joué à ce quiz.</p>
-          <button type="button" class="play-now-btn" @click="goToQuizCatalogue">
-            Jouer maintenant
-          </button>
-        </section>
-      </div>
-
-      <div v-else-if="selectedQuizId && !leaderboard.length" class="empty-state">
-        <div class="empty-icon">📊</div>
-        <p>Aucun score enregistré pour ce quiz.</p>
-        <p class="empty-subtitle">Soyez le premier à relever le défi !</p>
-      </div>
-
-      <div v-else class="empty-state">
-        <div class="empty-icon">🎮</div>
-        <p>Sélectionnez un quiz pour voir le classement</p>
-      </div>
+      </template>
     </main>
   </div>
 </template>
 
 <script>
+import api from '../../api/Axios'
+import { groupService } from '../../api/groups'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 
 export default {
   name: 'LeaderboardPage',
   components: {
-    AppHeader
+    AppHeader,
   },
   data() {
     return {
-      availableQuizzes: [],
-      selectedQuizId: '',
+      loading: false,
+      error: '',
       leaderboard: [],
-      userPosition: null
+      quizTitle: '',
+      groupName: '',
+      currentUserId: null,
     }
   },
   computed: {
-    topPlayers() {
-      return this.leaderboard.slice(0, 5)
-    }
+    quizId() {
+      const value = Number(this.$route.query.quiz)
+      return Number.isFinite(value) && value > 0 ? value : null
+    },
+    groupId() {
+      const value = Number(this.$route.query.group)
+      return Number.isFinite(value) && value > 0 ? value : null
+    },
+    hasRequiredContext() {
+      return Boolean(this.quizId && this.groupId)
+    },
+    rankedPlayers() {
+      let lastScore = null
+      let lastRank = 0
+
+      return this.leaderboard.map((player, index) => {
+        const rank = player.score === lastScore ? lastRank : index + 1
+        lastScore = player.score
+        lastRank = rank
+
+        return {
+          ...player,
+          rank,
+        }
+      })
+    },
+    podiumPlayers() {
+      return this.rankedPlayers.slice(0, 3)
+    },
+    userPosition() {
+      if (!this.currentUserId) return null
+
+      return (
+        this.rankedPlayers.find(
+          (player) => Number(player.userId) === Number(this.currentUserId)
+        ) || null
+      )
+    },
   },
   methods: {
-    loadAvailableQuizzes() {
-      // TODO (Laravel) : GET /api/quizzes?visibility=public
-      const storageKey = 'enseignant_quizzes'
+    async bootstrapPage() {
+      this.readCurrentUser()
+
+      if (!this.hasRequiredContext) {
+        this.leaderboard = []
+        this.quizTitle = ''
+        this.groupName = ''
+        this.error = ''
+        return
+      }
+
+      this.loading = true
+      this.error = ''
+
       try {
-        const saved = localStorage.getItem(storageKey)
-        if (!saved) return
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          this.availableQuizzes = parsed.filter((q) => q.isPublic)
-        }
-      } catch {
-        this.availableQuizzes = []
+        const [rankingResponse, groupResponse, quizResponse] = await Promise.all([
+          groupService.getQuizRanking(this.groupId, this.quizId),
+          groupService.show(this.groupId).catch(() => ({ data: null })),
+          api.get(`/quizzes/${this.quizId}`).catch(() => ({ data: null })),
+        ])
+
+        this.leaderboard = Array.isArray(rankingResponse.data)
+          ? rankingResponse.data
+              .map(this.mapRankingPlayer)
+              .sort((a, b) => b.score - a.score)
+          : []
+
+        this.groupName = groupResponse.data?.nom || `Groupe ${this.groupId}`
+        this.quizTitle =
+          quizResponse.data?.titre ||
+          quizResponse.data?.title ||
+          'Classement du quiz'
+      } catch (error) {
+        console.error('Erreur chargement classement', error)
+        this.error =
+          error.response?.data?.message ||
+          'Impossible de charger le classement du groupe.'
+        this.leaderboard = []
+      } finally {
+        this.loading = false
       }
     },
-    loadLeaderboard() {
-      if (!this.selectedQuizId) return
-
-      // TODO (Laravel) : GET /api/leaderboard/{quizId}
-      // Retour attendu : { leaderboard: [...], userPosition: {...} }
-      
-      // Données fictives pour la démo
-      const fakeLeaderboard = [
-        { id: 1, nom: 'Alice Martin', score: 95, date: '2024-02-15T10:30:00' },
-        { id: 2, nom: 'Bob Dupont', score: 88, date: '2024-02-14T14:20:00' },
-        { id: 3, nom: 'Clara Bernard', score: 85, date: '2024-02-13T09:15:00' },
-        { id: 4, nom: 'David Moreau', score: 82, date: '2024-02-12T16:45:00' },
-        { id: 5, nom: 'Emma Petit', score: 78, date: '2024-02-11T11:00:00' },
-        { id: 6, nom: 'François Roux', score: 75, date: '2024-02-10T13:30:00' },
-        { id: 7, nom: 'Vous', score: 70, date: '2024-02-09T15:00:00' }
-      ]
-      
-      this.leaderboard = fakeLeaderboard
-      
-      const userIndex = this.leaderboard.findIndex((p) => p.nom === 'Vous')
-      if (userIndex !== -1) {
-        this.userPosition = {
-          ...this.leaderboard[userIndex],
-          rank: userIndex + 1
-        }
-      } else {
-        this.userPosition = null
+    mapRankingPlayer(player) {
+      return {
+        id: player.id || `${player.user_id}-${player.quiz_id}-${player.score}`,
+        userId: player.user_id || player.user?.id || null,
+        nom:
+          player.user?.nickname ||
+          player.user?.name ||
+          player.nom ||
+          `Participant ${player.user_id || ''}`.trim(),
+        score: Number(player.score || 0),
+        date: player.date_tentative || player.created_at || null,
       }
+    },
+    readCurrentUser() {
+      try {
+        const rawUser = localStorage.getItem('user')
+        if (!rawUser) {
+          this.currentUserId = null
+          return
+        }
+
+        const parsedUser = JSON.parse(rawUser)
+        this.currentUserId = parsedUser?.id ?? null
+      } catch {
+        this.currentUserId = null
+      }
+    },
+    formatDate(dateValue) {
+      if (!dateValue) return 'Tentative non datee'
+
+      const date = new Date(dateValue)
+      if (Number.isNaN(date.getTime())) return 'Tentative non datee'
+
+      return date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
     },
     getRankMedal(rank) {
-      if (rank === 1) return '🥇'
-      if (rank === 2) return '🥈'
-      if (rank === 3) return '🥉'
-      return '🏅'
+      if (rank === 1) return '1'
+      if (rank === 2) return '2'
+      if (rank === 3) return '3'
+      return '*'
     },
-    formatDate(dateStr) {
-      const date = new Date(dateStr)
-      const options = { day: '2-digit', month: 'short', year: 'numeric' }
-      return date.toLocaleDateString('fr-FR', options)
+    isCurrentUser(player) {
+      return Number(player.userId) === Number(this.currentUserId)
     },
-    goToQuizCatalogue() {
-      this.$router.push('/etudiant/catalogue')
-    }
+    goBack() {
+      if (this.groupId) {
+        this.$router.push(`/etudiant/groupes/${this.groupId}/quiz`)
+        return
+      }
+
+      if (window.history.length > 1) {
+        this.$router.back()
+        return
+      }
+
+      this.$router.push('/etudiant')
+    },
+    playQuizAgain() {
+      if (!this.quizId) return
+
+      this.$router.push({
+        path: `/etudiant/quiz/${this.quizId}/jouer`,
+        query: this.groupId ? { group: this.groupId } : {},
+      })
+    },
   },
   mounted() {
-    this.loadAvailableQuizzes()
-    
-    const quizId = this.$route.query.quiz
-    if (quizId) {
-      this.selectedQuizId = Number(quizId)
-      this.loadLeaderboard()
-    }
-  }
+    this.bootstrapPage()
+  },
+  watch: {
+    '$route.fullPath'() {
+      this.bootstrapPage()
+    },
+  },
 }
 </script>
 
