@@ -5,30 +5,31 @@ namespace App\Http\Controllers;
 use App\Models\Quiz;
 use App\Models\Question;
 use App\Models\Result;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class QuizController extends Controller
 {
+    /**
+     * CRÉER UN QUIZ
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'titre' => 'required|string|max:100',
             'description' => 'nullable|string',
-            'category' => 'nullable|string|max:255',
+            'category_id' => 'nullable|integer|exists:categories,id',
             'is_public' => 'boolean',
             'education_level' => 'nullable|string|max:255',
         ]);
 
         $user = Auth::user();
-        if (!$user) {
-            return response()->json(['error' => 'Auth required'], 401);
-        }
-
-        if (!in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
-            return response()->json(['error' => 'Forbidden'], 403);
+        if (!$user || !in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
+            return response()->json(['error' => 'Action non autorisée'], 403);
         }
 
         do {
@@ -38,157 +39,146 @@ class QuizController extends Controller
         $quiz = Quiz::create($validated + [
             'code_quiz' => $code,
             'owner_id' => $user->id,
+            'plays_count' => 0
         ]);
 
-        return response()->json($quiz->load('questions'), 201);
+        return response()->json($quiz->load(['questions', 'category']), 201);
     }
 
+    /**
+     * INDEX (UTILISATEURS CONNECTÉS)
+     */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-
-        // 1. 初始化基础查询
-        $query = Quiz::withCount('questions');
-
-        $weakCategories = [];
-
-        // 2. 权限与等级过滤
-       if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
-           $query->where(function ($q) use ($user) {
-               $q->where('owner_id', $user->id)
-                 ->orWhereRaw('is_public = true');
-           });
-       } elseif ($user->role === 'STUDENT') {
-           $query->whereRaw('is_public = true')
-                 ->when($user->education_level, function ($q) use ($user) {
-                     $q->where(function ($sub) use ($user) {
-                         $sub->whereNull('education_level')
-                             ->orWhere('education_level', $user->education_level);
-                     });
-                 });
-
-            // --- 核心：更安全的权重计算 ---
-
-            // A. 获取弱点类别 (平均分 < 70)
-            // 这里不使用 join，而是通过关联关系或直接查 Result 表
-            $weakCategories = Result::where('user_id', $user->id)
-                ->with('quiz')
-                ->get()
-                ->groupBy(fn($r) => $r->quiz->category ?? 'Général')
-                ->map(fn($group) => $group->avg('score'))
-                ->filter(fn($score) => $score < 70)
-                ->keys()
-                ->toArray();
-
-            // B. 获取已尝试的 Quiz ID
-            $attemptedIds = Result::where('user_id', $user->id)->pluck('quiz_id')->unique()->toArray();
-
-            // C. 安全排序
-            if (!empty($weakCategories)) {
-                // 使用 findInSet 的逻辑或 field 排序的替代方案
-                // 这里用 simple orderByRaw，并对输入进行处理
-                $catList = collect($weakCategories)->map(fn($c) => "'".addslashes($c)."'")->implode(',');
-                $query->orderByRaw("CASE WHEN category IN ($catList) THEN 0 ELSE 1 END");
-            }
-
-            if (!empty($attemptedIds)) {
-                $idList = implode(',', $attemptedIds);
-                // 没做过的排在前面
-                $query->orderByRaw("CASE WHEN id NOT IN ($idList) THEN 0 ELSE 1 END");
-            }
-        } else {
-            return response()->json(['error' => 'Rôle non autorisé'], 403);
+        if (!$user) {
+            return $this->publicIndex($request);
         }
 
-        // 3. 基础排序：最新发布
-        $query->latest();
+        try {
+            $query = Quiz::with('category')->withCount('questions');
 
-        // 4. 分页逻辑
-        if ($request->has(['offset', 'limit'])) {
-            $query->offset((int)$request->query('offset'))->limit((int)$request->query('limit'));
+            // 🎯 FIX POSTGRES: Utilisation de whereRaw pour les booléens
+            if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
+                $query->where(function ($q) use ($user) {
+                    $q->where('owner_id', $user->id)
+                      ->orWhereRaw('is_public IS TRUE');
+                });
+            } else {
+                $query->whereRaw('is_public IS TRUE');
+
+                if (!$request->filled('category_id') && $user->education_level) {
+                    $query->where(function ($sub) use ($user) {
+                        $sub->whereNull('education_level')
+                            ->orWhere('education_level', $user->education_level);
+                    });
+                }
+            }
+
+            if ($request->filled('category_id')) {
+                $val = $request->category_id;
+                if (is_numeric($val)) {
+                    $query->where('category_id', '=', (int)$val);
+                } else {
+                    $query->whereHas('category', function($q) use ($val) {
+                        $q->where('name', 'ILIKE', $val);
+                    });
+                }
+            }
+
+            if ($request->filled('education_level') && $request->education_level !== 'Tous') {
+                $query->where('education_level', $request->education_level);
+            }
+
+            if ($request->get('sort') === 'populaire') {
+                $query->orderBy('plays_count', 'desc');
+            } else {
+                $query->latest();
+            }
+
+            return response()->json($query->get());
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erreur SQL',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $quizzes = $query->get();
-
-        // ✅ 为了防止 500，使用 transform 来安全添加属性
-        $quizzes->transform(function ($q) use ($weakCategories) {
-            $q->is_recommended = in_array($q->category, $weakCategories ?? []);
-            return $q;
-        });
-
-        return response()->json($quizzes);
     }
 
+    /**
+     * DÉTAILS D'UN QUIZ
+     */
     public function show(Quiz $quiz): JsonResponse
     {
         $user = Auth::user();
 
-        if (!$user) {
-            if (!$quiz->is_public) {
-                return response()->json(['error' => 'Forbidden'], 403);
-            }
-        } else {
-            if ($user->role === 'ADMIN') {
-                // ok
-            } elseif ($user->role === 'TEACHER') {
-                if ($quiz->owner_id !== $user->id && !$quiz->is_public) {
-                    return response()->json(['error' => 'Forbidden'], 403);
-                }
-            } elseif ($user->role === 'STUDENT') {
-                // étudiant autorisé (public ou privé, car entré via code + id)
-            } else {
-                return response()->json(['error' => 'Forbidden'], 403);
+        if (!$quiz->is_public) {
+            if (!$user || ($user->role !== 'ADMIN' && $quiz->owner_id !== $user->id)) {
+                return response()->json(['error' => 'Accès refusé'], 403);
             }
         }
 
+        $quiz->load(['questions', 'category']);
         $quiz->loadCount('questions');
 
         return response()->json($quiz);
     }
 
-    public function destroy(Quiz $quiz)
+    /**
+     * MODIFIER UN QUIZ
+     */
+    public function update(Request $request, Quiz $quiz): JsonResponse
     {
-        $user = Auth::user();
+        if (Auth::id() !== $quiz->owner_id && Auth::user()->role !== 'ADMIN') {
+            return response()->json(['error' => 'Non autorisé'], 403);
+        }
 
-        if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-            return response()->json(['error' => 'Forbidden'], 403);
+        $validated = $request->validate([
+            'titre' => 'string|max:100',
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'is_public' => 'boolean',
+            'education_level' => 'nullable|string',
+        ]);
+
+        $quiz->update($validated);
+        return response()->json($quiz->load('category'));
+    }
+
+    /**
+     * SUPPRIMER UN QUIZ
+     */
+    public function destroy(Quiz $quiz): JsonResponse
+    {
+        if ($quiz->owner_id !== Auth::id() && Auth::user()->role !== 'ADMIN') {
+            return response()->json(['error' => 'Non autorisé'], 403);
         }
 
         $quiz->delete();
-
-        return response()->json(['message' => 'Quiz supprimé avec succès']);
+        return response()->json(['message' => 'Quiz supprimé']);
     }
 
+    /**
+     * QUESTIONS - INDEX
+     */
     public function questionsIndex(Quiz $quiz)
     {
         $user = Auth::user();
-
-        if (!$user) {
-            if (!$quiz->is_public) {
-                return response()->json(['error' => 'Forbidden'], 403);
-            }
-        } else {
-            if ($user->role === 'ADMIN') {
-                // ok
-            } elseif ($user->role === 'TEACHER') {
-                if ($quiz->owner_id !== $user->id && !$quiz->is_public) {
-                    return response()->json(['error' => 'Forbidden'], 403);
-                }
-            } elseif ($user->role === 'STUDENT') {
-                // étudiant autorisé à voir les questions (public ou privé)
-            } else {
-                return response()->json(['error' => 'Forbidden'], 403);
-            }
+        if (!$quiz->is_public && (!$user || ($user->role !== 'ADMIN' && $quiz->owner_id !== $user->id))) {
+            return response()->json(['error' => 'Interdit'], 403);
         }
 
-        return $quiz->questions()->orderBy('id')->get();
+        return response()->json($quiz->questions()->orderBy('id')->get());
     }
 
+    /**
+     * QUESTIONS - STORE
+     */
     public function questionsStore(Request $request, Quiz $quiz)
     {
-        $user = Auth::user();
-        if ($quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-            return response()->json(['error' => 'Forbidden'], 403);
+        if ($quiz->owner_id !== Auth::id() && Auth::user()->role !== 'ADMIN') {
+            return response()->json(['error' => 'Interdit'], 403);
         }
 
         $data = $request->validate([
@@ -217,11 +207,13 @@ class QuizController extends Controller
         return response()->json($question, 201);
     }
 
+    /**
+     * QUESTIONS - UPDATE
+     */
     public function questionsUpdate(Request $request, Question $question)
     {
-        $user = Auth::user();
-        if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-            return response()->json(['error' => 'Forbidden'], 403);
+        if ($question->quiz->owner_id !== Auth::id() && Auth::user()->role !== 'ADMIN') {
+            return response()->json(['error' => 'Interdit'], 403);
         }
 
         $data = $request->validate([
@@ -249,60 +241,81 @@ class QuizController extends Controller
         return response()->json($question);
     }
 
+    /**
+     * QUESTIONS - DESTROY
+     */
     public function questionsDestroy(Question $question)
     {
-        $user = Auth::user();
-        if ($question->quiz->owner_id !== $user->id && $user->role !== 'ADMIN') {
-            return response()->json(['error' => 'Forbidden'], 403);
+        if ($question->quiz->owner_id !== Auth::id() && Auth::user()->role !== 'ADMIN') {
+            return response()->json(['error' => 'Interdit'], 403);
         }
 
         $question->delete();
-
         return response()->json(['message' => 'Question supprimée']);
     }
 
+    /**
+     * RECHERCHE AVANCÉE (POSTGRESQL)
+     */
+    public function search(Request $request): JsonResponse
+    {
+        try {
+            $request->validate(['q' => 'required|string|min:2|max:100']);
+            $term = $request->input('q');
+
+            $quizzes = Quiz::query()
+                ->join('categories', 'quizzes.category_id', '=', 'categories.id')
+                ->whereRaw('quizzes.is_public IS TRUE')
+                ->where(function ($query) use ($term) {
+                    $query->whereRaw("quizzes.search_vector @@ websearch_to_tsquery('french', ?)", [$term])
+                        ->orWhere('quizzes.titre', 'ILIKE', "%{$term}%")
+                        ->orWhere('quizzes.description', 'ILIKE', "%{$term}%")
+                        ->orWhere('categories.name', 'ILIKE', "%{$term}%")
+                        ->orWhereRaw("similarity(quizzes.titre, ?) > 0.3", [$term]);
+                })
+                ->orderByRaw("ts_rank(quizzes.search_vector, websearch_to_tsquery('french', ?)) DESC", [$term])
+                ->select([
+                    'quizzes.id', 'quizzes.titre', 'quizzes.description', 'quizzes.category_id',
+                    'quizzes.code_quiz', 'quizzes.education_level', 'quizzes.is_public', 'quizzes.created_at'
+                ])
+                ->selectRaw("ts_headline('french', coalesce(quizzes.description, ''), websearch_to_tsquery('french', ?), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as description_highlight", [$term])
+                ->with(['category:id,name'])
+                ->withCount('questions')
+                ->limit(20)
+                ->get();
+
+            return response()->json($quizzes);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erreur search', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * TROUVER PAR CODE
+     */
     public function findByCode(string $code): JsonResponse
     {
-        $user = Auth::user();
-
         $quiz = Quiz::where('code_quiz', strtoupper($code))
+            ->with(['category'])
             ->withCount('questions')
             ->first();
 
-        if (!$quiz) {
-            return response()->json(['error' => 'Quiz introuvable'], 404);
-        }
+        if (!$quiz) return response()->json(['error' => 'Quiz introuvable'], 404);
 
-        if ($user && $user->role === 'ADMIN') {
-            return response()->json($quiz);
-        }
-
-        if ($user && $quiz->owner_id === $user->id) {
-            return response()->json($quiz);
-        }
-
-        if ($user && $user->role === 'STUDENT') {
-            return response()->json($quiz);
-        }
-
-        if (!$user) {
-            return response()->json($quiz);
-        }
-
-        return response()->json(['error' => 'Forbidden'], 403);
+        return response()->json($quiz);
     }
 
+    /**
+     * ENREGISTRER RÉSULTAT
+     */
     public function storeResult(Request $request, Quiz $quiz): JsonResponse
     {
-        $user = $request->user();
-
+        $user = Auth::user();
         if (!$user || $user->role !== 'STUDENT') {
-            return response()->json(['error' => 'Forbidden'], 403);
+            return response()->json(['error' => 'Action réservée aux étudiants'], 403);
         }
 
-        $data = $request->validate([
-            'score' => 'required|integer|min:0|max:100',
-        ]);
+        $data = $request->validate(['score' => 'required|integer|min:0|max:100']);
 
         $result = Result::create([
             'user_id' => $user->id,
@@ -311,79 +324,62 @@ class QuizController extends Controller
             'date_tentative' => now(),
         ]);
 
+        $quiz->increment('plays_count');
+
         return response()->json($result, 201);
     }
 
-    public function myResults(Request $request): JsonResponse
+    /**
+     * MES RÉSULTATS
+     */
+    public function myResults(): JsonResponse
     {
-        $user = $request->user();
-
-        if (!$user || $user->role !== 'STUDENT') {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
-
         $results = Result::with('quiz')
-            ->where('user_id', $user->id)
+            ->where('user_id', Auth::id())
             ->orderByDesc('date_tentative')
             ->get();
 
         return response()->json($results);
     }
 
-    public function search(Request $request): JsonResponse
-    {
-        $request->validate([
-            'q' => ['required', 'string', 'min:2', 'max:100'],
-        ]);
-
-        $term = $request->input('q');
-
-        $quizzes = Quiz::whereRaw('is_public = true')
-            ->where(function ($q) use ($term) {
-                $q->whereRaw("search_vector @@ websearch_to_tsquery('french', ?)", [$term])
-                    ->orWhereRaw("titre ILIKE ?", ["%{$term}%"])
-                    ->orWhereRaw("description ILIKE ?", ["%{$term}%"])
-                    ->orWhereRaw("category ILIKE ?", ["%{$term}%"])
-                    ->orWhereRaw("similarity(titre, ?) > 0.3", [$term])
-                    ->orWhereRaw("similarity(coalesce(description, ''), ?) > 0.3", [$term])
-                    ->orWhereRaw("similarity(coalesce(category, ''), ?) > 0.3", [$term]);
-            })
-            ->orderByRaw(
-                "ts_rank(search_vector, websearch_to_tsquery('french', ?)) DESC",
-                [$term]
-            )
-            ->select([
-                'id',
-                'titre',
-                'category',
-                'description',
-                'code_quiz',
-                'education_level',
-                'is_public'
-            ])
-            ->selectRaw(
-                "ts_headline(
-                'french',
-                coalesce(description, ''),
-                websearch_to_tsquery('french', ?),
-                'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15'
-            ) as description_highlight",
-                [$term]
-            )
-            ->withCount('questions')
-            ->limit(20)
-            ->get();
-
-        return response()->json($quizzes);
-    }
-
+    /**
+     * INDEX PUBLIC (GUESTS)
+     */
     public function publicIndex(Request $request): JsonResponse
     {
-        $quizzes = Quiz::withCount('questions')
-            ->whereRaw('is_public IS TRUE')
-            ->latest()
-            ->get();
+        try {
+            // 🎯 FIX POSTGRES: whereRaw('is_public IS TRUE') pour éviter boolean=integer
+            $query = Quiz::with('category')
+                ->withCount('questions')
+                ->whereRaw('is_public IS TRUE');
 
-        return response()->json($quizzes);
+            if ($request->filled('category_id')) {
+                $val = $request->category_id;
+                if (is_numeric($val)) {
+                    $query->where('category_id', '=', (int)$val);
+                } else {
+                    $query->whereHas('category', function($q) use ($val) {
+                        $q->where('name', 'ILIKE', $val);
+                    });
+                }
+            }
+
+            if ($request->filled('education_level') && $request->education_level !== 'Tous') {
+                $query->where('education_level', $request->education_level);
+            }
+
+            if ($request->get('sort') === 'populaire') {
+                $query->orderBy('plays_count', 'desc');
+            } else {
+                $query->latest();
+            }
+
+            return response()->json($query->get());
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Crash publicIndex',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

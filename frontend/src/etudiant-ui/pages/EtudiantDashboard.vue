@@ -5,7 +5,7 @@
 
       <section class="etudiant-hero">
         <div class="etudiant-hero-left">
-          <h1>Bienvenue dans l'espace étudiant</h1>
+          <h1>Bienvenue {{ currentUser?.nickname ?? 'étudiant' }} !</h1>
           <p>Jouez à des quiz, révisez vos cours et progressez à votre rythme.</p>
           <div class="etudiant-hero-actions">
             <CallToActionBtn
@@ -108,6 +108,7 @@ export default {
   components: { AppHeader, CallToActionBtn },
   data() {
     return {
+      currentUser: null,  // ← ajoute ça
       publicQuizzes: [],
       suggestedQuizzes: [],
       selectedCategory: null,
@@ -128,6 +129,12 @@ export default {
     }
   },
   async mounted() {
+    try {
+        const { data } = await api.get('/user')
+        this.currentUser = data
+    } catch (e) {
+        console.error('Erreur user', e)
+    }
     await this.loadPublicQuizzes()
   },
   methods: {
@@ -149,14 +156,14 @@ export default {
       this.errorQuizzes = ''
       try {
         const mapQuiz = q => ({
-          id: q.id,
-          titre: q.titre,
-          categorie: q.category,
-          nbQuestions: q.questions_count ?? 0,
-          isPublic: true,
-          code: q.code_quiz,
-          education_level: q.education_level ?? null
-        })
+        id: q.id,
+        titre: q.titre,
+        categorie: q.category?.name ?? null,  // ← extrait juste le nom
+        nbQuestions: q.questions_count ?? 0,
+        isPublic: true,
+        code: q.code_quiz,
+        education_level: q.education_level ?? null
+    })
 
         // Tous les quiz publics sans filtre niveau
         const { data: allData } = await api.get('/quizzes/public')
