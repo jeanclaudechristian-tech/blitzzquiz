@@ -24,12 +24,11 @@
           <div class="field-row">
             <div class="field-group">
               <label for="categorie">Catégorie</label>
-              <select id="categorie" v-model="form.categorie">
-                <option value="">Choisir une catégorie</option>
-                <option value="Math">Math</option>
-                <option value="Français">Français</option>
-                <option value="Sciences">Sciences</option>
-                <option value="Histoire">Histoire</option>
+              <select id="categorie" v-model="form.category_id">
+                <option value="" disabled hidden>Choisir une catégorie</option>
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                  {{ cat.name || cat.NAME }}
+                </option>
               </select>
             </div>
 
@@ -93,12 +92,21 @@ export default {
       form: {
         titre: '',
         description: '',
-        categorie: '',
+        category_id: '',
         niveau: '',
         isPublic: false
       },
+      categories: [],
       error: '',
       saving: false
+    }
+  },
+  async mounted() {
+    try {
+      const { data } = await api.get('/categories')
+      this.categories = data
+    } catch (e) {
+      console.error('Erreur chargement catégories', e)
     }
   },
   methods: {
@@ -114,7 +122,7 @@ export default {
       const payload = {
         titre: this.form.titre.trim(),
         description: this.form.description.trim(),
-        category: this.form.categorie || null,
+        category_id: this.form.category_id || null,
         education_level: (this.form.niveau || '').toLowerCase() || null,
         is_public: this.form.isPublic
       }
@@ -129,8 +137,7 @@ export default {
     async handleSubmit() {
       try {
         const quiz = await this.createQuizOnApi()
-        // juste retour au dashboard après création
-        this.$router.push('/enseignant')
+        this.$router.push(`/enseignant/quiz/${quiz.id}/questions`)
       } catch (e) {
         if (e.message === 'invalid') return
         console.error('Erreur création quiz', e.response?.data || e)
