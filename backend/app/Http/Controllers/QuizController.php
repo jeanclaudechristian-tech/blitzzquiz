@@ -161,10 +161,10 @@ class QuizController extends Controller
     {
         $user = Auth::user();
 
-        if (!$quiz->is_public) {
-            if (!$user || ($user->role !== 'ADMIN' && $quiz->owner_id !== $user->id)) {
-                return response()->json(['error' => 'Accès refusé'], 403);
-            }
+        // Quiz privé : accessible à tout utilisateur connecté (accès par code)
+        // Seuls les non-connectés sont bloqués
+        if (!$quiz->is_public && !$user) {
+            return response()->json(['error' => 'Accès refusé'], 403);
         }
 
         $quiz->load(['questions', 'categoryRelation']);
@@ -213,7 +213,10 @@ class QuizController extends Controller
     public function questionsIndex(Quiz $quiz)
     {
         $user = Auth::user();
-        if (!$quiz->is_public && (!$user || ($user->role !== 'ADMIN' && $quiz->owner_id !== $user->id))) {
+
+        // Quiz privé : accessible à tout utilisateur connecté (accès par code)
+        // Seuls les non-connectés sont bloqués
+        if (!$quiz->is_public && !$user) {
             return response()->json(['error' => 'Interdit'], 403);
         }
 
