@@ -59,7 +59,7 @@ onMounted(loadGroups)
             </div>
             <div class="card-info">
               <h3>{{ g.nom }}</h3>
-              <p>{{ g.nb_membres }} Membres • Code: {{ g.code_invitation }}</p>
+              <p>{{ g.nb_membres }} Membres</p>
             </div>
             <span class="material-symbols-outlined arrow">chevron_right</span>
           </div>

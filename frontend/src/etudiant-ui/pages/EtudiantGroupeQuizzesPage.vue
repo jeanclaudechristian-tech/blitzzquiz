@@ -55,7 +55,7 @@ onMounted(loadGroupeQuizzes)
 
     <button class="fab-retour-blitzz" @click="goBack">
       <span class="material-symbols-outlined">west</span>
-      Retour aux groupes
+      Mes groupes
     </button>
 
     <div class="main-layout container-blitzz">
