@@ -98,6 +98,7 @@ onMounted(loadGroups)
           </div>
         </div>
 
+<<<<<<< HEAD
         <!-- Modale de confirmation -->
         <Transition name="modal-fade">
           <div v-if="confirmModal" class="modal-overlay" @click.self="annulerQuitter">
@@ -125,12 +126,41 @@ onMounted(loadGroups)
         </Transition>
 
         <div v-if="!loading && groupes.length === 0" class="empty-state">
+=======
+        <div v-else class="empty-state">
+>>>>>>> 44212ca10859fea58fa09a661aeedde6ce3e3422
           <span class="material-symbols-outlined icon">group_add</span>
           <h2>Aucun groupe</h2>
           <p>Utilise le bouton <strong>CODE</strong> en haut pour rejoindre ta première classe !</p>
         </div>
       </main>
     </div>
+
+    <!-- Modale de confirmation -->
+    <Transition name="modal-fade">
+      <div v-if="confirmModal" class="modal-overlay" @click.self="annulerQuitter">
+        <div class="modal-box">
+          <div class="modal-icon">
+            <span class="material-symbols-outlined">group_remove</span>
+          </div>
+          <h2 class="modal-title">Quitter le groupe ?</h2>
+          <p class="modal-desc">
+            Tu vas quitter <strong>{{ groupeAQuitter?.nom }}</strong>.
+            Tu pourras rejoindre à nouveau avec le code d'invitation.
+          </p>
+          <div class="modal-actions">
+            <button class="modal-btn modal-btn--cancel" @click="annulerQuitter">
+              Annuler
+            </button>
+            <button class="modal-btn modal-btn--confirm" @click="confirmerQuitter" :disabled="leaving">
+              <span v-if="leaving" class="mini-spinner"></span>
+              <span v-else class="material-symbols-outlined">logout</span>
+              {{ leaving ? 'En cours...' : 'Quitter' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <button class="fab-retour-accueil" @click="goHome">
       <span class="material-symbols-outlined">west</span>
