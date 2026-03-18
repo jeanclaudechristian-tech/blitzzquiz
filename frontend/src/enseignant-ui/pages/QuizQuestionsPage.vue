@@ -5,7 +5,7 @@
       <header class="questions-header">
         <h1>Questions – {{ quizTitle }}</h1>
         <button type="button" class="link-button" @click="goBack">
-          ← Retour à Mes quiz
+          ← Retour à la création
         </button>
       </header>
 

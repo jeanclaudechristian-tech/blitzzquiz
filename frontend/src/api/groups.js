@@ -14,11 +14,11 @@ export const groupService = {
   },
 
   update(id, payload) {
-    return api.patch(`/groups/${id}`, payload); // PATCH /api/groups/{id}
+    return api.put(`/groups/${id}`, payload); // PUT /api/groups/{id}
   },
 
   destroy(id) {
-    return api.delete(`/groups/${id}/destroy`); // DELETE /api/groups/{id}
+    return api.delete(`/groups/${id}`); // DELETE /api/groups/{id}
   },
 
   /**
@@ -70,5 +70,9 @@ export const groupService = {
    */
   inviteMemberByEmail(groupId, email) {
     return api.post(`/groups/${groupId}/members/invite`, { email });
+  },
+
+  removeMember(groupId, memberId) {
+    return api.delete(`/groups/${groupId}/members/${memberId}`);
   },
 };

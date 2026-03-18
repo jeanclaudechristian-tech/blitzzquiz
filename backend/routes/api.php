@@ -86,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Membres du groupe
     Route::post('/groups/{group}/members/invite', [GroupController::class, 'inviteByEmail']);
     Route::post('/groups/{group}/members', [GroupController::class, 'addMember']);
+    Route::delete('/groups/{group}/members/{user}', [GroupController::class, 'removeMember']);
     Route::delete('/groups/{group}/leave', [GroupController::class, 'leave']);
 
     // Assignments & Quiz du groupe

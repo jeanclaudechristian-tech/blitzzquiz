@@ -1,323 +1,401 @@
-<template>
-  <div class="groupe-details-page">
-    <AppHeader />
-    <main class="groupe-details-main" v-if="groupe">
-      <!-- Header avec actions -->
-      <header class="details-header">
-        <div>
-          <button type="button" class="back-button" @click="goBack">
-            ← Retour
-          </button>
-          <h1>{{ groupe.nom }}</h1>
-        </div>
-        <button type="button" class="delete-button" @click="requestDelete">
-          Supprimer le groupe
-        </button>
-      </header>
+<script setup>
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import api from '../../api/Axios';
+import AppHeader from '../../accueil-ui/composant/AppHeader.vue';
+import { groupService } from '../../api/groups';
 
-      <!-- Section 1 : Infos groupe -->
-      <section class="details-section">
-        <h2>Informations du groupe</h2>
-        <div class="info-card">
-          <div class="info-row">
-            <span class="info-label">Nom :</span>
-            <span class="info-value">{{ groupe.nom }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Description :</span>
-            <span class="info-value">{{ groupe.description || 'Aucune description' }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Visibilité :</span>
-            <div class="visibility-controls">
-              <span :class="['pill', groupe.isPublic ? 'pill--public' : 'pill--private']">
-                {{ groupe.isPublic ? 'Public' : 'Privé' }}
-              </span>
-              <button type="button" class="toggle-visibility-btn" @click="toggleVisibility">
-                Modifier
-              </button>
-            </div>
-          </div>
-          <div class="info-row" v-if="!groupe.isPublic">
-            <span class="info-label">Code du groupe :</span>
-            <div class="code-display">
-              <span class="code-value">{{ groupe.code }}</span>
-              <button type="button" class="copy-button" @click="copyCode">
-                {{ codeCopied ? 'Copié !' : 'Copier' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+const route = useRoute();
+const router = useRouter();
 
-      <!-- Section 2 : Liste membres -->
-      <section class="details-section">
-        <div class="section-header">
-          <h2>Membres ({{ groupe.membres.length }})</h2>
-          <button type="button" class="action-button" @click="showInviteModal = true">
-            + Inviter un membre
-          </button>
-        </div>
-        <div v-if="groupe.membres.length" class="membres-list">
-          <div
-            v-for="membre in groupe.membres"
-            :key="membre.id"
-            class="membre-item"
-          >
-            <span class="membre-name">{{ membre.nom }}</span>
-            <span class="membre-email">{{ membre.email }}</span>
-          </div>
-        </div>
-        <p v-else class="empty-message">Aucun membre pour l'instant.</p>
-      </section>
+const groupe = ref(null);
+const allQuizzes = ref([]);
+const assignedQuizzes = ref([]);
+const selectedQuizId = ref('');
+const codeCopied = ref(false);
+const showDeleteModal = ref(false);
+const showInviteModal = ref(false);
+const inviteEmail = ref('');
+const loading = ref(true);
+const inviteError = ref('');
+const actionError = ref('');
 
-      <!-- Section 3 : Quiz assignés -->
-      <section class="details-section">
-        <h2>Quiz assignés au groupe</h2>
+const currentUserId = computed(() => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    return user?.id ?? null;
+});
 
-        <!-- Formulaire d'assignation -->
-        <div class="assign-form">
-          <select v-model="selectedQuizId" class="quiz-select">
-            <option value="">Sélectionner un quiz</option>
-            <option
-              v-for="quiz in availableQuizzes"
-              :key="quiz.id"
-              :value="quiz.id"
-            >
-              {{ quiz.titre }} ({{ quiz.nbQuestions }} questions)
-            </option>
-          </select>
-          <button
-            type="button"
-            class="action-button"
-            @click="assignQuiz"
-            :disabled="!selectedQuizId"
-          >
-            Associer
-          </button>
-        </div>
+const memberRows = computed(() => {
+    if (!groupe.value) return [];
 
-        <!-- Liste des quiz assignés -->
-        <div v-if="groupe.quizAssignes.length" class="quiz-list">
-          <div
-            v-for="quizAssigne in groupe.quizAssignes"
-            :key="quizAssigne.quizId"
-            class="quiz-item"
-          >
-            <div class="quiz-info">
-              <span class="quiz-name">{{ getQuizName(quizAssigne.quizId) }}</span>
-              <span :class="['badge', quizAssigne.statut === 'actif' ? 'badge--actif' : 'badge--termine']">
-                {{ quizAssigne.statut === 'actif' ? 'Actif' : 'Terminé' }}
-              </span>
-            </div>
-            <button
-              type="button"
-              class="remove-button"
-              @click="removeQuizAssignment(quizAssigne.quizId)"
-            >
-              Retirer
-            </button>
-          </div>
-        </div>
-        <p v-else class="empty-message">Aucun quiz assigné.</p>
-      </section>
+    return groupe.value.members.map((member) => ({
+        id: member.id,
+        displayName:
+            member.nickname ||
+            member.username ||
+            member.name ||
+            member.email?.split('@')[0] ||
+            'Membre',
+        email: member.email || 'Courriel indisponible',
+        isOwner: member.id === groupe.value.ownerId,
+        isCurrentUser: member.id === currentUserId.value
+    }));
+});
 
-      <!-- Modal Supprimer -->
-      <div v-if="showDeleteModal" class="modal-overlay" @click="closeDeleteModal">
-        <div class="modal-content" @click.stop>
-          <h3>Supprimer ce groupe ?</h3>
-          <p>Cette action est irréversible.</p>
-          <div class="modal-actions">
-            <button type="button" class="cancel-button" @click="closeDeleteModal">
-              Annuler
-            </button>
-            <button type="button" class="delete-button" @click="confirmDelete">
-              Supprimer
-            </button>
-          </div>
-        </div>
-      </div>
+const availableQuizzes = computed(() => {
+    const assignedIds = new Set(assignedQuizzes.value.map((quiz) => quiz.id));
+    return allQuizzes.value.filter((quiz) => !assignedIds.has(quiz.id));
+});
 
-      <!-- Modal Inviter membre -->
-      <div v-if="showInviteModal" class="modal-overlay" @click="showInviteModal = false">
-        <div class="modal-content" @click.stop>
-          <h3>Inviter un membre</h3>
-          <p class="help-text">Entrez l'email de l'étudiant à inviter</p>
-          <input
-            v-model="inviteEmail"
-            type="email"
-            placeholder="exemple@email.com"
-            class="modal-input"
-          />
-          <div class="modal-actions">
-            <button type="button" class="cancel-button" @click="showInviteModal = false">
-              Annuler
-            </button>
-            <button type="button" class="action-button" @click="inviteMembre">
-             Ajouter un membre
-            </button>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-</template>
+const loadGroup = async () => {
+    const { data } = await groupService.show(route.params.id);
 
-<script>
-import api from '../../api/Axios'
-import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import { groupService } from '../../api/groups'
+    groupe.value = {
+        id: data.id,
+        nom: data.nom,
+        description: data.description || '',
+        isPublic: Boolean(data.is_public),
+        code: data.code_invitation,
+        ownerId: data.owner_id,
+        members: Array.isArray(data.members) ? data.members : []
+    };
+};
 
-export default {
-  name: 'GroupeDetailsPage',
-  components: {
-    AppHeader
-  },
-  data() {
-    return {
-      groupe: null,
-      allQuizzes: [],
-      selectedQuizId: '',
-      codeCopied: false,
-      showDeleteModal: false,
-      showInviteModal: false,
-      inviteEmail: '',
+const loadAssignedQuizzes = async () => {
+    const { data } = await groupService.getQuizzes(route.params.id);
+    const raw = Array.isArray(data) ? data : [];
+
+    assignedQuizzes.value = raw.map((quiz) => ({
+        id: quiz.id,
+        titre: quiz.titre,
+        questionsCount: quiz.questions_count ?? 0,
+        isPublic: Boolean(quiz.is_public)
+    }));
+};
+
+const loadAllQuizzes = async () => {
+    const userId = currentUserId.value;
+    const { data } = await api.get('/quizzes');
+
+    allQuizzes.value = data
+        .filter((quiz) => !userId || quiz.owner_id === userId)
+        .map((quiz) => ({
+            id: quiz.id,
+            titre: quiz.titre,
+            questionsCount: quiz.questions_count ?? 0
+        }));
+};
+
+const loadPage = async () => {
+    loading.value = true;
+    actionError.value = '';
+
+    try {
+        await Promise.all([loadGroup(), loadAssignedQuizzes(), loadAllQuizzes()]);
+    } catch (error) {
+        console.error('Erreur chargement groupe', error.response?.data || error);
+        router.push('/enseignant/groupes');
+    } finally {
+        loading.value = false;
     }
-  },
-  computed: {
-    availableQuizzes() {
-      const assignedIds = this.groupe?.quizAssignes?.map((qa) => qa.quizId) ?? []
-      return this.allQuizzes.filter((q) => !assignedIds.includes(q.id))
-    },
-  },
-  methods: {
-    async loadGroupe() {
-      // VERSION API : plus de localStorage
-      try {
-        const id = this.$route.params.id
-        const { data } = await groupService.show(id)
+};
 
-        this.groupe = {
-          id: data.id,
-          nom: data.nom,
-          description: data.description ?? '',
-          isPublic: !!data.is_public,
-          code: data.code_invitation,
-          membres: data.members ?? [],
-          nbMembres: data.nb_membres ?? (data.members ? data.members.length : 0),
-          quizAssignes: data.assignments ?? [],
-        }
-      } catch (e) {
-        console.error(e)
-        this.$router.push('/enseignant/groupes')
-      }
-    },
-    async loadQuizzes() {
-      // Charge les vrais quiz de l'enseignant depuis l'API (/quizzes)
-      try {
-        const user = JSON.parse(localStorage.getItem('user') || 'null')
-        const userId = user?.id ?? null
+const copyCode = async () => {
+    if (!groupe.value?.code) return;
 
-        const { data } = await api.get('/quizzes')
+    await navigator.clipboard.writeText(groupe.value.code);
+    codeCopied.value = true;
+    setTimeout(() => {
+        codeCopied.value = false;
+    }, 1600);
+};
 
-        this.allQuizzes = data
-          .filter((q) => !userId || q.owner_id === userId)
-          .map((q) => ({
-            id: q.id,
-            titre: q.titre,
-            nbQuestions: q.questions_count ?? 0,
-          }))
-      } catch (e) {
-        console.error('Erreur chargement quiz pour association groupe', e)
-        this.allQuizzes = []
-      }
-    },
-    getQuizName(quizId) {
-      const quiz = this.allQuizzes.find((q) => q.id === quizId)
-      return quiz ? quiz.titre : 'Quiz inconnu'
-    },
-    copyCode() {
-      navigator.clipboard.writeText(this.groupe.code)
-      this.codeCopied = true
-      setTimeout(() => {
-        this.codeCopied = false
-      }, 2000)
-    },
-    async toggleVisibility() {
-      const newValue = !this.groupe.isPublic
-      try {
-        const { data } = await groupService.update(this.groupe.id, {
-          is_public: newValue,
-        })
-        this.groupe.isPublic = !!data.is_public
-        this.groupe.code = data.code_invitation
-      } catch (e) {
-        console.error(e)
-      }
-    },
-    async assignQuiz() {
-      // Envoie l'info au backend pour créer une ligne dans assignments
-      if (!this.selectedQuizId) return
-      try {
-        const { data } = await groupService.assignQuizToGroup(
-          this.groupe.id,
-          this.selectedQuizId,
-        )
-        // data ressemble à { quizId, statut, dateAssignation }
-        this.groupe.quizAssignes.push(data)
-        this.selectedQuizId = ''
-      } catch (e) {
-        console.error('Erreur lors de lassociation du quiz au groupe', e)
-      }
-    },
-    async removeQuizAssignment(quizId) {
-      try {
-        await groupService.removeQuizFromGroup(this.groupe.id, quizId)
-        this.groupe.quizAssignes = this.groupe.quizAssignes.filter(
-          (qa) => qa.quizId !== quizId,
-        )
-      } catch (e) {
-        console.error('Erreur lors du retrait du quiz du groupe', e)
-      }
-    },
-    async inviteMembre() {
-      // pour l’instant mock; tu brancheras plus tard
-      if (!this.inviteEmail?.trim()) return
-      try {
-        await groupService.inviteMemberByEmail(this.groupe.id, this.inviteEmail.trim())
-        await this.loadGroupe()
-        this.inviteEmail = ''
-        this.showInviteModal = false
-      } catch (e) {
-        console.error('Erreur invitation membre', e)
-        const msg = e.response?.data?.error || "Erreur lors de l'invitation."
-        alert(msg)
-      }
-    },
-    requestDelete() {
-      this.showDeleteModal = true
-    },
-    closeDeleteModal() {
-      this.showDeleteModal = false
-    },
-    async confirmDelete() {
-      try {
-        await groupService.destroy(this.groupe.id)
-      } catch (e) {
-        console.error(e)
-      }
-      this.$router.push('/enseignant/groupes')
-    },
-    goBack() {
-      this.$router.push('/enseignant/groupes')
-    },
-  },
-  mounted() {
-    this.loadGroupe()
-    this.loadQuizzes()
-  },
-}
+const toggleVisibility = async () => {
+    if (!groupe.value) return;
+
+    actionError.value = '';
+
+    try {
+        const { data } = await groupService.update(groupe.value.id, {
+            is_public: !groupe.value.isPublic
+        });
+        groupe.value.isPublic = Boolean(data.is_public);
+        groupe.value.code = data.code_invitation ?? groupe.value.code;
+    } catch (error) {
+        console.error('Erreur changement visibilite', error.response?.data || error);
+        actionError.value = 'Impossible de modifier la visibilite du groupe.';
+    }
+};
+
+const assignQuiz = async () => {
+    if (!selectedQuizId.value || !groupe.value) return;
+
+    actionError.value = '';
+
+    try {
+        await groupService.assignQuizToGroup(groupe.value.id, selectedQuizId.value);
+        selectedQuizId.value = '';
+        await loadAssignedQuizzes();
+    } catch (error) {
+        console.error('Erreur association quiz', error.response?.data || error);
+        actionError.value = 'Impossible d associer ce quiz au groupe.';
+    }
+};
+
+const removeQuiz = async (quizId) => {
+    if (!groupe.value) return;
+    if (!confirm('Retirer ce quiz du groupe ?')) return;
+
+    actionError.value = '';
+
+    try {
+        await groupService.removeQuizFromGroup(groupe.value.id, quizId);
+        assignedQuizzes.value = assignedQuizzes.value.filter((quiz) => quiz.id !== quizId);
+    } catch (error) {
+        console.error('Erreur retrait quiz', error.response?.data || error);
+        actionError.value = 'Impossible de retirer ce quiz du groupe.';
+    }
+};
+
+const removeMember = async (member) => {
+    if (!groupe.value || member.isOwner) return;
+    if (!confirm(`Retirer ${member.displayName} du groupe ?`)) return;
+
+    actionError.value = '';
+
+    try {
+        await groupService.removeMember(groupe.value.id, member.id);
+        groupe.value.members = groupe.value.members.filter((item) => item.id !== member.id);
+    } catch (error) {
+        console.error('Erreur retrait membre', error.response?.data || error);
+        actionError.value =
+            error.response?.data?.error || 'Impossible de retirer ce membre du groupe.';
+    }
+};
+
+const inviteMember = async () => {
+    if (!groupe.value) return;
+    if (!inviteEmail.value.trim()) {
+        inviteError.value = 'Entre un courriel valide.';
+        return;
+    }
+
+    inviteError.value = '';
+
+    try {
+        await groupService.inviteMemberByEmail(groupe.value.id, inviteEmail.value.trim());
+        inviteEmail.value = '';
+        showInviteModal.value = false;
+        await loadGroup();
+    } catch (error) {
+        console.error('Erreur invitation membre', error.response?.data || error);
+        inviteError.value =
+            error.response?.data?.error || 'Impossible d inviter ce membre.';
+    }
+};
+
+const confirmDelete = async () => {
+    if (!groupe.value) return;
+
+    try {
+        await groupService.destroy(groupe.value.id);
+        router.push('/enseignant/groupes');
+    } catch (error) {
+        console.error('Erreur suppression groupe', error.response?.data || error);
+        actionError.value = 'Impossible de supprimer le groupe.';
+        showDeleteModal.value = false;
+    }
+};
+
+const goBack = () => {
+    router.push('/enseignant/groupes');
+};
+
+const goToCreate = () => {
+    router.push({ path: '/enseignant', query: { mode: 'groupe' } });
+};
+
+onMounted(loadPage);
 </script>
+
+<template>
+    <div class="teacher-group-detail-page">
+        <AppHeader />
+
+        <main v-if="groupe && !loading" class="teacher-group-detail-main">
+            <section class="detail-hero">
+                <div class="detail-hero-copy">
+                    <button type="button" class="back-button" @click="goBack">
+                        ← Mes groupes
+                    </button>
+
+                    <div class="hero-badges">
+                        <span class="hero-pill" :class="{ 'hero-pill--private': !groupe.isPublic }">
+                            {{ groupe.isPublic ? 'Public' : 'Prive' }}
+                        </span>
+                        <button type="button" class="hero-code" @click="copyCode">
+                            {{ codeCopied ? 'Code copie' : `Code ${groupe.code}` }}
+                        </button>
+                    </div>
+
+                    <h1>{{ groupe.nom }}</h1>
+                    <p>
+                        {{
+                            groupe.description ||
+                                'Gere les membres et les quiz de ce groupe.'
+                        }}
+                    </p>
+
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <span>Membres</span>
+                            <strong>{{ memberRows.length }}</strong>
+                        </div>
+                        <div class="hero-stat">
+                            <span>Quiz assignes</span>
+                            <strong>{{ assignedQuizzes.length }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="detail-hero-actions">
+                    <button type="button" class="hero-action hero-action--primary" @click="showInviteModal = true">
+                        Inviter un membre
+                    </button>
+                    <button type="button" class="hero-action" @click="toggleVisibility">
+                        Rendre {{ groupe.isPublic ? 'prive' : 'public' }}
+                    </button>
+                    <button type="button" class="hero-action" @click="goToCreate">
+                        Nouveau groupe
+                    </button>
+                    <button type="button" class="hero-action hero-action--danger" @click="showDeleteModal = true">
+                        Supprimer le groupe
+                    </button>
+                </aside>
+            </section>
+
+            <p v-if="actionError" class="action-error">{{ actionError }}</p>
+
+            <section class="detail-grid">
+                <article class="detail-card">
+                    <header class="detail-card-head">
+                        <div>
+                            <p class="detail-card-kicker">Membres</p>
+                            <h2>{{ memberRows.length }} participant(s)</h2>
+                        </div>
+                        <button type="button" class="mini-action" @click="showInviteModal = true">
+                            Ajouter
+                        </button>
+                    </header>
+
+                    <div class="member-list">
+                        <div v-for="member in memberRows" :key="member.id" class="member-row">
+                            <div class="member-main">
+                                <strong>{{ member.displayName }}</strong>
+                                <span>{{ member.email }}</span>
+                            </div>
+
+                            <div class="member-side">
+                                <span class="member-badge" :class="{ 'member-badge--owner': member.isOwner }">
+                                    {{ member.isOwner ? 'Owner' : member.isCurrentUser ? 'Vous' : 'Membre' }}
+                                </span>
+                                <button
+                                    v-if="!member.isOwner"
+                                    type="button"
+                                    class="remove-button"
+                                    @click="removeMember(member)"
+                                >
+                                    Retirer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="detail-card">
+                    <header class="detail-card-head">
+                        <div>
+                            <p class="detail-card-kicker">Quiz</p>
+                            <h2>Quiz assignes au groupe</h2>
+                        </div>
+                    </header>
+
+                    <div class="assign-bar">
+                        <select v-model="selectedQuizId" class="quiz-select">
+                            <option value="">Choisir un quiz</option>
+                            <option v-for="quiz in availableQuizzes" :key="quiz.id" :value="quiz.id">
+                                {{ quiz.titre }} ({{ quiz.questionsCount }} questions)
+                            </option>
+                        </select>
+
+                        <button
+                            type="button"
+                            class="mini-action mini-action--solid"
+                            :disabled="!selectedQuizId"
+                            @click="assignQuiz"
+                        >
+                            Associer
+                        </button>
+                    </div>
+
+                    <div v-if="assignedQuizzes.length" class="quiz-list">
+                        <div v-for="quiz in assignedQuizzes" :key="quiz.id" class="quiz-row">
+                            <div class="quiz-main">
+                                <strong>{{ quiz.titre }}</strong>
+                                <span>
+                                    {{ quiz.questionsCount }} question(s) ·
+                                    {{ quiz.isPublic ? 'Public' : 'Prive' }}
+                                </span>
+                            </div>
+
+                            <button type="button" class="remove-button" @click="removeQuiz(quiz.id)">
+                                Retirer
+                            </button>
+                        </div>
+                    </div>
+
+                    <p v-else class="empty-copy">Aucun quiz n est encore associe a ce groupe.</p>
+                </article>
+            </section>
+        </main>
+
+        <div v-else class="detail-loading">
+            <div class="spinner"></div>
+        </div>
+
+        <div v-if="showInviteModal" class="modal-overlay" @click.self="showInviteModal = false">
+            <div class="modal-card">
+                <h3>Inviter un membre</h3>
+                <p>Entre le courriel de l utilisateur a ajouter a ce groupe.</p>
+                <input v-model="inviteEmail" type="email" class="modal-input" placeholder="exemple@email.com" />
+                <p v-if="inviteError" class="modal-error">{{ inviteError }}</p>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn" @click="showInviteModal = false">
+                        Annuler
+                    </button>
+                    <button type="button" class="modal-btn modal-btn--primary" @click="inviteMember">
+                        Envoyer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
+            <div class="modal-card">
+                <h3>Supprimer ce groupe ?</h3>
+                <p>Cette action supprime le groupe et retire aussi ses membres.</p>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn" @click="showDeleteModal = false">
+                        Annuler
+                    </button>
+                    <button type="button" class="modal-btn modal-btn--danger" @click="confirmDelete">
+                        Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
 
 <style scoped>
 @import './GroupeDetailsPage.css';

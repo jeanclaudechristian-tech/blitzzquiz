@@ -21,7 +21,7 @@
                 Groupe
               </router-link>
               <router-link to="/historique" class="nav-link">Historique</router-link>
-              <router-link v-if="userRole === 'TEACHER'" to="/enseignant/quiz/nouveau" class="nav-link link-creer">
+              <router-link v-if="userRole === 'TEACHER'" to="/enseignant" class="nav-link link-creer">
                 Créer
               </router-link>
             </template>

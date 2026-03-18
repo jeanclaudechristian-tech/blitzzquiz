@@ -4,7 +4,7 @@
     <main class="preview-main" v-if="quizLoaded">
       <header class="preview-header">
         <button type="button" class="back-button" @click="goBack">
-          ← Retour au dashboard
+          ← Retour à la création
         </button>
         <h1>{{ quizTitle }}</h1>
       </header>
@@ -68,7 +68,7 @@
             ✏️ Modifier les questions
           </button>
           <button type="button" class="btn-primary" @click="goBack">
-            Retour au dashboard
+            Retour à la création
           </button>
         </div>
       </div>

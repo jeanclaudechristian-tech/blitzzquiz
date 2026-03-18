@@ -5,7 +5,7 @@
     <main class="etudiant-main">
       <section class="profil-hero panel-surface">
         <div class="hero-copy">
-          <p class="hero-kicker">Espace etudiant</p>
+          <p class="hero-kicker">Mon espace</p>
           <h1>Mon profil</h1>
           <p class="hero-subtitle">
             Gere ton compte, mets a jour tes informations et garde un acces

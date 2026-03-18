@@ -7,7 +7,6 @@ import DesktopCourriel from "../auth-ui/pages/DesktopCourriel.vue";
 import DesktopResetMotDePasse from "../auth-ui/pages/DesktopResetMotDePasse.vue";
 import DesktopSucces from "../auth-ui/pages/DesktopSucces.vue";
 import EnseignantDashboard from "../enseignant-ui/pages/EnseignantDashboard.vue";
-import QuizCreatePage from "../enseignant-ui/pages/QuizCreatePage.vue";
 import EditQuizPage from "../enseignant-ui/pages/EditQuizPage.vue";
 import QuizQuestionsPage from "../enseignant-ui/pages/QuizQuestionsPage.vue";
 import PrevisualiserQuestions from "../enseignant-ui/pages/PrevisualiserQuestions.vue";
@@ -23,7 +22,6 @@ import AdminDashboard from "../admin-ui/pages/AdminDashboard.vue";
 import UsersListPage from "../admin-ui/pages/UsersListPage.vue";
 import SuperAdminView from "../admin-ui/pages/SuperAdminView.vue";
 import GroupesListPage from "../enseignant-ui/pages/GroupesListPage.vue";
-import GroupeCreatePage from "../enseignant-ui/pages/GroupeCreatePage.vue";
 import GroupeDetailsPage from "../enseignant-ui/pages/GroupeDetailsPage.vue";
 import EtudiantProfil from "../etudiant-ui/pages/EtudiantProfil.vue";
 
@@ -103,7 +101,7 @@ const routes = [
   {
     path: "/enseignant/quiz/nouveau",
     name: "QuizCreate",
-    component: QuizCreatePage,
+    redirect: { path: "/enseignant", query: { mode: "quiz" } },
   },
   {
     path: "/enseignant/quiz/:id/editer",
@@ -128,7 +126,7 @@ const routes = [
   {
     path: "/enseignant/groupes/nouveau",
     name: "GroupeCreate",
-    component: GroupeCreatePage,
+    redirect: { path: "/enseignant", query: { mode: "groupe" } },
   },
   {
     path: "/enseignant/groupes/:id",

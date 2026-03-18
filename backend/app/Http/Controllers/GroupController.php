@@ -324,6 +324,25 @@ class GroupController extends Controller
     /**
      * Quitter groupe.
      */
+    public function removeMember(Group $group, User $user)
+    {
+        if (Auth::id() !== $group->owner_id) {
+            return response()->json(['error' => 'Acces refuse'], 403);
+        }
+
+        if ($user->id === $group->owner_id) {
+            return response()->json(['error' => 'Impossible de retirer le proprietaire du groupe'], 422);
+        }
+
+        if (!$group->members()->where('user_id', $user->id)->exists()) {
+            return response()->json(['error' => 'Membre introuvable dans ce groupe'], 404);
+        }
+
+        $group->members()->detach($user->id);
+
+        return response()->json(['message' => 'Membre retire du groupe']);
+    }
+
     public function leave(Group $group)
     {
         $group->members()->detach(Auth::id());

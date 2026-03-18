@@ -1,108 +1,118 @@
-<template>
-  <div class="groupes-page">
-    <AppHeader />
-    <main class="groupes-main">
-      <header class="groupes-header">
-        <button type="button" class="back-button" @click="goToDashboard">
-          ← Retour au dashboard
-        </button>
-        <h1>Mes Groupes</h1>
-        <CallToActionBtn text="Créer un groupe" variant="dark" @click="goToCreateGroupe" />
-      </header>
-
-      <div class="groupes-filters">
-        <input v-model="searchTerm" type="text" placeholder="Rechercher un groupe…" class="search-input" />
-        <select v-model="filterStatut" class="filter-select">
-          <option value="">Tous les statuts</option>
-          <option value="public">Public</option>
-          <option value="prive">Privé</option>
-        </select>
-      </div>
-
-      <div v-if="filteredGroupes.length" class="groupes-grid">
-        <article v-for="groupe in filteredGroupes" :key="groupe.id" class="groupe-card">
-          <h3 class="groupe-name">{{ groupe.nom }}</h3>
-          <p class="groupe-meta">
-            {{ groupe.nbMembres }} membre{{ groupe.nbMembres > 1 ? 's' : '' }}
-          </p>
-          <span :class="['pill', groupe.isPublic ? 'pill--public' : 'pill--private']">
-            {{ groupe.isPublic ? 'Public' : 'Privé' }}
-          </span>
-          <button type="button" class="voir-button" @click="openGroupe(groupe)">
-            Voir
-          </button>
-        </article>
-      </div>
-
-      <div v-else class="groupes-empty">
-        <p>Aucun groupe trouvé.</p>
-        <button type="button" class="link-button" @click="goToCreateGroupe">
-          Créer votre premier groupe
-        </button>
-      </div>
-    </main>
-  </div>
-</template>
-
-<script>
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 import { groupService } from '../../api/groups'
 
-export default {
-  name: 'GroupesListPage',
-  components: { AppHeader, CallToActionBtn },
-  data() {
-    return {
-      groupes: [],
-      searchTerm: '',
-      filterStatut: '',
-    }
-  },
-  computed: {
-    filteredGroupes() {
-      const term = this.searchTerm.trim().toLowerCase()
-      return this.groupes.filter((g) => {
-        const matchSearch = !term || g.nom.toLowerCase().includes(term)
-        const matchStatut =
-          !this.filterStatut ||
-          (this.filterStatut === 'public' && g.isPublic) ||
-          (this.filterStatut === 'prive' && !g.isPublic)
-        return matchSearch && matchStatut
-      })
-    },
-  },
-  methods: {
-    async loadGroupes() {
-      try {
-        const { data } = await groupService.list()
-        const raw = Array.isArray(data) ? data : data.data
-        this.groupes = raw.map((g) => ({
-          id: g.id,
-          nom: g.name ?? g.nom,
-          isPublic: !!g.is_public,
-          nbMembres: g.members_count ?? g.nb_membres ?? (g.members ? g.members.length : 0),
-        }))
-      } catch (e) {
-        console.error('Erreur chargement groupes', e)
-        this.groupes = []
-      }
-    },
-    goToCreateGroupe() {
-      this.$router.push('/enseignant/groupes/nouveau')
-    },
-    openGroupe(groupe) {
-      this.$router.push(`/enseignant/groupes/${groupe.id}`)
-    },
-    goToDashboard() {
-      this.$router.push('/enseignant')
-    },
-  },
-  mounted() {
-    this.loadGroupes()
-  },
+const router = useRouter()
+const groupes = ref([])
+const loading = ref(true)
+
+const currentUserId = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  return user?.id ?? null
+})
+
+const ownedGroups = computed(() =>
+  groupes.value.filter((group) => group.owner_id === currentUserId.value),
+)
+
+const loadGroupes = async () => {
+  loading.value = true
+  try {
+    const { data } = await groupService.list()
+    const raw = Array.isArray(data) ? data : data.data
+    groupes.value = raw.map((group) => ({
+      id: group.id,
+      nom: group.nom ?? group.name,
+      owner_id: group.owner_id,
+      code: group.code_invitation ?? group.code,
+      isPublic: Boolean(group.is_public),
+      nbMembres:
+        group.nb_membres ??
+        group.members_count ??
+        (group.members ? group.members.length : 0),
+    }))
+  } catch (error) {
+    console.error('Erreur chargement groupes', error)
+    groupes.value = []
+  } finally {
+    loading.value = false
+  }
 }
+
+const goToGroup = (id) => {
+  router.push(`/enseignant/groupes/${id}`)
+}
+
+const goToCreateGroup = () => {
+  router.push({ path: '/enseignant', query: { mode: 'groupe' } })
+}
+
+const goToCreateHub = () => {
+  router.push('/enseignant')
+}
+
+onMounted(loadGroupes)
 </script>
+
+<template>
+  <div class="teacher-groups-page">
+    <AppHeader />
+
+    <div class="main-layout">
+      <main class="content-area">
+        <header class="header-text">
+          <h1 class="anton-title">MES GROUPES</h1>
+          <p v-if="!loading" class="count-text">
+            {{ ownedGroups.length }} GROUPES CREES
+          </p>
+        </header>
+
+        <div v-if="loading" class="loader">
+          <div class="spinner"></div>
+        </div>
+
+        <div v-else-if="ownedGroups.length > 0" class="group-list">
+          <article
+            v-for="group in ownedGroups"
+            :key="group.id"
+            class="group-card-blitzz"
+            @click="goToGroup(group.id)"
+          >
+            <div class="card-icon">
+              <span class="material-symbols-outlined">groups</span>
+            </div>
+
+            <div class="card-info">
+              <h3>{{ group.nom }}</h3>
+              <p>
+                {{ group.nbMembres }} Membres | Code: {{ group.code }} |
+                {{ group.isPublic ? 'Public' : 'Prive' }}
+              </p>
+            </div>
+
+            <span class="material-symbols-outlined arrow">chevron_right</span>
+          </article>
+        </div>
+
+        <div v-else class="empty-state">
+          <span class="material-symbols-outlined icon">group_add</span>
+          <h2>Aucun groupe</h2>
+          <p>Commence par creer ton premier groupe.</p>
+          <button type="button" class="empty-btn" @click="goToCreateGroup">
+            Creer un groupe
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <button class="fab-retour-creation" @click="goToCreateHub">
+      <span class="material-symbols-outlined">west</span>
+      Retour a la creation
+    </button>
+  </div>
+</template>
 
 <style scoped>
 @import './GroupesListPage.css';
