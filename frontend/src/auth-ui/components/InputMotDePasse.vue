@@ -7,6 +7,7 @@
       :type="showPassword ? 'text' : 'password'"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
+      @keyup.enter="$emit('submit')"
       :placeholder="placeholder"
       class="input-field"
       :disabled="disabled"
@@ -34,7 +35,7 @@ export default {
       default: false
     }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'submit'],
   data() {
     return {
       showPassword: false,

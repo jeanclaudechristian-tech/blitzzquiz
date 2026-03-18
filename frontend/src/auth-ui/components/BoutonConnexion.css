@@ -5,6 +5,10 @@
   position: relative;
   cursor: pointer;
   transition: transform 0.2s ease, opacity 0.2s ease;
+  border: none;
+  background: none;
+  padding: 0;
+  display: block;
 }
 
 .bouton-connexion:hover {

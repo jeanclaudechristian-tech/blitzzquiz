@@ -6,7 +6,7 @@
       </video>
     </div>
     <div class="espace-connexion">
-      <div class="form-content">
+        <form class="form-content" @submit.prevent="handleConnexion">
         <BlackBlitzzQuiz class="logo" />
         <div class="titre">
           <p>Se connecter</p>
@@ -15,14 +15,14 @@
           <p> </p>
           <p>compte</p>
         </div>
-        <InputNomUtilisateur v-model="formData.username" />
-        <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" />
+        <InputNomUtilisateur v-model="formData.username" @submit="handleConnexion" />
+        <InputMotDePasse v-model="formData.password" placeholder="Mot de passe" @submit="handleConnexion" />
         <BoutonMdpOublie />
         <BoutonConnexion :disabled="loading" @click="handleConnexion" />
         <Diviseur />
         <BoutonCreerUnCompte />
         <BoutonGoogle />
-      </div>
+      </form>
     </div>
   </div>
 </template>
@@ -60,7 +60,18 @@ export default {
       error: null
     }
   },
+  mounted() {
+    document.addEventListener('keydown', this.onEnterKey)
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.onEnterKey)
+  },
   methods: {
+    onEnterKey(e) {
+      if (e.key === 'Enter') {
+        this.handleConnexion()
+      }
+    },
     async handleConnexion() {
       if (this.loading) return
       this.loading = true
