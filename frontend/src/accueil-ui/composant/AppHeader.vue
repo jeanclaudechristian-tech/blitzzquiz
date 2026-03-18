@@ -1,6 +1,6 @@
 <template>
   <div class="header-container" :class="{ 'header-hidden': isHidden }">
-    <div class="header-content">
+    <div class="header-content" :class="{ 'desktop-search-active': isSearchOpen && !isMobile }">
 
       <div class="header-left">
         <div class="logo-wrapper" :class="{ 'hide-on-mobile': (isSearchOpen || isExpanded) && isMobile }"
@@ -64,7 +64,7 @@
               </router-link>
             </template>
 
-            <router-link to="/#section-footer" class="nav-link">FAQ</router-link>
+            <router-link v-if="!isLoggedIn" to="/#section-footer" class="nav-link">FAQ</router-link>
           </div>
         </nav>
 
