@@ -435,9 +435,6 @@ class QuizController extends Controller
     public function storeResult(Request $request, Quiz $quiz): JsonResponse
     {
         $user = Auth::user();
-        if (!$user || $user->role !== 'STUDENT') {
-            return response()->json(['error' => 'Action rÃ©servÃ©e aux Ã©tudiants'], 403);
-        }
 
         $data = $request->validate(['score' => 'required|integer|min:0|max:100']);
 
