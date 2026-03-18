@@ -1,6 +1,12 @@
 <template>
   <div class="header-container" :class="{ 'header-hidden': isHidden }">
-    <div class="header-content" :class="{ 'desktop-search-active': isSearchOpen && !isMobile }">
+    <div
+      class="header-content"
+      :class="{
+        'desktop-search-active': isSearchOpen && !isMobile,
+        'desktop-search-moving': desktopSearchMoving && !isMobile
+      }"
+    >
 
       <div class="header-left">
         <div class="logo-wrapper" :class="{ 'hide-on-mobile': (isSearchOpen || isExpanded) && isMobile }"
@@ -143,6 +149,7 @@ const route = useRoute();
 
 const isExpanded = ref(false);
 const isSearchOpen = ref(false);
+const desktopSearchMoving = ref(false);
 const isHidden = ref(false);
 const isMobile = ref(false);
 const isLoggedIn = ref(false);
@@ -160,6 +167,14 @@ const loadingSearch = ref(false);
 let debounceTimer = null;
 const searchCache = new Map();
 let abortController = null;
+let desktopSearchTimer = null;
+
+const clearDesktopSearchTimer = () => {
+  if (desktopSearchTimer) {
+    clearTimeout(desktopSearchTimer);
+    desktopSearchTimer = null;
+  }
+};
 
 const onSearchInput = () => {
   clearTimeout(debounceTimer);
@@ -252,6 +267,8 @@ const handleLogout = async () => {
 watch(() => route.path, () => {
   checkAuthStatus();
   isSearchOpen.value = false;
+  desktopSearchMoving.value = false;
+  clearDesktopSearchTimer();
   showGuestModal.value = false;
 });
 
@@ -259,6 +276,9 @@ const checkMobile = () => {
   isMobile.value = window.innerWidth < 768;
   if (!isMobile.value) {
     isExpanded.value = false;
+  } else {
+    desktopSearchMoving.value = false;
+    clearDesktopSearchTimer();
   }
 };
 const toggleMenu = () => {
@@ -266,8 +286,42 @@ const toggleMenu = () => {
   if (isSearchOpen.value) isSearchOpen.value = false;
   isExpanded.value = !isExpanded.value;
 };
-const toggleSearch = () => { if (isExpanded.value) isExpanded.value = false; isSearchOpen.value = !isSearchOpen.value; };
-const closeAll = () => { isExpanded.value = false; isSearchOpen.value = false; searchResults.value = []; };
+const toggleSearch = () => {
+  if (isExpanded.value) isExpanded.value = false;
+
+  if (!isMobile.value && !isSearchOpen.value && !desktopSearchMoving.value) {
+    desktopSearchMoving.value = true;
+    clearDesktopSearchTimer();
+    desktopSearchTimer = setTimeout(() => {
+      isSearchOpen.value = true;
+      desktopSearchMoving.value = false;
+      desktopSearchTimer = null;
+    }, 700);
+    return;
+  }
+
+  if (desktopSearchMoving.value) {
+    desktopSearchMoving.value = false;
+    clearDesktopSearchTimer();
+    return;
+  }
+
+  if (isSearchOpen.value) {
+    desktopSearchMoving.value = false;
+    clearDesktopSearchTimer();
+    isSearchOpen.value = false;
+    return;
+  }
+
+  isSearchOpen.value = true;
+};
+const closeAll = () => {
+  isExpanded.value = false;
+  isSearchOpen.value = false;
+  desktopSearchMoving.value = false;
+  clearDesktopSearchTimer();
+  searchResults.value = [];
+};
 
 let lastScrollY = 0;
 let isScrollingDown = false;
@@ -310,6 +364,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  clearDesktopSearchTimer();
   window.removeEventListener('resize', checkMobile);
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('click', closeAll);

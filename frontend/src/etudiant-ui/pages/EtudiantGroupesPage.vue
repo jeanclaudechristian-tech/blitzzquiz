@@ -124,7 +124,7 @@ onMounted(loadGroups)
           </div>
         </Transition>
 
-        <div v-else class="empty-state">
+        <div v-if="!loading && groupes.length === 0" class="empty-state">
           <span class="material-symbols-outlined icon">group_add</span>
           <h2>Aucun groupe</h2>
           <p>Utilise le bouton <strong>CODE</strong> en haut pour rejoindre ta première classe !</p>

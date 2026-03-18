@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { groupService } from '../../api/groups'
+import { resolveQuizImage } from '../../api/quiz'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 
 const route = useRoute()
@@ -36,7 +37,7 @@ const loadGroupeQuizzes = async () => {
         id: q.id,
         titre: q.titre,
         category: (q.category && typeof q.category === 'object') ? (q.category.name || q.category.NAME) : (q.category || 'Général'),
-        image: q.image || '/images/default-quiz.jpg',
+        image: resolveQuizImage(q),
         nbQuestions: q.questions_count ?? 0
     }));
   } catch (e) {

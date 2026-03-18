@@ -124,6 +124,11 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.field-group .file-input {
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
 .field-group textarea {
   min-height: 140px;
   resize: vertical;
@@ -134,6 +139,45 @@
 .field-group select:focus {
   border-color: #00a3ff;
   box-shadow: 0 0 0 4px rgba(0, 163, 255, 0.08);
+}
+
+.field-help {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.image-preview {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.image-preview img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid #dbe4ef;
+  background: #f8fbff;
+}
+
+.image-clear-btn {
+  justify-self: start;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111111;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.image-clear-btn:hover {
+  border-color: #00a3ff;
 }
 
 .choice-row {

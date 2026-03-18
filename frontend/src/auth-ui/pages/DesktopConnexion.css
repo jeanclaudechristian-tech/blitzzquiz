@@ -4,20 +4,21 @@
 
 .desktop-connexion {
   position: relative;
+  height: 100dvh;
   min-height: 100vh;
   display: flex;
   align-items: stretch;
   width: 100%;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 /* =========================
-   Colonne vidéo (gauche)
+   Colonne video (gauche)
    ========================= */
 
 .background-video {
   flex: 1 1 auto;
-  min-width: 0;            
+  min-width: 0;
   position: relative;
   overflow: hidden;
 }
@@ -35,29 +36,28 @@
    ========================= */
 
 .espace-connexion {
-  flex: 0 0 500px;         
-  max-width: 50vw;         
-  min-height: 100vh;
+  flex: 0 0 500px;
+  max-width: 50vw;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
 
-  background-color: #f6feff;
-  border-left: 1px solid #f6feff;
+  background-color: #ffffff;
+  border-left: 1px solid #ffffff;
 
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-
-  padding: 80px 0 40px 0;
+  overflow: hidden;
+  padding: clamp(28px, 6.5vh, 80px) 0 clamp(14px, 3.5vh, 40px) 0;
 }
 
-/* contenu centré */
+/* contenu centre */
 .form-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: clamp(8px, 1.6vh, 16px);
   align-items: center;
 
   width: 100%;
@@ -67,19 +67,19 @@
 }
 
 .logo {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .titre {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-style: normal;
-  line-height: 1.2;
+  line-height: 1.08;
   color: #24201d;
-  font-size: 42px;
+  font-size: clamp(30px, 4.5vh, 42px);
   width: 100%;
   text-align: left;
-  margin-bottom: 16px;
+  margin-bottom: clamp(4px, 1.1vh, 16px);
 }
 
 .titre p {
@@ -100,23 +100,24 @@
   .espace-connexion {
     flex-basis: 450px;
     max-width: 60vw;
-    padding-top: 64px;
   }
 
   .titre {
-    font-size: 36px;
+    font-size: clamp(28px, 4.1vh, 36px);
   }
 }
 
-/* Mobile/tablette : panneau en pleine largeur + vidéo en arrière-plan léger */
+/* Mobile/tablette: panneau en pleine largeur + video en arriere-plan leger */
 @media (max-width: 768px) {
   .desktop-connexion {
-    display: block;       
-    overflow: auto;       
+    display: block;
+    overflow: auto;
+    height: auto;
+    min-height: 100vh;
   }
 
   .background-video {
-    position: fixed;    
+    position: fixed;
     inset: 0;
     z-index: 0;
   }
@@ -130,7 +131,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: rgba(14, 35, 64, 0.65); 
+    background: rgba(14, 35, 64, 0.65);
   }
 
   .espace-connexion {
@@ -139,14 +140,16 @@
 
     width: 100%;
     max-width: 100%;
+    height: auto;
     min-height: 100vh;
     flex: none;
+    box-sizing: border-box;
 
-    background-color: rgba(246, 254, 255, 0.95);
+    background-color: #ffffff;
     border-left: none;
 
     padding: 56px 0 28px 0;
-    overflow: visible; 
+    overflow: visible;
   }
 
   .form-content {

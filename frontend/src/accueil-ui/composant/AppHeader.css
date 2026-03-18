@@ -177,7 +177,7 @@
   align-items: center;
   width: 0;
   overflow: visible; 
-  transition: width 1.35s cubic-bezier(0.23, 1, 0.32, 1), margin-left 1.35s ease;
+  transition: width 1.1s cubic-bezier(0.23, 1, 0.32, 1), margin-left 1.1s ease;
   height: 100%;
 }
 
@@ -284,26 +284,24 @@
     position: relative;
     left: auto;
     transform: none;
-    transition: left 0.45s cubic-bezier(0.23, 1, 0.32, 1), transform 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: left 0.7s cubic-bezier(0.23, 1, 0.32, 1), transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
     z-index: 3;
   }
 
-  .header-content.desktop-search-active .search-wrapper {
+  .header-content.desktop-search-active .search-wrapper,
+  .header-content.desktop-search-moving .search-wrapper {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     margin-right: 0;
   }
 
-  .header-content.desktop-search-active .nav-links-wrapper {
+  .header-content.desktop-search-active .nav-links-wrapper,
+  .header-content.desktop-search-moving .nav-links-wrapper {
     max-width: 0 !important;
     opacity: 0;
     pointer-events: none;
     transform: translateY(-6px);
-  }
-
-  .header-content.desktop-search-active .search-input-container.is-open {
-    transition-delay: 0.45s;
   }
 }
 
@@ -313,10 +311,18 @@
 @media (max-width: 768px) {
   .header-container { top: 1rem; padding: 0 1rem; }
   .header-content { height: 56px; padding: 0 1rem !important; }
-  .header-left { gap: 6px; }
+  .header-left {
+    gap: 4px;
+    flex: 0 0 auto;
+    min-width: auto;
+  }
   .logo-wrapper { margin-right: 4px; }
   .search-wrapper { margin-right: 0 !important; }
   .menu-btn-wrapper { margin-left: 0 !important; }
+  .search-wrapper,
+  .menu-btn-wrapper {
+    flex: 0 0 auto;
+  }
 
   .hide-on-mobile {
     display: none !important;
@@ -324,16 +330,26 @@
 
   .nav-links-wrapper {
     display: none !important;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100vw - 130px);
     max-width: 0 !important;
     margin-right: 0 !important;
+    z-index: 5;
   }
 
   .nav-links-wrapper.is-expanded {
     display: flex !important;
-    max-width: calc(100vw - 120px) !important;
-    padding-right: 20px !important;
+    max-width: calc(100vw - 130px) !important;
+    padding-right: 0 !important;
     margin-right: 0 !important;
     overflow-x: auto;
+  }
+
+  .nav-links {
+    gap: 14px;
   }
 
   /* LIGNE COUPEE PLUS COURT SUR MOBILE */
@@ -343,7 +359,7 @@
     margin-left: 10px !important;
   }
 
-  .icon-btn { font-size: 22px !important; width: 2.2rem; height: 2.2rem; }
+  .icon-btn { font-size: 22px !important; width: 2.1rem; height: 2.1rem; }
   .btn-code { margin-right: -7px; }
   .logo-img, .logo-svg { height: 40px !important; } /* Ajustement du logo pour mobile */
 }

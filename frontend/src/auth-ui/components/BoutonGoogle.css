@@ -29,39 +29,43 @@
   border-radius: 8px;
 }
 
-.button-text {
+.button-content {
   position: absolute;
-  inset: 0 16.16% 0 28.05%;
+  inset: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.button-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-style: normal;
-  justify-content: center;
-  line-height: 0;
   color: #f6feff;
   font-size: 16px;
   text-align: center;
 }
 
 .button-text p {
-  line-height: normal;
-  white-space: pre-wrap;
+  line-height: 1;
+  white-space: nowrap;
   margin: 0;
 }
 
 .google-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .google-icon img {
   display: block;
-  width: 26px;
-  height: 27px;
+  width: 24px;
+  height: 24px;
 }

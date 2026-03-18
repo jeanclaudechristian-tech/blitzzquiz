@@ -24,6 +24,8 @@ export interface Quiz {
     updated_at: string;
     titre_highlight?: string;
     description_highlight?: string;
+    image?: string | null;
+    image_path?: string | null;
 
     // 关联关系 (可选，因为 API 不一定每次都把这些带回来)
     is_recommended?: boolean;

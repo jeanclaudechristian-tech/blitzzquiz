@@ -1,11 +1,11 @@
 .black-blitzz-quiz {
   width: 100%;
-  max-width: 402px;
+  max-width: clamp(220px, 30vh, 360px);
   height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32px;
+  margin-bottom: clamp(8px, 1.8vh, 24px);
   flex-shrink: 0;
 }
 
@@ -17,12 +17,13 @@
 
 @media (max-width: 1024px) {
   .black-blitzz-quiz {
-    max-width: 350px;
+    max-width: clamp(200px, 28vh, 300px);
   }
 }
 
 @media (max-width: 768px) {
   .black-blitzz-quiz {
     max-width: 280px;
+    margin-bottom: 20px;
   }
 }

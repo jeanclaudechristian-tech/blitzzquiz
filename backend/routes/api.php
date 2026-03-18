@@ -65,6 +65,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/quizzes', [QuizController::class, 'store']);
     Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
     Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
+    Route::post('/quizzes/{quiz}/image', [QuizController::class, 'uploadImage']);
+    Route::delete('/quizzes/{quiz}/image', [QuizController::class, 'deleteImage']);
     Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
     Route::get('/quizzes/code/{code}', [QuizController::class, 'findByCode']);
     Route::post('/quizzes/{quiz}/results', [QuizController::class, 'storeResult']);

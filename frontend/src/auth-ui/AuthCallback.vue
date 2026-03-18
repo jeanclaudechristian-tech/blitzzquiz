@@ -1,8 +1,19 @@
 <template>
   <div class="auth-callback">
-    <div class="loading">
-      <div class="spinner"></div>
-      <p>Authentification en cours...</p>
+    <div class="callback-card">
+      <div class="bolt-shell" aria-hidden="true">
+        <span class="pulse-ring pulse-ring-1"></span>
+        <span class="pulse-ring pulse-ring-2"></span>
+        <span class="pulse-ring pulse-ring-3"></span>
+        <img src="/images/Eclaire.svg" alt="" class="bolt-icon" />
+      </div>
+
+      <h1 class="callback-title">Connexion Google sécurisée</h1>
+      <p class="callback-subtitle">Validation de votre compte en cours...</p>
+
+      <div class="progress-track" aria-hidden="true">
+        <div class="progress-fill"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -20,55 +31,45 @@ export default {
 
     onMounted(async () => {
       try {
-        // 1. 获取 Google 返回的 access_token
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const idToken = hashParams.get('id_token');
-
-        console.log("🔍 [Debug] 当前获取到的 Access Token:", idToken);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const idToken = hashParams.get('id_token')
 
         if (!idToken) {
-          router.push('/connexion');
-          return;
+          router.push('/connexion')
+          return
         }
 
-        // 2. 直接发给你的 Laravel 后端，不要在前端解析 JWT
+        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`)
+
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ access_token: idToken }) // 字段名保持 access_token 没关系，只要内容是 id_token
-        });
+          body: JSON.stringify({ access_token: idToken })
+        })
 
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error("❌ [Backend Error] 后端验证失败详情:", errorData);
-          throw new Error('Erreur backend');
+          throw new Error('Erreur backend')
         }
 
-        const data = await response.json();
+        const data = await response.json()
 
-        // 3. 存储你自己的 Laravel Token
-        localStorage.setItem('token', data.token);
-        const userToSave = {
-          ...data.user,
-          is_super: data.is_super === true // 确保从根节点读取并存入 user 内部
-        };
-        localStorage.setItem('user', JSON.stringify(userToSave));
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
 
-        // 4. 根据后端返回的逻辑跳转
         if (data.needs_completion) {
           registrationStore.startGoogleFlow({
-            google_id: data.user.google_id, 
+            google_id: data.user.google_id,
             email: data.user.email,
             avatar: data.user.avatar
-          });
-          router.push('/inscription');
-        } else {
-          // REDIRECTION UNIFIÉE VERS LA LANDING PAGE (MainPage)
-          router.push('/');
+          })
+          router.push('/inscription')
+          return
         }
+
+        router.push('/')
       } catch (error) {
-        console.error('Erreur:', error);
-        // router.push('/connexion');
+        console.error('Erreur callback Google:', error)
+        router.push('/connexion')
       }
     })
 
@@ -79,31 +80,151 @@ export default {
 
 <style scoped>
 .auth-callback {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(80, 202, 255, 0.2), transparent 42%),
+    radial-gradient(circle at 86% 85%, rgba(36, 32, 29, 0.1), transparent 36%),
+    #f6feff;
 }
 
-.loading {
+.callback-card {
+  width: min(460px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(80, 202, 255, 0.35);
+  border-radius: 22px;
+  box-shadow: 0 20px 45px rgba(36, 32, 29, 0.09);
+  padding: 34px 28px 30px;
   text-align: center;
-  color: white;
 }
 
-.spinner {
-  width: 50px;
-  height: 50px;
-  margin: 0 auto 20px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.bolt-shell {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid rgba(80, 202, 255, 0.45);
+  opacity: 0;
+  animation: pulse 2.1s ease-out infinite;
+}
+
+.pulse-ring-2 {
+  animation-delay: 0.7s;
+}
+
+.pulse-ring-3 {
+  animation-delay: 1.4s;
+}
+
+.bolt-icon {
+  width: 30px;
+  height: auto;
+  filter: drop-shadow(0 8px 15px rgba(80, 202, 255, 0.35));
+  animation: bolt-breath 1.35s ease-in-out infinite;
+}
+
+.callback-title {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: clamp(24px, 4.2vw, 32px);
+  color: #24201d;
+  line-height: 1.15;
+}
+
+.callback-subtitle {
+  margin: 12px 0 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #4f4f4f;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(80, 202, 255, 0.18);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #50caff 0%, #2aa9df 100%);
+  animation: progress-slide 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.08);
+    opacity: 0;
+  }
+}
+
+@keyframes bolt-breath {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-90%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+@media (max-width: 768px) {
+  .callback-card {
+    border-radius: 18px;
+    padding: 28px 20px 24px;
+  }
+
+  .bolt-shell {
+    width: 92px;
+    height: 92px;
+    margin-bottom: 14px;
+  }
+
+  .bolt-icon {
+    width: 26px;
+  }
+
+  .callback-subtitle {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring,
+  .bolt-icon,
+  .progress-fill {
+    animation: none;
   }
 }
 </style>

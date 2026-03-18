@@ -239,11 +239,23 @@ export default {
 @media (max-width: 768px) {
   .cta-image-wrapper {
     margin-top: 20px;
-    min-width: unset;
+    min-width: 0;
+    width: min(100%, 360px);
+    height: 320px;
+    min-height: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: hidden;
   }
 
   .cta-einstein-img {
-    max-width: 250px;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none;
+    object-fit: cover;
+    object-position: center 38%;
+    transform: scale(1.2);
+    transform-origin: center center;
   }
 }
 </style>

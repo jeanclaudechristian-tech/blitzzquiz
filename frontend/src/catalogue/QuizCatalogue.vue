@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { quizService } from '../api/quiz';
+import { quizService, resolveQuizImage } from '../api/quiz';
 import AppHeader from '../accueil-ui/composant/AppHeader.vue';
 import QuizModal from '../quiz-ui/quiz.vue'; // 🎯 Vérifie bien que le chemin est correct
 // 🎯 1. IMPORT DU MODAL
@@ -110,7 +110,7 @@ const loadQuizzes = async () => {
                 id: q.id,
                 titre: q.titre,
                 category: catName || 'Général',
-                image: q.image || '/images/default-quiz.jpg',
+                image: resolveQuizImage(q),
                 education_level: q.education_level || 'Tous'
             };
         });

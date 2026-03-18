@@ -1,9 +1,16 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../../api/Axios'
 import { groupService } from '../../api/groups'
+import { quizService } from '../../api/quiz'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
+
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+const MIN_IMAGE_WIDTH = 640
+const MIN_IMAGE_HEIGHT = 360
+const MAX_IMAGE_WIDTH = 4096
+const MAX_IMAGE_HEIGHT = 4096
 
 const router = useRouter()
 const route = useRoute()
@@ -18,6 +25,10 @@ const savingQuiz = ref(false)
 const savingGroup = ref(false)
 const previewCode = ref(generatePreviewCode())
 const categories = ref([])
+const quizImageInput = ref(null)
+const quizImageFile = ref(null)
+const quizImagePreview = ref('')
+const quizImageError = ref('')
 
 const quizForm = ref({
   titre: '',
@@ -31,6 +42,74 @@ const groupForm = ref({
   nom: '',
   isPublic: true,
 })
+
+const revokePreview = () => {
+  if (quizImagePreview.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(quizImagePreview.value)
+  }
+}
+
+const resetQuizImage = () => {
+  revokePreview()
+  quizImageFile.value = null
+  quizImagePreview.value = ''
+  quizImageError.value = ''
+  if (quizImageInput.value) {
+    quizImageInput.value.value = ''
+  }
+}
+
+const loadImageDimensions = (file) =>
+  new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      resolve({ width: image.width, height: image.height, objectUrl })
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('invalid_image'))
+    }
+
+    image.src = objectUrl
+  })
+
+const onQuizImageSelected = async (event) => {
+  quizImageError.value = ''
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    quizImageError.value = 'Image trop lourde. Maximum 5 Mo.'
+    resetQuizImage()
+    return
+  }
+
+  try {
+    const { width, height, objectUrl } = await loadImageDimensions(file)
+    if (
+      width < MIN_IMAGE_WIDTH ||
+      height < MIN_IMAGE_HEIGHT ||
+      width > MAX_IMAGE_WIDTH ||
+      height > MAX_IMAGE_HEIGHT
+    ) {
+      URL.revokeObjectURL(objectUrl)
+      quizImageError.value =
+        'Dimensions invalides. Utilise une image entre 640x360 et 4096x4096.'
+      resetQuizImage()
+      return
+    }
+
+    revokePreview()
+    quizImageFile.value = file
+    quizImagePreview.value = objectUrl
+  } catch (error) {
+    quizImageError.value = 'Impossible de lire cette image.'
+    resetQuizImage()
+  }
+}
 
 watch(
   () => route.query.mode,
@@ -81,6 +160,20 @@ const loadCategories = async () => {
   }
 }
 
+const uploadQuizImageIfNeeded = async (quizId) => {
+  if (!quizImageFile.value) return true
+
+  try {
+    await quizService.uploadImage(quizId, quizImageFile.value)
+    return true
+  } catch (error) {
+    console.error('Erreur upload image quiz', error.response?.data || error)
+    quizError.value =
+      'Le quiz est cree, mais l image n a pas pu etre enregistree. Termine dans la page d edition.'
+    return false
+  }
+}
+
 const createQuiz = async () => {
   quizError.value = ''
 
@@ -96,7 +189,7 @@ const createQuiz = async () => {
     description: quizForm.value.description.trim(),
     category_id: quizForm.value.categoryId ? Number(quizForm.value.categoryId) : null,
     education_level: (quizForm.value.niveau || '').toLowerCase() || null,
-    is_public: quizForm.value.isPublic ? '1' : '0',
+    is_public: quizForm.value.isPublic,
   }
 
   try {
@@ -110,6 +203,13 @@ const createQuiz = async () => {
 const createQuizAndContinue = async () => {
   try {
     const quiz = await createQuiz()
+    const uploadOk = await uploadQuizImageIfNeeded(quiz.id)
+
+    if (!uploadOk) {
+      router.push(`/enseignant/quiz/${quiz.id}/editer`)
+      return
+    }
+
     router.push(`/enseignant/quiz/${quiz.id}/questions`)
   } catch (error) {
     if (error.message === 'invalid') return
@@ -121,6 +221,7 @@ const createQuizAndContinue = async () => {
 const createQuizOnly = async () => {
   try {
     const quiz = await createQuiz()
+    await uploadQuizImageIfNeeded(quiz.id)
     router.push(`/enseignant/quiz/${quiz.id}/editer`)
   } catch (error) {
     if (error.message === 'invalid') return
@@ -159,6 +260,10 @@ const openGroups = () => {
 }
 
 onMounted(loadCategories)
+
+onBeforeUnmount(() => {
+  revokePreview()
+})
 </script>
 
 <template>
@@ -203,6 +308,30 @@ onMounted(loadCategories)
               rows="5"
               placeholder="Ajoute un contexte ou des consignes."
             ></textarea>
+          </div>
+
+          <div class="field-group field-group--wide">
+            <label for="quiz-image">Image de la carte (optionnel)</label>
+            <input
+              id="quiz-image"
+              ref="quizImageInput"
+              class="file-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              @change="onQuizImageSelected"
+            />
+            <p class="field-help">
+              Formats: JPG, PNG, WebP. Max 5 Mo. Dimensions entre 640x360 et 4096x4096.
+            </p>
+
+            <div v-if="quizImagePreview" class="image-preview">
+              <img :src="quizImagePreview" alt="Apercu image quiz" />
+              <button type="button" class="image-clear-btn" @click="resetQuizImage">
+                Retirer l image
+              </button>
+            </div>
+
+            <p v-if="quizImageError" class="form-error">{{ quizImageError }}</p>
           </div>
 
           <div class="field-row">
@@ -350,3 +479,4 @@ onMounted(loadCategories)
 <style scoped>
 @import './EnseignantDashboard.css';
 </style>
+

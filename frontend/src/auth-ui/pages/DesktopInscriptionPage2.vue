@@ -10,9 +10,7 @@
         <BlackBlitzzQuiz class="logo" />
         <div class="titre">
           <p>Création</p>
-          <p> </p>
           <p>du</p>
-          <p> </p>
           <p>compte</p>
         </div>
 

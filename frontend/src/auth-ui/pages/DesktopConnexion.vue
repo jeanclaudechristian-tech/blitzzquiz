@@ -10,9 +10,7 @@
         <BlackBlitzzQuiz class="logo" />
         <div class="titre">
           <p>Se connecter</p>
-          <p> </p>
           <p>à mon</p>
-          <p> </p>
           <p>compte</p>
         </div>
         <InputNomUtilisateur v-model="formData.username" @submit="handleConnexion" />

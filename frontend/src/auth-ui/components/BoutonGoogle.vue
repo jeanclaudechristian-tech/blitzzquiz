@@ -1,11 +1,13 @@
 <template>
   <div class="bouton-google" @click="loginWithGoogle" :class="{ 'disabled': isLoading }">
     <div class="button-background"></div>
-    <div class="button-text">
-      <p>{{ isLoading ? 'Connexion en cours...' : 'Se connecter avec Google' }}</p>
-    </div>
-    <div class="google-icon">
-      <img src="../../assets/googleIcon1.svg" alt="Google icon" />
+    <div class="button-content">
+      <div class="google-icon">
+        <img src="../../assets/googleIcon1.svg" alt="Google icon" />
+      </div>
+      <div class="button-text">
+        <p>{{ isLoading ? 'Connexion en cours...' : 'Se connecter avec Google' }}</p>
+      </div>
     </div>
   </div>
 </template>

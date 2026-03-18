@@ -11,11 +11,39 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class QuizController extends Controller
 {
     /**
-     * CRÉER UN QUIZ
+     * Normalize is_public for Postgres writes while keeping API contract unchanged.
+     */
+    private function normalizeIsPublic(Request $request, array &$validated): void
+    {
+        if ($request->has('is_public')) {
+            $validated['is_public'] = $request->boolean('is_public') ? 'true' : 'false';
+        }
+    }
+
+    private function canManageQuiz(Quiz $quiz): bool
+    {
+        $user = Auth::user();
+        return (bool) $user && ($quiz->owner_id === $user->id || $user->role === 'ADMIN');
+    }
+
+    private function deleteQuizImageFile(?string $path): void
+    {
+        if (!$path) {
+            return;
+        }
+
+        $disk = Storage::disk('public');
+        if ($disk->exists($path)) {
+            $disk->delete($path);
+        }
+    }
+    /**
+     * CRÃ‰ER UN QUIZ
      */
     public function store(Request $request): JsonResponse
     {
@@ -26,10 +54,11 @@ class QuizController extends Controller
             'is_public' => 'boolean',
             'education_level' => 'nullable|string|max:255',
         ]);
+        $this->normalizeIsPublic($request, $validated);
 
         $user = Auth::user();
         if (!$user || !in_array($user->role, ['TEACHER', 'ADMIN'], true)) {
-            return response()->json(['error' => 'Action non autorisée'], 403);
+            return response()->json(['error' => 'Action non autorisÃ©e'], 403);
         }
 
         do {
@@ -46,36 +75,36 @@ class QuizController extends Controller
     }
 
     /**
-     * INDEX (UTILISATEURS CONNECTÉS)
+     * INDEX (UTILISATEURS CONNECTÃ‰S)
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // 1. 游客逻辑
+        // 1. æ¸¸å®¢é€»è¾‘
         if (!$user) {
             return $this->publicIndex($request);
         }
 
         try {
-            // 初始化基础查询
+            // åˆå§‹åŒ–åŸºç¡€æŸ¥è¯¢
             $query = Quiz::with('categoryRelation')->withCount('questions');
 
-            // 初始化推荐所需的变量
+            // åˆå§‹åŒ–æŽ¨èæ‰€éœ€çš„å˜é‡
             $weakCategoryIds = [];
             $offset = (int)$request->query('offset', 0);
             $limit = (int)$request->query('limit', 15);
 
-            // 2. 权限与身份逻辑
+            // 2. æƒé™ä¸Žèº«ä»½é€»è¾‘
             if ($user->role === 'TEACHER' || $user->role === 'ADMIN') {
                 $query->where(function ($q) use ($user) {
                     $q->where('owner_id', $user->id)
-                      ->orWhereRaw('is_public IS TRUE'); // 保留你的 Raw 写法
+                      ->orWhereRaw('is_public IS TRUE'); // ä¿ç•™ä½ çš„ Raw å†™æ³•
                 });
             } elseif ($user->role === 'STUDENT') {
                 $query->whereRaw('is_public IS TRUE');
 
-                // 自动筛选教育等级
+                // è‡ªåŠ¨ç­›é€‰æ•™è‚²ç­‰çº§
                 if (!$request->filled('category_id') && $user->education_level) {
                     $query->where(function ($sub) use ($user) {
                         $sub->whereNull('education_level')
@@ -83,9 +112,9 @@ class QuizController extends Controller
                     });
                 }
 
-                // --- 核心：安全且高性能的推荐算法 ---
+                // --- æ ¸å¿ƒï¼šå®‰å…¨ä¸”é«˜æ€§èƒ½çš„æŽ¨èç®—æ³• ---
 
-                // A. 数据库级聚合：获取平均分 < 70 的分类 ID
+                // A. æ•°æ®åº“çº§èšåˆï¼šèŽ·å–å¹³å‡åˆ† < 70 çš„åˆ†ç±» ID
                 $weakCategoryIds = Result::join('quizzes', 'results.quiz_id', '=', 'quizzes.id')
                     ->where('results.user_id', $user->id)
                     ->whereNotNull('quizzes.category_id')
@@ -95,14 +124,14 @@ class QuizController extends Controller
                     ->pluck('category_id')
                     ->toArray();
 
-                // B. 获取已尝试过的 Quiz ID
+                // B. èŽ·å–å·²å°è¯•è¿‡çš„ Quiz ID
                 $attemptedIds = Result::where('user_id', $user->id)
                     ->pluck('quiz_id')
                     ->unique()
                     ->toArray();
 
-                // C. 安全排序：弱点分类置顶
-                // 只有当数组不为空时才拼接 SQL，防止 IN () 报错导致 App 加载失败
+                // C. å®‰å…¨æŽ’åºï¼šå¼±ç‚¹åˆ†ç±»ç½®é¡¶
+                // åªæœ‰å½“æ•°ç»„ä¸ä¸ºç©ºæ—¶æ‰æ‹¼æŽ¥ SQLï¼Œé˜²æ­¢ IN () æŠ¥é”™å¯¼è‡´ App åŠ è½½å¤±è´¥
                 if (!empty($weakCategoryIds)) {
                     $catList = implode(',', array_filter($weakCategoryIds));
                     if (!empty($catList)) {
@@ -110,7 +139,7 @@ class QuizController extends Controller
                     }
                 }
 
-                // D. 安全排序：没做过的优先
+                // D. å®‰å…¨æŽ’åºï¼šæ²¡åšè¿‡çš„ä¼˜å…ˆ
                 if (!empty($attemptedIds)) {
                     $idList = implode(',', array_filter($attemptedIds));
                     if (!empty($idList)) {
@@ -118,22 +147,22 @@ class QuizController extends Controller
                     }
                 }
             } else {
-                return response()->json(['error' => 'Rôle non autorisé'], 403);
+                return response()->json(['error' => 'RÃ´le non autorisÃ©'], 403);
             }
 
-            // 3. 基础排序：最新发布
+            // 3. åŸºç¡€æŽ’åºï¼šæœ€æ–°å‘å¸ƒ
             $query->latest();
 
-            // 4. 执行分页获取数据
+            // 4. æ‰§è¡Œåˆ†é¡µèŽ·å–æ•°æ®
             $quizzes = $query->offset($offset)->limit($limit)->get();
 
-            // 5. 标记推荐逻辑 (核心修复：锁定第一页)
+            // 5. æ ‡è®°æŽ¨èé€»è¾‘ (æ ¸å¿ƒä¿®å¤ï¼šé”å®šç¬¬ä¸€é¡µ)
             $recommendedCount = 0;
             $maxRecommended = 3;
-            $weakSet = array_flip($weakCategoryIds); // 使用哈希表提高匹配效率
+            $weakSet = array_flip($weakCategoryIds); // ä½¿ç”¨å“ˆå¸Œè¡¨æé«˜åŒ¹é…æ•ˆçŽ‡
 
             $quizzes->transform(function ($q) use ($weakSet, &$recommendedCount, $maxRecommended, $offset) {
-                // 只有在第一页 (offset 为 0) 时才尝试打“推荐”标签
+                // åªæœ‰åœ¨ç¬¬ä¸€é¡µ (offset ä¸º 0) æ—¶æ‰å°è¯•æ‰“â€œæŽ¨èâ€æ ‡ç­¾
                 if ($offset === 0 && $recommendedCount < $maxRecommended && isset($weakSet[$q->category_id])) {
                     $q->is_recommended = true;
                     $recommendedCount++;
@@ -146,7 +175,7 @@ class QuizController extends Controller
             return response()->json($quizzes);
 
         } catch (\Exception $e) {
-            // 如果报错，返回具体信息方便你排查字段名
+            // å¦‚æžœæŠ¥é”™ï¼Œè¿”å›žå…·ä½“ä¿¡æ¯æ–¹ä¾¿ä½ æŽ’æŸ¥å­—æ®µå
             return response()->json([
                 'error' => 'SQL Error',
                 'message' => $e->getMessage()
@@ -155,16 +184,14 @@ class QuizController extends Controller
     }
 
     /**
-     * DÉTAILS D'UN QUIZ
+     * DÃ‰TAILS D'UN QUIZ
      */
     public function show(Quiz $quiz): JsonResponse
     {
         $user = Auth::user();
 
-        // Quiz privé : accessible à tout utilisateur connecté (accès par code)
-        // Seuls les non-connectés sont bloqués
         if (!$quiz->is_public && !$user) {
-            return response()->json(['error' => 'Accès refusé'], 403);
+            return response()->json(['error' => 'Acces refuse'], 403);
         }
 
         $quiz->load(['questions', 'categoryRelation']);
@@ -179,7 +206,7 @@ class QuizController extends Controller
     public function update(Request $request, Quiz $quiz): JsonResponse
     {
         if (Auth::id() !== $quiz->owner_id && Auth::user()->role !== 'ADMIN') {
-            return response()->json(['error' => 'Non autorisé'], 403);
+            return response()->json(['error' => 'Non autorisÃ©'], 403);
         }
 
         $validated = $request->validate([
@@ -189,9 +216,53 @@ class QuizController extends Controller
             'is_public' => 'boolean',
             'education_level' => 'nullable|string',
         ]);
+        $this->normalizeIsPublic($request, $validated);
 
         $quiz->update($validated);
         return response()->json($quiz->load('category'));
+    }
+
+    public function uploadImage(Request $request, Quiz $quiz): JsonResponse
+    {
+        if (!$this->canManageQuiz($quiz)) {
+            return response()->json(['error' => 'Non autorise'], 403);
+        }
+
+        $validated = $request->validate([
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120|dimensions:min_width=640,min_height=360,max_width=4096,max_height=4096',
+        ]);
+
+        $oldPath = $quiz->image_path;
+        $newPath = $validated['image']->store('quiz-images', 'public');
+
+        $quiz->image_path = $newPath;
+        $quiz->save();
+
+        $this->deleteQuizImageFile($oldPath);
+
+        return response()->json([
+            'message' => 'Image du quiz mise a jour',
+            'image' => $quiz->image,
+            'quiz' => $quiz->fresh()->load(['categoryRelation'])->loadCount('questions'),
+        ]);
+    }
+
+    public function deleteImage(Quiz $quiz): JsonResponse
+    {
+        if (!$this->canManageQuiz($quiz)) {
+            return response()->json(['error' => 'Non autorise'], 403);
+        }
+
+        $oldPath = $quiz->image_path;
+        $quiz->image_path = null;
+        $quiz->save();
+
+        $this->deleteQuizImageFile($oldPath);
+
+        return response()->json([
+            'message' => 'Image du quiz supprimee',
+            'quiz' => $quiz->fresh()->load(['categoryRelation'])->loadCount('questions'),
+        ]);
     }
 
     /**
@@ -200,11 +271,12 @@ class QuizController extends Controller
     public function destroy(Quiz $quiz): JsonResponse
     {
         if ($quiz->owner_id !== Auth::id() && Auth::user()->role !== 'ADMIN') {
-            return response()->json(['error' => 'Non autorisé'], 403);
+            return response()->json(['error' => 'Non autorisÃ©'], 403);
         }
 
+        $this->deleteQuizImageFile($quiz->image_path);
         $quiz->delete();
-        return response()->json(['message' => 'Quiz supprimé']);
+        return response()->json(['message' => 'Quiz supprimÃ©']);
     }
 
     /**
@@ -302,11 +374,11 @@ class QuizController extends Controller
         }
 
         $question->delete();
-        return response()->json(['message' => 'Question supprimée']);
+        return response()->json(['message' => 'Question supprimÃ©e']);
     }
 
     /**
-     * RECHERCHE AVANCÉE (POSTGRESQL)
+     * RECHERCHE AVANCÃ‰E (POSTGRESQL)
      */
     public function search(Request $request): JsonResponse
     {
@@ -327,7 +399,8 @@ class QuizController extends Controller
                 ->orderByRaw("ts_rank(quizzes.search_vector, websearch_to_tsquery('french', ?)) DESC", [$term])
                 ->select([
                     'quizzes.id', 'quizzes.titre', 'quizzes.description', 'quizzes.category_id',
-                    'quizzes.code_quiz', 'quizzes.education_level', 'quizzes.is_public', 'quizzes.created_at', 'quizzes.plays_count'
+                    'quizzes.code_quiz', 'quizzes.education_level', 'quizzes.is_public', 'quizzes.created_at',
+                    'quizzes.plays_count', 'quizzes.image_path'
                 ])
                 ->selectRaw("ts_headline('french', coalesce(quizzes.description, ''), websearch_to_tsquery('french', ?), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as description_highlight", [$term])
                 ->with(['categoryRelation:id,name'])
@@ -357,13 +430,13 @@ class QuizController extends Controller
     }
 
     /**
-     * ENREGISTRER RÉSULTAT
+     * ENREGISTRER RÃ‰SULTAT
      */
     public function storeResult(Request $request, Quiz $quiz): JsonResponse
     {
         $user = Auth::user();
         if (!$user || $user->role !== 'STUDENT') {
-            return response()->json(['error' => 'Action réservée aux étudiants'], 403);
+            return response()->json(['error' => 'Action rÃ©servÃ©e aux Ã©tudiants'], 403);
         }
 
         $data = $request->validate(['score' => 'required|integer|min:0|max:100']);
@@ -381,7 +454,7 @@ class QuizController extends Controller
     }
 
     /**
-     * MES RÉSULTATS
+     * MES RÃ‰SULTATS
      */
     public function myResults(): JsonResponse
     {
@@ -399,7 +472,7 @@ class QuizController extends Controller
     public function publicIndex(Request $request): JsonResponse
     {
         try {
-            // 🎯 FIX POSTGRES: whereRaw('is_public IS TRUE') pour éviter boolean=integer
+            // ðŸŽ¯ FIX POSTGRES: whereRaw('is_public IS TRUE') pour Ã©viter boolean=integer
             $query = Quiz::with('category')
                 ->withCount('questions')
                 ->whereRaw('is_public IS TRUE');

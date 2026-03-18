@@ -251,6 +251,7 @@ class GroupController extends Controller
                 'id' => $quiz->id,
                 'titre' => $quiz->titre,
                 'category' => $quiz->category,
+                'image' => $quiz->image,
                 'questions_count' => $quiz->questions_count ?? 0,
                 'is_public' => (bool)$quiz->is_public,
                 'code_quiz' => $quiz->code_quiz,
