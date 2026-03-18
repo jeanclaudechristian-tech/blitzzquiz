@@ -87,8 +87,7 @@ onMounted(loadGroupes)
             <div class="card-info">
               <h3>{{ group.nom }}</h3>
               <p>
-                {{ group.nbMembres }} Membres | Code: {{ group.code }} |
-                {{ group.isPublic ? 'Public' : 'Prive' }}
+                {{ group.nbMembres }} Membres • Code: {{ group.code }} • {{ group.isPublic ? 'Public' : 'Privé' }}
               </p>
             </div>
 

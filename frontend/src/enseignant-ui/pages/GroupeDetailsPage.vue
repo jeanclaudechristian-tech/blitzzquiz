@@ -226,7 +226,8 @@ onMounted(loadPage);
             <section class="detail-hero">
                 <div class="detail-hero-copy">
                     <button type="button" class="back-button" @click="goBack">
-                        ← Mes groupes
+                        <span class="material-symbols-outlined">west</span>
+                        Mes groupes
                     </button>
 
                     <div class="hero-badges">

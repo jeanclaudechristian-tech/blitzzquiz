@@ -50,7 +50,6 @@
   font-weight: 700;
 }
 
-.back-button,
 .hero-code,
 .hero-action,
 .mini-action,
@@ -58,6 +57,20 @@
   border: 1px solid #dbe4ef;
   background: #ffffff;
   color: #111111;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: #111111;
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+}
+
+.back-button .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .hero-badges {
@@ -338,7 +351,13 @@
   flex-wrap: wrap;
 }
 
-.back-button:hover,
+.back-button:hover {
+  background: #00a3ff;
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 163, 255, 0.3);
+}
+
 .hero-code:hover,
 .hero-action:hover,
 .mini-action:hover,
