@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue';
 import { quizService } from '@/api/quiz';
 import { useQuizStore } from '@/stores/quizStore';
 import GuestModal from '../composant/GuestModal.vue';
@@ -23,23 +23,36 @@ let isWheelLocked = false;
 let touchStartX = 0;
 let touchEndX = 0;
 
+const hasValidToken = () => {
+    const token = localStorage.getItem('token');
+    return Boolean(token && token !== 'null' && token !== 'undefined');
+};
+
+const syncAuthState = () => {
+    isLoggedIn.value = hasValidToken();
+};
+
 const loadQuizzes = async () => {
     isLoading.value = true;
+    syncAuthState();
 
     try {
         const data = await quizService.getSuggestionQuizzes(8);
         quizzes.value = data.quizzes;
-        isLoggedIn.value = data.isLoggedIn;
+        // Toujours se baser sur le token local pour eviter un etat stale en keep-alive.
+        syncAuthState();
     } catch (error) {
         console.error('Echec total du chargement :', error);
         quizzes.value = [];
-        isLoggedIn.value = false;
+        syncAuthState();
     } finally {
         isLoading.value = false;
     }
 };
 
 const handleCardClick = (quizId) => {
+    syncAuthState();
+
     if (!isLoggedIn.value) {
         showGuestModal.value = true;
         return;
@@ -144,14 +157,38 @@ const resetInactivityTimer = () => {
     }, 2000);
 };
 
+const refreshAuthAndSuggestionsIfNeeded = async () => {
+    const wasLoggedIn = isLoggedIn.value;
+    syncAuthState();
+
+    if (wasLoggedIn !== isLoggedIn.value) {
+        showGuestModal.value = false;
+        await loadQuizzes();
+    }
+};
+
 onMounted(async () => {
     await loadQuizzes();
     startAutoPlay();
+    window.addEventListener('focus', refreshAuthAndSuggestionsIfNeeded);
+    window.addEventListener('storage', refreshAuthAndSuggestionsIfNeeded);
+});
+
+onActivated(() => {
+    void refreshAuthAndSuggestionsIfNeeded();
+    startAutoPlay();
+});
+
+onDeactivated(() => {
+    stopAutoPlay();
+    clearTimeout(inactivityTimeout);
 });
 
 onUnmounted(() => {
     stopAutoPlay();
     clearTimeout(inactivityTimeout);
+    window.removeEventListener('focus', refreshAuthAndSuggestionsIfNeeded);
+    window.removeEventListener('storage', refreshAuthAndSuggestionsIfNeeded);
 });
 </script>
 

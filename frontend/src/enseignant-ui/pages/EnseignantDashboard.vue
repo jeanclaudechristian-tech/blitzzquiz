@@ -335,7 +335,6 @@ onMounted(loadCategories)
       >
         Quiz
       </button>
-      <span class="creation-toggle-separator">|</span>
       <button
         type="button"
         class="creation-toggle-btn"
