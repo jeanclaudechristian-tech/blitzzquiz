@@ -96,7 +96,7 @@ const createQuiz = async () => {
     description: quizForm.value.description.trim(),
     category_id: quizForm.value.categoryId ? Number(quizForm.value.categoryId) : null,
     education_level: (quizForm.value.niveau || '').toLowerCase() || null,
-    is_public: quizForm.value.isPublic,
+    is_public: quizForm.value.isPublic ? '1' : '0',
   }
 
   try {

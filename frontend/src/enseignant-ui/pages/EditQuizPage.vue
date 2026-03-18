@@ -229,7 +229,7 @@ export default {
           description: this.form.description.trim(),
           category_id: this.form.categoryId ? Number(this.form.categoryId) : null,
           education_level: this.form.niveau || null,
-          is_public: this.form.isPublic,
+          is_public: this.form.isPublic ? '1' : '0',
           code_quiz: this.form.code_quiz,
           statut: publish ? 'Publie' : this.form.statut || 'Brouillon',
         }

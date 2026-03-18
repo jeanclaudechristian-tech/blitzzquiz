@@ -124,7 +124,7 @@ export default {
         description: this.form.description.trim(),
         category_id: this.form.category_id || null,
         education_level: (this.form.niveau || '').toLowerCase() || null,
-        is_public: this.form.isPublic
+        is_public: this.form.isPublic ? '1' : '0'
       }
 
 
