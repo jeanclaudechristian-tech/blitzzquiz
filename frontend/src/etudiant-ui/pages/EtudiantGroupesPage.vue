@@ -98,7 +98,6 @@ onMounted(loadGroups)
           </div>
         </div>
 
-<<<<<<< HEAD
         <!-- Modale de confirmation -->
         <Transition name="modal-fade">
           <div v-if="confirmModal" class="modal-overlay" @click.self="annulerQuitter">
@@ -126,9 +125,6 @@ onMounted(loadGroups)
         </Transition>
 
         <div v-if="!loading && groupes.length === 0" class="empty-state">
-=======
-        <div v-else class="empty-state">
->>>>>>> 44212ca10859fea58fa09a661aeedde6ce3e3422
           <span class="material-symbols-outlined icon">group_add</span>
           <h2>Aucun groupe</h2>
           <p>Utilise le bouton <strong>CODE</strong> en haut pour rejoindre ta première classe !</p>
