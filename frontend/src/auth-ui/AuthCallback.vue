@@ -53,8 +53,14 @@ export default {
 
         const data = await response.json()
 
+        const userData = {
+          ...data.user,
+          is_super: data.is_super,
+          role: data.role
+        }
+
         localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('user', JSON.stringify(userData))
 
         if (data.needs_completion) {
           registrationStore.startGoogleFlow({
