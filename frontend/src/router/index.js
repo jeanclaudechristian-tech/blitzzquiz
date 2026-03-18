@@ -211,4 +211,31 @@ const router = createRouter({
   },
 });
 
+router.beforeEach((to, from, next) => {
+  // 假设你把用户信息存在 localStorage 或 Pinia 里
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAuthenticated = !!user.id;
+  const userRole = user.role; // 'STUDENT', 'TEACHER', 'ADMIN'
+
+  // 1. 保护所有以 /admin 开头的路由
+  if (to.path.startsWith('/admin')) {
+    if (isAuthenticated && userRole === 'ADMIN') {
+      next(); // 只有管理员可以进入
+    } else {
+      next('/connexion'); // 否则踢回登录页
+    }
+  }
+  // 2. 保护超级管理员页面
+  else if (to.path === '/admin/super') {
+    if (user.role === 'ADMIN') { // 或者由后端在登录时返回一个 isSuper 标记
+      next();
+    } else {
+      next('/admin');
+    }
+  }
+  else {
+    next();
+  }
+});
+
 export default router;

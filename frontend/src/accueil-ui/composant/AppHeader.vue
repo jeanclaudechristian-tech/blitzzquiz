@@ -65,6 +65,25 @@
             </template>
 
             <router-link v-if="!isLoggedIn" to="/#section-footer" class="nav-link">FAQ</router-link>
+
+            <template v-if="isLoggedIn">
+              <router-link
+                  v-if="userRole === 'ADMIN' || userRole === 'TEACHER'"
+                  to="/admin"
+                  class="nav-link link-admin-portal"
+              >
+                Admin
+              </router-link>
+
+              <router-link
+                  v-if="isSuper"
+                  to="/admin/super"
+                  class="nav-link link-super-portal"
+              >
+                <i class="mdi mdi-crown"></i> Super Admin
+              </router-link>
+
+            </template>
           </div>
         </nav>
 
@@ -130,6 +149,7 @@ const isLoggedIn = ref(false);
 const userRole = ref('');
 const showGuestModal = ref(false);
 const isCodeModalOpen = ref(false);
+const isSuper = ref(false);
 
 const showQuizModal = ref(false);
 const selectedQuizId = ref(null);
@@ -200,12 +220,14 @@ const checkAuthStatus = () => {
     try {
       const userObj = JSON.parse(userStr);
       userRole.value = userObj.role;
+      isSuper.value = userObj.is_super === true;
     } catch (e) {
       userRole.value = '';
+      isSuper.value = false;
     }
   } else {
-    // Securite: on vide le role si aucun user
     userRole.value = '';
+    isSuper.value = false;
   }
 };
 

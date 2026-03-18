@@ -18,8 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(HandleCors::class);
 
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminOnly::class,
-        ]);
+                'admin' => \App\Http\Middleware\AdminOnly::class,
+                'super.admin' => \App\Http\Middleware\CheckSuperAdmin::class,
+            ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

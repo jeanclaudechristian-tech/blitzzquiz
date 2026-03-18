@@ -73,8 +73,10 @@ class AuthController extends Controller
         $token = $user->createToken('quiz-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
-            'token' => $token,
+            'user'     => $user,                // 包含 id, nickname 等基础信息
+            'token'    => $token,               // 圣典令牌
+            'role'     => $user->role,          // 平铺 role，方便移动端直接读取
+            'is_super' => $user->isSuperAdmin(), // 平铺 is_super，方便 Web 端读取
         ]);
     }
 
@@ -138,7 +140,11 @@ class AuthController extends Controller
            }
 
            $token = $user->createToken('auth_token')->plainTextToken;
-           return response()->json(['token' => $token, 'user' => $user, 'needs_completion' => false]);
+           return response()->json(['user'     => $user,
+                                        'token'    => $token,
+                                        'role'     => $user->role,
+                                        'is_super' => $user->isSuperAdmin(),
+                                        'needs_completion' => false ]);
 
        } catch (\Exception $e) {
            return response()->json(['error' => $e->getMessage()], 500);

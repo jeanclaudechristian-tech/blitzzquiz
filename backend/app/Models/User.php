@@ -93,4 +93,14 @@ class User extends Authenticatable implements MustVerifyEmail
         // 触发通知
         $this->notify(new CustomVerifyEmailNotification($url));
     }
+
+    public function isSuperAdmin(): bool
+    {
+        $adminEmailsString = env('SUPER_ADMIN_EMAILS', '');
+
+        // 🎯 核心修复：使用 array_map('trim', ...) 杀掉所有看不见的空格
+        $adminEmails = array_map('trim', explode(',', $adminEmailsString));
+
+        return $this->role === 'ADMIN' && in_array($this->email, $adminEmails);
+    }
 }

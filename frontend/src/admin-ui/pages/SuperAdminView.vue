@@ -65,6 +65,30 @@
         </div>
       </section>
 
+      <section class="admin-invitation">
+        <h2>✉️ Inviter un Administrateur</h2>
+        <p class="subtitle">Promouvoir un utilisateur existant ou créer un nouveau compte admin</p>
+
+        <div class="invitation-form">
+          <input
+              v-model="inviteEmail"
+              type="email"
+              placeholder="Email du futur administrateur"
+              class="invitation-input"
+              :disabled="isInviting"
+          />
+          <button
+              @click="handleInviteAdmin"
+              class="invitation-btn"
+              :disabled="isInviting || !inviteEmail"
+          >
+            <span v-if="!isInviting">Envoyer l'invitation</span>
+            <span v-else class="mini-spinner"></span>
+          </button>
+        </div>
+        <p v-if="inviteMessage" :class="['message', inviteStatus]">{{ inviteMessage }}</p>
+      </section>
+
       <section class="quick-test">
         <h2>🧪 Test rapide</h2>
         <p>Testez n'importe quel quiz en un clic</p>
@@ -78,11 +102,20 @@
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
+import { adminService } from '@/api/admin';
 
 export default {
   name: 'SuperAdminView',
   components: {
     AppHeader
+  },
+  data() {
+    return {
+      inviteEmail: '',
+      isInviting: false,
+      inviteMessage: '',
+      inviteStatus: '' // 'success' 或 'error'
+    }
   },
   methods: {
     switchToStudent() {
@@ -97,6 +130,23 @@ export default {
     },
     goToAdminDashboard() {
       this.$router.push('/admin')
+    },
+    async handleInviteAdmin() {
+      if (!this.inviteEmail) return;
+      this.isInviting = true;
+
+      try {
+        // 调用你新创的 admin.js 接口
+        const response = await adminService.inviteAdmin(this.inviteEmail);
+        this.inviteStatus = 'success';
+        this.inviteMessage = "L'invitation a été envoyée avec succès !";
+        this.inviteEmail = '';
+      } catch (error) {
+        this.inviteStatus = 'error';
+        this.inviteMessage = error.response?.data?.message || "Erreur d'invitation";
+      } finally {
+        this.isInviting = false;
+      }
     },
     testQuiz() {
       // TODO (Laravel) : Afficher une modal avec liste des quiz disponibles

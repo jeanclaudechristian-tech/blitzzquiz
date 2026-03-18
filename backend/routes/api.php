@@ -9,6 +9,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Admin\ImpersonationController;
+use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Middleware\AdminOnly;
+use App\Http\Middleware\CheckSuperAdmin;
 
 // ==========================================
 //  ROUTES PUBLIQUES
@@ -97,14 +100,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/groups/{group}/quizzes/{quiz}/ranking', [GroupController::class, 'quizRanking']);
 
     // ==========================================
-    // ADMIN (TEACHER ONLY)
+    // ADMIN
     // ==========================================
-    Route::middleware('admin')->prefix('admin')->group(function () {
+    Route::middleware(AdminOnly::class)->prefix('admin')->group(function () {
 
         Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index']);
         Route::patch('/users/{id}/disable', [\App\Http\Controllers\Admin\AdminUserController::class, 'disable']);
         Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy']);
         Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Admin\AdminUserController::class, 'resetPassword']);
+        Route::post('/users/invite-admin', [AdminUserController::class, 'inviteAdmin'])
+                ->middleware(CheckSuperAdmin::class);
 
         // Impersonation
         Route::post('/impersonate', [ImpersonationController::class, 'impersonate']);

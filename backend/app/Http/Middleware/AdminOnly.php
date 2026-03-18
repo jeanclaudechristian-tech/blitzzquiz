@@ -12,7 +12,7 @@ class AdminOnly
         $user = $request->user();
 
 
-        if (!$user || $user->role !== 'TEACHER') {
+        if (!$user || $user->role !== 'ADMIN') {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 

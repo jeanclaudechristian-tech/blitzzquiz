@@ -48,7 +48,11 @@ export default {
 
         // 3. 存储你自己的 Laravel Token
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        const userToSave = {
+          ...data.user,
+          is_super: data.is_super === true // 确保从根节点读取并存入 user 内部
+        };
+        localStorage.setItem('user', JSON.stringify(userToSave));
 
         // 4. 根据后端返回的逻辑跳转
         if (data.needs_completion) {

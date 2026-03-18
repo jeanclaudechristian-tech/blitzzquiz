@@ -78,16 +78,20 @@ export default {
       this.error = null
 
       try {
-        const data = await authService.login(
-            this.formData.username, 
-            this.formData.password
-        )
+        const data = await authService.login(this.formData.username, this.formData.password);
 
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
+        // 1. 正常存储 Token
+        localStorage.setItem('token', data.token);
 
-        // 🎯 MODIFICATION : On envoie tout le monde vers la page Main (/)
-        this.$router.push('/')
+        // 2. 🎯 缝合逻辑：把外层的 is_super 塞进 user 对象里再存
+        // 这样 AppHeader.vue 里的 userObj.is_super 就能读到了
+        const userToSave = {
+          ...data.user,
+          is_super: data.is_super
+        };
+        localStorage.setItem('user', JSON.stringify(userToSave));
+
+        this.$router.push('/');
 
       } catch (error) {
         const status = error.response?.status
