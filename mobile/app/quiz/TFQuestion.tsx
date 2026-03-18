@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, StyleProp, ViewStyle} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { QuestionModuleProps } from '@/types';
 import { colors } from '@/components/blitzz/tokens';
 import LottieView from 'lottie-react-native';
-import Animated, {FadeIn, LinearTransition} from "react-native-reanimated";
+import Animated, {FadeIn, LinearTransition} from 'react-native-reanimated';
 import {Ionicons} from "@expo/vector-icons";
 
-export const QCMModule = ({ question, onAnswer, disabled }: QuestionModuleProps) => {
+export const TFModule = ({ question, onAnswer, disabled }: QuestionModuleProps) => {
     const { metadata } = question;
     const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
+    // 🎯 强制模拟 QCM 的选项结构
     const options = [
-        { key: 'A', text: metadata.choixA },
-        { key: 'B', text: metadata.choixB },
-        { key: 'C', text: metadata.choixC },
-        { key: 'D', text: metadata.choixD },
+        { key: 'A', text: 'Vrai' },
+        { key: 'B', text: 'Faux' },
     ];
 
     const handlePress = (key: string) => {
@@ -23,7 +22,7 @@ export const QCMModule = ({ question, onAnswer, disabled }: QuestionModuleProps)
         setSelectedKey(key);
         const isCorrect = key === metadata.bonneReponse;
 
-        // ✅ 改为传递 1 或 0，确保与填空题的小数逻辑兼容
+        // 保持与 QuizPlayer 的兼容性
         onAnswer(key, isCorrect ? 1 : 0);
     };
 
@@ -38,9 +37,7 @@ export const QCMModule = ({ question, onAnswer, disabled }: QuestionModuleProps)
                     const isCorrectAnswer = opt.key === metadata.bonneReponse;
                     const isSelected = opt.key === selectedKey;
 
-                    // 核心逻辑：
-                    // 1. 如果是正确答案且已经选了 -> 变绿
-                    // 2. 如果选错了 -> 选中的变红，正确的依然变绿
+                    // 🎯 完全复刻 QCM 的颜色切换逻辑
                     let cardStyle: StyleProp<ViewStyle> = styles.optionCard;
                     if (selectedKey) {
                         if (isCorrectAnswer) cardStyle = [styles.optionCard, styles.correctCard];
@@ -98,23 +95,19 @@ export const QCMModule = ({ question, onAnswer, disabled }: QuestionModuleProps)
     );
 };
 
+// 🎯 样式完全照搬 QCM
 const styles = StyleSheet.create({
-    container: {
-        // ✅ 确保容器撑开
-        width: '100%',
-    },
+    container: { width: '100%' },
     lottieIcon: {
-        width: 40,  // 根据你的 Lottie JSON 画幅大小适当调整
+        width: 40,
         height: 40,
         position: 'absolute',
-        // 如果发现动画偏离中心，可以使用 transform 微调
         transform: [{ scale: 1.2 }],
     },
     lottieIcon2: {
-        width: 90,  // 根据你的 Lottie JSON 画幅大小适当调整
+        width: 90,
         height: 90,
         position: 'absolute',
-        // 如果发现动画偏离中心，可以使用 transform 微调
         transform: [{ scale: 1.2 }],
     },
     iconSlot: {
@@ -122,7 +115,6 @@ const styles = StyleSheet.create({
         height: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        // zIndex 确保动画层级在上面
         zIndex: 10,
     },
     questionText: {
@@ -131,34 +123,27 @@ const styles = StyleSheet.create({
         color: colors.dark,
         marginBottom: 40,
         textAlign: 'center',
-        // ✅ 增加行高让长题目更优雅
         lineHeight: 32,
     },
-    optionsList: {
-        width: '100%',
-        gap: 15,
-    },
+    optionsList: { width: '100%', gap: 15 },
     optionCard: {
         backgroundColor: '#FFF',
-        padding: 20, // ✅ 增加内衬，让卡片更厚实
+        padding: 20,
         borderRadius: 20,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 15,
         borderWidth: 2,
         borderColor: 'transparent',
-        // ✅ 增加阴影，让它在位面上“浮”起来
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowRadius: 10,
         elevation: 2,
     },
-    // ✅ 成功位面：生机勃勃的绿
     correctCard: {
         borderColor: '#4CAF50',
         backgroundColor: '#F1F8E9',
     },
-    // ❌ 失败位面：警示之红
     wrongCard: {
         borderColor: '#FF5252',
         backgroundColor: '#FFEBEE',
@@ -170,8 +155,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primary + '15',
         justifyContent: 'center',
         alignItems: 'center'
-    },
-    explanationContainer: {
+    },explanationContainer: {
         marginTop: 20,
         padding: 20,
         backgroundColor: colors.primary + '08', // 极淡的主题色背景
@@ -197,5 +181,5 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     optionKey: { color: colors.primary, fontWeight: '700' },
-    optionText: { fontSize: 16, color: colors.dark, flex: 1 }
+    optionText: { fontSize: 18, color: colors.dark, flex: 1, fontWeight: '600' }
 });

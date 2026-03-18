@@ -74,7 +74,7 @@
 
             <template v-if="isLoggedIn">
               <router-link
-                  v-if="userRole === 'ADMIN' || userRole === 'TEACHER'"
+                  v-if="userRole === 'ADMIN'"
                   to="/admin"
                   class="nav-link link-admin-portal"
               >

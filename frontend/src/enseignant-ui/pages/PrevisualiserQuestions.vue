@@ -31,25 +31,44 @@
               APERÇU
             </div>
 
-            <div class="question-text">
+            <div class="question-text" v-if="q.type !== 'FILL_IN'">
               {{ q.texte }}
             </div>
 
+            <div class="question-text fill-in-text" v-else v-html="renderFillInText(q)"></div>
+
             <div class="choices-preview">
-              <div
-                v-for="choice in ['A', 'B', 'C', 'D']"
-                :key="choice"
-                class="choice-preview"
-                :class="{
-                  'correct-choice':
-                    q.metadata?.bonneReponse === choice,
-                }"
-              >
-                <span class="choice-letter">{{ choice }}.</span>
-                <span class="choice-text">
-                  {{ q.metadata?.[`choix${choice}`] }}
-                </span>
-              </div>
+              <template v-if="q.type === 'QCM'">
+                <div
+                    v-for="choice in ['A', 'B', 'C', 'D']"
+                    :key="choice"
+                    class="choice-preview"
+                    :class="{ 'correct-choice': q.metadata?.bonneReponse === choice }"
+                >
+                  <span class="choice-letter">{{ choice }}.</span>
+                  <span class="choice-text">{{ q.metadata?.[`choix${choice}`] }}</span>
+                </div>
+              </template>
+
+              <template v-else-if="q.type === 'TF'">
+                <div class="choice-preview" :class="{ 'correct-choice': q.metadata?.bonneReponse === 'A' }">
+                  <span class="choice-letter">Vrai</span>
+                </div>
+                <div class="choice-preview" :class="{ 'correct-choice': q.metadata?.bonneReponse === 'B' }">
+                  <span class="choice-letter">Faux</span>
+                </div>
+              </template>
+
+              <template v-else-if="q.type === 'FILL_IN'">
+                <div class="fill-in-answers-list">
+                  <div v-for="(blank, bIndex) in q.metadata?.blanks" :key="bIndex" class="fill-in-answer-item">
+                    <span class="answer-num">#{{ bIndex + 1 }}</span>
+                    <span class="answer-tags">
+                      {{ blank.accepted_answers.join(' / ') }}
+                    </span>
+                  </div>
+                </div>
+              </template>
             </div>
 
             <div v-if="q.explanation" class="explanation-preview">
@@ -127,6 +146,13 @@ export default {
     },
     goToAddQuestions() {
       this.$router.push(`/enseignant/quiz/${this.$route.params.id}/questions`)
+    },
+    renderFillInText(q) {
+      if (!q.texte) return '';
+      // 将 [[1]] 替换为带编号的蓝色小方块占位符
+      return q.texte.replace(/\[\[(\d+)\]\]/g, (match, number) => {
+        return `<span class="preview-blank-tag">${number}</span>`;
+      });
     },
   },
   mounted() {
