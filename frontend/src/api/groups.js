@@ -75,4 +75,12 @@ export const groupService = {
   removeMember(groupId, memberId) {
     return api.delete(`/groups/${groupId}/members/${memberId}`);
   },
+
+  /**
+   * Quitter un groupe (étudiant membre).
+   * DELETE /api/groups/{id}/leave
+   */
+  leave(groupId) {
+    return api.delete(`/groups/${groupId}/leave`);
+  },
 };

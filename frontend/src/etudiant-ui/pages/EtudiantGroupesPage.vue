@@ -8,6 +8,10 @@ const router = useRouter()
 const groupes = ref([])
 const loading = ref(true)
 
+const confirmModal = ref(false)
+const groupeAQuitter = ref(null)
+const leaving = ref(false)
+
 const loadGroups = async () => {
   loading.value = true
   try {
@@ -26,6 +30,32 @@ const goToGroup = (id) => {
 
 const goHome = () => {
   router.push('/')
+}
+
+const ouvrirConfirmation = (e, groupe) => {
+  e.stopPropagation()
+  groupeAQuitter.value = groupe
+  confirmModal.value = true
+}
+
+const annulerQuitter = () => {
+  confirmModal.value = false
+  groupeAQuitter.value = null
+}
+
+const confirmerQuitter = async () => {
+  if (!groupeAQuitter.value) return
+  leaving.value = true
+  try {
+    await groupService.leave(groupeAQuitter.value.id)
+    groupes.value = groupes.value.filter(g => g.id !== groupeAQuitter.value.id)
+    confirmModal.value = false
+    groupeAQuitter.value = null
+  } catch (e) {
+    console.error("Erreur lors du départ du groupe", e)
+  } finally {
+    leaving.value = false
+  }
 }
 
 onMounted(loadGroups)
@@ -61,9 +91,38 @@ onMounted(loadGroups)
               <h3>{{ g.nom }}</h3>
               <p>{{ g.nb_membres }} Membres</p>
             </div>
-            <span class="material-symbols-outlined arrow">chevron_right</span>
+            <button class="btn-quitter" @click="ouvrirConfirmation($event, g)">
+              <span class="material-symbols-outlined">logout</span>
+              Quitter
+            </button>
           </div>
         </div>
+
+        <!-- Modale de confirmation -->
+        <Transition name="modal-fade">
+          <div v-if="confirmModal" class="modal-overlay" @click.self="annulerQuitter">
+            <div class="modal-box">
+              <div class="modal-icon">
+                <span class="material-symbols-outlined">group_remove</span>
+              </div>
+              <h2 class="modal-title">Quitter le groupe ?</h2>
+              <p class="modal-desc">
+                Tu vas quitter <strong>{{ groupeAQuitter?.nom }}</strong>. 
+                Tu pourras rejoindre à nouveau avec le code d'invitation.
+              </p>
+              <div class="modal-actions">
+                <button class="modal-btn modal-btn--cancel" @click="annulerQuitter">
+                  Annuler
+                </button>
+                <button class="modal-btn modal-btn--confirm" @click="confirmerQuitter" :disabled="leaving">
+                  <span v-if="leaving" class="mini-spinner"></span>
+                  <span v-else class="material-symbols-outlined">logout</span>
+                  {{ leaving ? 'En cours...' : 'Quitter' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
 
         <div v-else class="empty-state">
           <span class="material-symbols-outlined icon">group_add</span>
@@ -197,9 +256,170 @@ onMounted(loadGroups)
   font-size: 0.9rem;
 }
 
-.arrow {
+.btn-quitter {
   margin-left: auto;
-  color: #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #f9fafb;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.btn-quitter .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.btn-quitter:hover {
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Modale ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-box {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px 36px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+.modal-icon {
+  width: 64px;
+  height: 64px;
+  background: #111111;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: #ffffff;
+}
+
+.modal-icon .material-symbols-outlined {
+  font-size: 30px;
+}
+
+.modal-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 1.8rem;
+  color: #1a1a1a;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.modal-desc {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0 0 28px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 20px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.modal-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.modal-btn--cancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.modal-btn--cancel:hover {
+  background: #e5e7eb;
+  transform: translateY(-2px);
+}
+
+.modal-btn--confirm {
+  background: #111111;
+  color: #ffffff;
+  border: 2px solid transparent;
+}
+
+.modal-btn--confirm:hover:not(:disabled) {
+  background: #00A3FF;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 163, 255, 0.3);
+}
+
+.modal-btn--confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mini-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Transitions modale ── */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.modal-fade-enter-active .modal-box,
+.modal-fade-leave-active .modal-box {
+  transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.25s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+.modal-fade-enter-from .modal-box,
+.modal-fade-leave-to .modal-box {
+  transform: scale(0.92) translateY(20px);
+  opacity: 0;
 }
 
 .loader { display: flex; justify-content: center; padding: 100px 0; }
@@ -211,12 +431,30 @@ onMounted(loadGroups)
 
 @media (max-width: 768px) {
   .anton-title { font-size: 3rem; }
+
   .fab-retour-accueil {
     bottom: 20px;
     left: 20px;
     padding: 12px 20px;
     font-size: 0.85rem;
     border-radius: 8px;
+  }
+
+  .btn-quitter span.material-symbols-outlined {
+    display: none;
+  }
+
+  .btn-quitter {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .modal-box {
+    padding: 28px 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
   }
 }
 </style>
