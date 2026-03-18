@@ -8,38 +8,6 @@
           <img src="/images/Black_BlitzzQuiz 1.png" alt="Blitzz Logo" class="logo-img" />
         </div>
 
-        <nav class="nav-links-wrapper" :class="{ 'is-expanded': isExpanded }">
-          <div class="nav-links">
-            <a class="btn-code" @click.prevent="isCodeModalOpen = true" style="cursor: pointer;">CODE</a>
-            <router-link to="/#section-hero" class="nav-link">Accueil</router-link>
-            <router-link to="/catalogue" class="nav-link">Explorer</router-link> 
-            <router-link to="/#section-footer" class="nav-link">Aide</router-link>
-
-            <template v-if="isLoggedIn">
-              <router-link :to="userRole === 'TEACHER' ? '/enseignant/groupes' : '/etudiant/mes-groupes'"
-                class="nav-link">
-                Groupe
-              </router-link>
-              <router-link to="/historique" class="nav-link">Historique</router-link>
-              <router-link v-if="userRole === 'TEACHER'" to="/enseignant" class="nav-link link-creer">
-                Créer
-              </router-link>
-            </template>
-
-            <router-link to="/#section-footer" class="nav-link">FAQ</router-link>
-          </div>
-        </nav>
-
-        <div class="menu-btn-wrapper" :class="{ 'hide-on-mobile': isSearchOpen && isMobile }">
-          <button class="icon-btn" @click.stop="toggleMenu">
-            <Transition name="icon-swap">
-              <i v-if="isExpanded && isMobile" class="mdi mdi-close absolute-icon"></i>
-              <div v-else-if="isExpanded" class="vertical-bar absolute-icon"></div>
-              <i v-else class="mdi mdi-menu absolute-icon"></i>
-            </Transition>
-          </button>
-        </div>
-
         <div class="search-wrapper" :class="{ 'hide-on-mobile': isExpanded && isMobile }">
           <button class="icon-btn search-trigger" @click.stop="toggleSearch">
             <Transition name="icon-swap">
@@ -76,6 +44,38 @@
               <div class="mini-spinner"></div>
             </div>
           </div>
+        </div>
+
+        <nav class="nav-links-wrapper" :class="{ 'is-expanded': isExpanded }">
+          <div class="nav-links">
+            <a class="btn-code" @click.prevent="isCodeModalOpen = true" style="cursor: pointer;">CODE</a>
+            <router-link to="/#section-hero" class="nav-link">Accueil</router-link>
+            <router-link to="/catalogue" class="nav-link">Explorer</router-link> 
+            <router-link to="/#section-footer" class="nav-link">Aide</router-link>
+
+            <template v-if="isLoggedIn">
+              <router-link :to="userRole === 'TEACHER' ? '/enseignant/groupes' : '/etudiant/mes-groupes'"
+                class="nav-link">
+                Groupe
+              </router-link>
+              <router-link to="/historique" class="nav-link">Historique</router-link>
+              <router-link v-if="userRole === 'TEACHER'" to="/enseignant" class="nav-link link-creer">
+                Créer
+              </router-link>
+            </template>
+
+            <router-link to="/#section-footer" class="nav-link">FAQ</router-link>
+          </div>
+        </nav>
+
+        <div class="menu-btn-wrapper" :class="{ 'hide-on-mobile': isSearchOpen && isMobile }">
+          <button class="icon-btn" @click.stop="toggleMenu">
+            <Transition name="icon-swap">
+              <i v-if="isExpanded && isMobile" class="mdi mdi-close absolute-icon"></i>
+              <div v-else-if="isExpanded" class="vertical-bar absolute-icon"></div>
+              <i v-else class="mdi mdi-menu absolute-icon"></i>
+            </Transition>
+          </button>
         </div>
       </div>
 
@@ -186,7 +186,7 @@ const goToQuiz = (quiz) => {
   if (userRole.value === 'TEACHER' || userRole.value === 'ADMIN') {
     router.push(`/enseignant/quiz/${quiz.id}/editer`);
   } else {
-    // 🎯 CORRECTION : Ouverture propre de la modale pour l'étudiant
+    // Correction: ouverture propre de la modale pour l'etudiant
     selectedQuizId.value = quiz.id;
     showQuizModal.value = true;
   }
@@ -204,7 +204,7 @@ const checkAuthStatus = () => {
       userRole.value = '';
     }
   } else {
-    // 🎯 SÉCURITÉ : On s'assure de bien vider le rôle si aucun user
+    // Securite: on vide le role si aucun user
     userRole.value = '';
   }
 };
@@ -226,15 +226,24 @@ const handleLogout = async () => {
   }
 };
 
-// Le header se met à jour en douceur quand la page change (après un login par exemple)
+// Le header se met a jour quand la page change (apres un login, par exemple)
 watch(() => route.path, () => {
   checkAuthStatus();
   isSearchOpen.value = false;
   showGuestModal.value = false;
 });
 
-const checkMobile = () => { isMobile.value = window.innerWidth < 768; };
-const toggleMenu = () => { if (isSearchOpen.value) isSearchOpen.value = false; isExpanded.value = !isExpanded.value; };
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+  if (!isMobile.value) {
+    isExpanded.value = false;
+  }
+};
+const toggleMenu = () => {
+  if (!isMobile.value) return;
+  if (isSearchOpen.value) isSearchOpen.value = false;
+  isExpanded.value = !isExpanded.value;
+};
 const toggleSearch = () => { if (isExpanded.value) isExpanded.value = false; isSearchOpen.value = !isSearchOpen.value; };
 const closeAll = () => { isExpanded.value = false; isSearchOpen.value = false; searchResults.value = []; };
 
