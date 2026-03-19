@@ -18,9 +18,6 @@
               ></div>
             </div>
           </div>
-          <div class="timer">
-            {{ remainingSeconds }}s
-          </div>
         </header>
 
         <section class="play-body">
@@ -56,6 +53,11 @@
                 {{ choiceText(opt) || '(aucun texte)' }}
               </span>
             </button>
+          </div>
+
+          <div v-if="showFeedback" class="answer-explanation">
+            <p class="answer-explanation-title">Explication</p>
+            <p class="answer-explanation-text">{{ explanationText(currentQuestion) }}</p>
           </div>
         </section>
 
@@ -102,8 +104,6 @@ export default {
       lockedChoice: false,
       showFeedback: false,
       inReview: false,
-      remainingSeconds: 60,
-      timerId: null,
       answers: [],
       loading: false,
       error: '',
@@ -140,29 +140,21 @@ export default {
         this.$router.push('/etudiant')
       } else {
         this.quizLoaded = true
-        this.startTimer()
-      }
-    },
-    startTimer() {
-      this.remainingSeconds = 60
-      this.timerId = setInterval(() => {
-        if (this.remainingSeconds > 0) {
-          this.remainingSeconds -= 1
-        } else {
-          this.finishQuiz()
-        }
-      }, 1000)
-    },
-    stopTimer() {
-      if (this.timerId) {
-        clearInterval(this.timerId)
-        this.timerId = null
       }
     },
     choiceText(opt) {
       const q = this.currentQuestion
       if (!q || !q.metadata) return ''
       return q.metadata[`choix${opt}`] || ''
+    },
+    explanationText(question) {
+      return (
+        question?.explanation ||
+        question?.explication ||
+        question?.metadata?.explication ||
+        question?.metadata?.explanation ||
+        'Aucune explication fournie.'
+      )
     },
     selectChoice(opt) {
       if (!this.choiceText(opt)) return
@@ -199,7 +191,6 @@ export default {
       if (this.finishing) return
       this.finishing = true
 
-      this.stopTimer()
       const total = this.questions.length
       let correct = 0
 
@@ -211,14 +202,12 @@ export default {
       })
 
       const percent = total ? Math.round((correct / total) * 100) : 0
-      const tempsEcoule = 60 - this.remainingSeconds
       const quizId = this.$route.params.id
 
       const result = {
         total,
         correct,
         percent,
-        temps_ecoule: tempsEcoule,
       }
 
       try {
@@ -235,15 +224,11 @@ export default {
       this.$router.push(`/etudiant/quiz/${quizId}/loading`)
     },
     goBack() {
-      this.stopTimer()
       this.$router.push('/etudiant')
     },
   },
   mounted() {
     this.loadQuestions()
-  },
-  beforeUnmount() {
-    this.stopTimer()
   },
 }
 </script>

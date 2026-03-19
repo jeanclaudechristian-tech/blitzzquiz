@@ -361,6 +361,8 @@
     background-color: #ffffff; 
     display: flex;
     flex-direction: column;
+    position: relative;
+    isolation: isolate;
 }
 
 /* Tablette : On garde un ratio qui remplit mieux l'écran */
@@ -1002,6 +1004,32 @@
    RESPONSIVE MOBILE
    ========================================================================== */
 @media (max-width: 768px) {
+  .home-page {
+    background-image: none !important;
+    background-attachment: scroll;
+    background-color: transparent;
+  }
+
+  .home-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url('/images/MainPageBKG(Greek).svg');
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: 150% auto;
+    background-color: #ffffff;
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .home-page > * {
+    position: relative;
+    z-index: 1;
+  }
+
   .header-container { top: 1rem; padding: 0 1rem; }
   .header-content { height: 56px; padding: 0 1rem !important; }
 

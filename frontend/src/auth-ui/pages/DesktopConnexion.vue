@@ -7,7 +7,9 @@
     </div>
     <div class="espace-connexion">
         <form class="form-content" @submit.prevent="handleConnexion">
-        <BlackBlitzzQuiz class="logo" />
+        <router-link to="/" class="logo-home-link" aria-label="Retour a l'accueil">
+          <BlackBlitzzQuiz class="logo" />
+        </router-link>
         <div class="titre">
           <p>Se connecter</p>
           <p>à mon</p>

@@ -27,7 +27,6 @@
               <div
                 style="display: flex; gap: 30px; background: #f3f4f6; padding: 15px 30px; border-radius: 12px; font-family: 'Inter', sans-serif;">
                 <div><strong>Questions :</strong> {{ questions.length }}</div>
-                <div><strong>Durée :</strong> ~{{ Math.max(1, Math.round(questions.length / 3)) }} min</div>
               </div>
 
               <div
@@ -35,7 +34,6 @@
                 <p style="font-weight: bold; margin-bottom: 10px; font-family: 'Inter', sans-serif;">Règles rapides :
                 </p>
                 <ul style="color: #6b7280; font-family: 'Inter', sans-serif; font-size: 0.95rem; padding-left: 20px;">
-                  <li>Temps limité (60s par défaut)</li>
                   <li>Score calculé automatiquement</li>
                 </ul>
               </div>
@@ -56,9 +54,6 @@
                     <div class="progress-fill" :style="{ width: ((index) / questions.length * 100) + '%' }"></div>
                   </div>
                 </div>
-                <div class="timer" v-if="index === currentIndex">
-                  {{ remainingSeconds }}s
-                </div>
               </header>
 
               <section class="play-body">
@@ -77,16 +72,25 @@
                     <span class="choice-text">{{ choiceText(opt, question) }}</span>
                   </button>
                 </div>
+
+                <div class="answer-explanation-slot">
+                  <div
+                    v-if="showFeedback && index === currentIndex"
+                    class="answer-explanation"
+                  >
+                    <p class="answer-explanation-title">Explication</p>
+                    <p class="answer-explanation-text">{{ explanationText(question) }}</p>
+                  </div>
+                </div>
               </section>
 
               <footer class="play-footer" style="justify-content: center;">
                 <button 
-                  v-if="index === currentIndex" 
+                  v-if="index === currentIndex && (selectedChoice || inReview)"
                   class="next-btn"
-                  :disabled="!selectedChoice" 
                   @click="nextQuestion"
                 >
-                  Suivant
+                  {{ inReview ? (index === questions.length - 1 ? 'Voir le resultat' : 'Question suivante') : 'Valider la reponse' }}
                 </button>
               </footer>
             </div>
@@ -167,15 +171,51 @@ export default {
       currentIndex: 0,
       selectedChoice: '',
       showFeedback: false,
-      remainingSeconds: 60,
-      timerId: null,
+      inReview: false,
       answers: [],
       finalResult: null,
       loading: false,
       error: '',
+      scrollLockY: 0,
+      scrollLockSnapshot: null,
     }
   },
   methods: {
+    lockPageScroll() {
+      const html = document.documentElement;
+      const body = document.body;
+
+      this.scrollLockY = window.scrollY || window.pageYOffset || 0;
+      this.scrollLockSnapshot = {
+        htmlOverflow: html.style.overflow,
+        bodyOverflow: body.style.overflow,
+        bodyPosition: body.style.position,
+        bodyTop: body.style.top,
+        bodyWidth: body.style.width,
+      };
+
+      html.style.overflow = 'hidden';
+      body.style.overflow = 'hidden';
+      body.style.position = 'fixed';
+      body.style.top = `-${this.scrollLockY}px`;
+      body.style.width = '100%';
+    },
+    unlockPageScroll() {
+      const html = document.documentElement;
+      const body = document.body;
+      const snap = this.scrollLockSnapshot;
+
+      if (!snap) return;
+
+      html.style.overflow = snap.htmlOverflow;
+      body.style.overflow = snap.bodyOverflow;
+      body.style.position = snap.bodyPosition;
+      body.style.top = snap.bodyTop;
+      body.style.width = snap.bodyWidth;
+
+      window.scrollTo(0, this.scrollLockY);
+      this.scrollLockSnapshot = null;
+    },
     async loadQuizData() {
       this.loading = true;
       this.error = '';
@@ -214,50 +254,44 @@ export default {
     },
     startQuizFromLobby() {
       this.quizState = 'playing';
-      this.startTimer();
-    },
-    startTimer() {
-      this.remainingSeconds = 60;
-      this.timerId = setInterval(() => {
-        if (this.remainingSeconds > 0) {
-          this.remainingSeconds -= 1;
-        } else {
-          this.finishQuiz();
-        }
-      }, 1000);
-    },
-    stopTimer() {
-      if (this.timerId) {
-        clearInterval(this.timerId);
-        this.timerId = null;
-      }
     },
     choiceText(opt, question) {
       if (!question || !question.metadata) return '';
       return question.metadata[`choix${opt}`] || '';
+    },
+    explanationText(question) {
+      return (
+        question?.explanation ||
+        question?.explication ||
+        question?.metadata?.explication ||
+        question?.metadata?.explanation ||
+        'Aucune explication fournie.'
+      );
     },
     selectChoice(opt) {
       if (this.showFeedback) return;
       this.selectedChoice = opt;
     },
     nextQuestion() {
-      if (!this.selectedChoice) return;
+      if (!this.selectedChoice && !this.inReview) return;
 
-      this.answers[this.currentIndex] = this.selectedChoice;
-      this.showFeedback = true;
+      if (!this.inReview) {
+        this.answers[this.currentIndex] = this.selectedChoice;
+        this.showFeedback = true;
+        this.inReview = true;
+        return;
+      }
 
-      setTimeout(() => {
-        if (this.currentIndex < this.questions.length - 1) {
-          this.currentIndex += 1;
-          this.selectedChoice = '';
-          this.showFeedback = false;
-        } else {
-          this.finishQuiz();
-        }
-      }, 600);
+      if (this.currentIndex < this.questions.length - 1) {
+        this.currentIndex += 1;
+        this.selectedChoice = '';
+        this.showFeedback = false;
+        this.inReview = false;
+      } else {
+        this.finishQuiz();
+      }
     },
     async finishQuiz() {
-      this.stopTimer();
       const id = this.quizId || this.$route.params.id;
       const total = this.questions.length;
       let correct = 0;
@@ -274,7 +308,6 @@ export default {
         total,
         correct,
         percent,
-        temps_ecoule: 60 - this.remainingSeconds,
       };
 
       try {
@@ -293,12 +326,13 @@ export default {
       this.answers = [];
       this.selectedChoice = '';
       this.showFeedback = false;
+      this.inReview = false;
       this.finalResult = null;
       this.quizState = 'playing';
-      this.startTimer();
     },
     closeModal(useRouteFallback = true) {
-      this.stopTimer();
+      this.unlockPageScroll();
+
       if (useRouteFallback && this.$route.name === 'EtudiantQuizPlay') {
         const groupId = this.$route.query.group;
 
@@ -357,12 +391,11 @@ export default {
     }
   },
   mounted() {
-    document.body.style.overflow = 'hidden';
+    this.lockPageScroll();
     this.loadQuizData();
   },
   beforeUnmount() {
-    document.body.style.overflow = '';
-    this.stopTimer();
+    this.unlockPageScroll();
   },
 }
 </script>
@@ -375,7 +408,7 @@ export default {
 <style scoped src="./quiz.css"></style>
 
 <style scoped>
-/* BACKDROP — flou + opacité pour le plein écran */
+/* BACKDROP - flou + opacite pour le plein ecran */
 .guest-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -426,7 +459,7 @@ export default {
   }
 }
 
-/* 🎯 STYLES DU NOUVEAU BOUTON SUIVANT */
+/* STYLES DU NOUVEAU BOUTON SUIVANT */
 .next-btn {
   width: 100%;
   padding: 14px 24px;
@@ -453,3 +486,4 @@ export default {
   transform: translateY(-2px);
 }
 </style>
+

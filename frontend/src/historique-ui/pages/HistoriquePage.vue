@@ -64,10 +64,6 @@
                 <span class="material-symbols-outlined icon-sm">calendar_today</span> 
                 {{ formatDate(attempt.date) }}
               </span>
-              <span class="meta-item">
-                <span class="material-symbols-outlined icon-sm">timer</span> 
-                {{ formatDuration(attempt.duree) }}
-              </span>
             </div>
           </div>
 
@@ -190,7 +186,6 @@ export default {
           quizTitre: item.quiz?.titre || 'Quiz',
           score: item.score,
           date: item.date_tentative || item.created_at,
-          duree: 0,
         }))
       } catch (e) {
         console.error('Erreur chargement historique', e.response?.data || e)
@@ -216,12 +211,6 @@ export default {
       const date = new Date(dateStr)
       const options = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }
       return date.toLocaleDateString('fr-FR', options)
-    },
-    formatDuration(seconds) {
-      const secs = Number(seconds) || 0
-      const mins = Math.floor(secs / 60)
-      const rest = secs % 60
-      return `${mins}min ${rest}s`
     },
     replayQuiz(attempt) {
       this.selectedQuizId = attempt.quizId;

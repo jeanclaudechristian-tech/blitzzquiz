@@ -44,10 +44,17 @@
   justify-content: center;
 }
 
+.quiz-3d-container,
+.play-card-3d,
+.play-card-3d * {
+  font-family: 'Inter', sans-serif;
+}
+
 .quiz-stack-track {
   position: relative;
   width: 870px;  
   height: 500px; 
+  --explanation-slot-height: 88px;
   transform-style: preserve-3d;
 }
 
@@ -117,22 +124,13 @@
   transition: width 0.3s ease;
 }
 
-.timer {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  background: #f3f4f6;
-  padding: 8px 16px;
-  border-radius: 20px;
-}
-
 .play-body {
   flex-grow: 1;
-  padding: 30px 40px;
+  min-height: 0;
+  padding: 26px 40px 20px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .question-text {
@@ -140,7 +138,7 @@
   font-size: 1.6rem;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
   text-align: center;
 }
 
@@ -148,6 +146,37 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+}
+
+.answer-explanation {
+  margin-top: 0;
+  height: 100%;
+  overflow-y: auto;
+  border: 1px solid #dbeafe;
+  border-left: 4px solid #00A3FF;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 12px 14px;
+}
+
+.answer-explanation-slot {
+  margin-top: 14px;
+  min-height: var(--explanation-slot-height);
+  max-height: var(--explanation-slot-height);
+}
+
+.answer-explanation-title {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0369a1;
+}
+
+.answer-explanation-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #374151;
 }
 
 .choice-btn {
@@ -219,8 +248,10 @@
 }
 
 .play-footer {
+  min-height: 84px;
   padding: 20px 40px;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   border-top: 1px solid #f0f0f0;
 }
@@ -231,6 +262,7 @@
     height: 75vh; /* Prend 75% de l'écran, peu importe le téléphone */
     max-height: 650px;
     min-height: 480px;
+    --explanation-slot-height: 78px;
   }
   
   /* On réduit les paddings globaux pour gagner de la place */

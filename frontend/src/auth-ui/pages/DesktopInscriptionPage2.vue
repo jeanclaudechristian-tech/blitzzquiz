@@ -7,7 +7,9 @@
     </div>
     <div class="espace-inscription">
       <div class="form-content">
-        <BlackBlitzzQuiz class="logo" />
+        <router-link to="/" class="logo-home-link" aria-label="Retour a l'accueil">
+          <BlackBlitzzQuiz class="logo" />
+        </router-link>
         <div class="titre">
           <p>Création</p>
           <p>du</p>

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import MainPage from "../accueil-ui/MainPage.vue"; 
+import MainPage from "../accueil-ui/MainPage.vue";
 import DesktopConnexion from "../auth-ui/pages/DesktopConnexion.vue";
 import DesktopInscriptionPage1 from "../auth-ui/pages/DesktopInscriptionPage1.vue";
 import DesktopInscriptionPage2 from "../auth-ui/pages/DesktopInscriptionPage2.vue";
@@ -11,9 +11,6 @@ import EditQuizPage from "../enseignant-ui/pages/EditQuizPage.vue";
 import QuizQuestionsPage from "../enseignant-ui/pages/QuizQuestionsPage.vue";
 import PrevisualiserQuestions from "../enseignant-ui/pages/PrevisualiserQuestions.vue";
 import EtudiantDashboard from "../etudiant-ui/pages/EtudiantDashboard.vue";
-// ❌ Supprimé : QuizCataloguePage (Ancien catalogue)
-// ❌ Supprimé : EnterQuizCodePage (Géré par CodeModal)
-// ❌ Supprimé : EnterGroupCodePage (Géré par CodeModal)
 import EtudiantGroupeQuizzesPage from "../etudiant-ui/pages/EtudiantGroupeQuizzesPage.vue";
 import EtudiantQuizResultPage from "../etudiant-ui/pages/EtudiantQuizResultPage.vue";
 import LeaderboardPage from "../classement-ui/pages/LeaderboardPage.vue";
@@ -24,13 +21,9 @@ import SuperAdminView from "../admin-ui/pages/SuperAdminView.vue";
 import GroupesListPage from "../enseignant-ui/pages/GroupesListPage.vue";
 import GroupeDetailsPage from "../enseignant-ui/pages/GroupeDetailsPage.vue";
 import EtudiantProfil from "../etudiant-ui/pages/EtudiantProfil.vue";
-
-// ✅ AJOUTÉ : Import pour la page de tes groupes
-import EtudiantGroupesPage from "../etudiant-ui/pages/EtudiantGroupesPage.vue"; 
-
-// === LES DEUX IMPORTS QUIZ ===
-import QuizPlayOverlay from "../quiz-ui/quiz.vue"; 
-import QuizCatalogue from "../catalogue/QuizCatalogue.vue"; 
+import EtudiantGroupesPage from "../etudiant-ui/pages/EtudiantGroupesPage.vue";
+import QuizPlayOverlay from "../quiz-ui/quiz.vue";
+import QuizCatalogue from "../catalogue/QuizCatalogue.vue";
 
 const routes = [
   {
@@ -39,10 +32,14 @@ const routes = [
     component: MainPage,
   },
   {
-    // 🎯 LE CATALOGUE UNIQUE POUR TOUT LE MONDE
     path: "/catalogue",
     name: "CataloguePublic",
     component: QuizCatalogue,
+  },
+  {
+    // Compatibilite anciens liens etudiant
+    path: "/etudiant/catalogue",
+    redirect: "/catalogue",
   },
   {
     path: "/home",
@@ -139,7 +136,6 @@ const routes = [
     component: EtudiantDashboard,
   },
   {
-    // ✅ AJOUTÉ : La route pour les groupes de l'étudiant
     path: "/etudiant/mes-groupes",
     name: "EtudiantMesGroupes",
     component: EtudiantGroupesPage,
@@ -150,7 +146,11 @@ const routes = [
     component: EtudiantGroupeQuizzesPage,
   },
   {
-    // 🎯 ROUTE UNIQUE POUR JOUER (MODALE 3D)
+    // Compatibilite anciens liens quiz etudiant
+    path: "/etudiant/quiz/:id",
+    redirect: (to) => `/etudiant/quiz/${to.params.id}/jouer`,
+  },
+  {
     path: "/etudiant/quiz/:id/jouer",
     name: "EtudiantQuizPlay",
     component: QuizPlayOverlay,
@@ -200,40 +200,34 @@ const router = createRouter({
     if (to.hash) {
       return {
         el: to.hash,
-        behavior: 'smooth',
-      }
+        behavior: "smooth",
+      };
     }
     if (savedPosition) {
-      return savedPosition
-    } else {
-      return { top: 0 }
+      return savedPosition;
     }
+    return { top: 0 };
   },
 });
 
 router.beforeEach((to, from, next) => {
-  // 假设你把用户信息存在 localStorage 或 Pinia 里
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAuthenticated = !!user.id;
-  const userRole = user.role; // 'STUDENT', 'TEACHER', 'ADMIN'
+  const userRole = user.role;
 
-  // 1. 保护所有以 /admin 开头的路由
-  if (to.path.startsWith('/admin')) {
-    if (isAuthenticated && userRole === 'ADMIN') {
-      next(); // 只有管理员可以进入
-    } else {
-      next('/connexion'); // 否则踢回登录页
-    }
-  }
-  // 2. 保护超级管理员页面
-  else if (to.path === '/admin/super') {
-    if (user.role === 'ADMIN') { // 或者由后端在登录时返回一个 isSuper 标记
+  if (to.path.startsWith("/admin")) {
+    if (isAuthenticated && userRole === "ADMIN") {
       next();
     } else {
-      next('/admin');
+      next("/connexion");
     }
-  }
-  else {
+  } else if (to.path === "/admin/super") {
+    if (user.role === "ADMIN") {
+      next();
+    } else {
+      next("/admin");
+    }
+  } else {
     next();
   }
 });

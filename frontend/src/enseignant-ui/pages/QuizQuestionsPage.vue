@@ -3,9 +3,15 @@
     <AppHeader />
     <main class="questions-main" v-if="quizLoaded">
       <header class="questions-header">
-        <h1>Questions – {{ quizTitle }}</h1>
+        <div class="questions-header-copy">
+          <p class="questions-kicker">Edition du quiz</p>
+          <h1>Questions - {{ quizTitle }}</h1>
+          <p class="questions-subtitle">
+            Ajoute, ajuste et reorganise les questions avant publication.
+          </p>
+        </div>
         <button type="button" class="link-button" @click="goBack">
-          ← Retour à la création
+          Retour a l edition
         </button>
       </header>
 
@@ -16,7 +22,7 @@
             <h2>Questions ({{ questions.length }})</h2>
           </div>
 
-          <div v-for="(q, index) in questions" :key="q.id"
+            <div v-for="(q, index) in questions" :key="q.id"
             :class="['question-item', { active: index === currentIndex }]" @click="loadQuestion(index)">
             <span>Q{{ index + 1 }}</span>
             <button type="button" class="question-delete" @click.stop="deleteQuestion(index)">
@@ -111,16 +117,12 @@
             <p v-if="error" class="form-error">{{ error }}</p>
 
             <div class="builder-actions">
-              <CallToActionBtn
-                text="Ajouter la question"
-                variant="dark"
-                type="submit"
-              />
-              <CallToActionBtn
-                text="Enregistrer"
-                variant="blue"
-                @click="saveAll"
-              />
+              <button type="submit" class="btn-primary">
+                {{ primaryActionLabel }}
+              </button>
+              <button type="button" class="btn-secondary" @click="saveAll">
+                Enregistrer et retourner a l edition
+              </button>
               <button
                 type="button"
                 class="link-button"
@@ -151,12 +153,11 @@
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import CallToActionBtn from '../../accueil-ui/composant/CallToActionBtn.vue'
 import api from '../../api/Axios'
 
 export default {
   name: 'QuizQuestionsPage',
-  components: { AppHeader, CallToActionBtn },
+  components: { AppHeader },
   data() {
     return {
       quizLoaded: false,
@@ -175,6 +176,11 @@ export default {
       error: '',
       showPreview: false,
     }
+  },
+  computed: {
+    primaryActionLabel() {
+      return this.currentIndex == null ? 'Ajouter la question' : 'Mettre a jour la question'
+    },
   },
   methods: {
     async loadQuizMeta() {
@@ -322,13 +328,14 @@ export default {
     },
 
     saveAll() {
-      this.$router.push('/enseignant')
+      this.goBack()
     },
     preview() {
       this.showPreview = true
     },
     goBack() {
-      this.$router.push('/enseignant')
+      const id = this.$route.params.id
+      this.$router.push(`/enseignant/quiz/${id}/editer`)
     },
   },
   mounted() {

@@ -168,6 +168,7 @@ let debounceTimer = null;
 const searchCache = new Map();
 let abortController = null;
 let desktopSearchTimer = null;
+const DESKTOP_SEARCH_MOVE_MS = 1200;
 
 const clearDesktopSearchTimer = () => {
   if (desktopSearchTimer) {
@@ -296,7 +297,7 @@ const toggleSearch = () => {
       isSearchOpen.value = true;
       desktopSearchMoving.value = false;
       desktopSearchTimer = null;
-    }, 700);
+    }, DESKTOP_SEARCH_MOVE_MS);
     return;
   }
 

@@ -19,10 +19,6 @@
             {{ quiz.questions_count ?? quiz.nbQuestions }}
           </li>
           <li>
-            <strong>Durée estimée :</strong>
-            ~{{ estimatedDuration }} min
-          </li>
-          <li>
             <strong>Catégorie :</strong>
             {{ quiz.category || 'Non définie' }}
           </li>
@@ -32,7 +28,6 @@
           <p class="rules-title">Règles rapides</p>
           <ul>
             <li>1 tentative</li>
-            <li>Temps limité</li>
             <li>Score calculé automatiquement</li>
           </ul>
         </div>
@@ -76,13 +71,6 @@ export default {
       error: '',
     }
   },
-  computed: {
-    estimatedDuration() {
-      // estimation simple : 1 minute par 3 questions
-      const q = this.quiz?.questions_count ?? this.quiz?.nbQuestions ?? 0
-      return Math.max(1, Math.round(q / 3) || 1)
-    },
-  },
   methods: {
    async loadQuiz() {
   this.loading = true
@@ -121,3 +109,4 @@ goBack() {
 <style scoped>
 @import './EtudiantQuizLobbyPage.css';
 </style>
+
