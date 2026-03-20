@@ -37,6 +37,10 @@ class QuizController extends Controller
             return;
         }
 
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return;
+        }
+
         $disk = Storage::disk('public');
         if ($disk->exists($path)) {
             $disk->delete($path);
@@ -247,6 +251,29 @@ class QuizController extends Controller
         ]);
     }
 
+    public function setImageUrl(Request $request, Quiz $quiz): JsonResponse
+    {
+        if (!$this->canManageQuiz($quiz)) {
+            return response()->json(['error' => 'Non autorise'], 403);
+        }
+
+        $validated = $request->validate([
+            'image_url' => 'required|string|max:2048|url',
+        ]);
+
+        $oldPath = $quiz->image_path;
+        $quiz->image_path = trim($validated['image_url']);
+        $quiz->save();
+
+        $this->deleteQuizImageFile($oldPath);
+
+        return response()->json([
+            'message' => 'URL image du quiz mise a jour',
+            'image' => $quiz->image,
+            'quiz' => $quiz->fresh()->load(['categoryRelation'])->loadCount('questions'),
+        ]);
+    }
+
     public function deleteImage(Quiz $quiz): JsonResponse
     {
         if (!$this->canManageQuiz($quiz)) {
@@ -305,25 +332,64 @@ class QuizController extends Controller
         }
 
         $data = $request->validate([
+            'type' => 'required|in:QCM,TF,FILL_IN',
             'texte' => 'required|string',
-            'choixA' => 'required|string',
-            'choixB' => 'required|string',
-            'choixC' => 'required|string',
-            'choixD' => 'required|string',
-            'bonneReponse' => 'required|in:A,B,C,D',
             'explication' => 'nullable|string',
+            'bonneReponse' => 'nullable|string', // QCM is A,B,C,D; TF is Vrai,Faux
         ]);
 
+        $type = $data['type'];
+        $metadata = [];
+
+        // 2. 根据类型分流处理不同的结构
+        switch ($type) {
+            case 'QCM':
+                // 只有 QCM 强制要求 A,B,C,D
+                $qcmData = $request->validate([
+                    'choixA' => 'required|string',
+                    'choixB' => 'required|string',
+                    'choixC' => 'required|string',
+                    'choixD' => 'required|string',
+                    'bonneReponse' => 'required|in:A,B,C,D',
+                ]);
+                $metadata = $qcmData; // 包含选项和正确答案
+                break;
+
+            case 'TF':
+                // 对错题：后端统一结构，前端只需传 A 或 B
+                $tfData = $request->validate([
+                    'bonneReponse' => 'required|in:A,B',
+                ]);
+                $metadata = [
+                    'options' => [
+                        ['label' => 'Vrai', 'value' => 'A'],
+                        ['label' => 'Faux', 'value' => 'B']
+                    ],
+                    'bonneReponse' => $tfData['bonneReponse']
+                ];
+                break;
+
+            case 'FILL_IN':
+                // 兼容单项和多项填空
+                $fillInData = $request->validate([
+                    // blanks 是一个数组，每一项代表一个填空位
+                    'blanks' => 'required|array|min:1',
+                    'blanks.*.accepted_answers' => 'required|array|min:1',
+                    'blanks.*.accepted_answers.*' => 'string',
+                    'case_sensitive' => 'boolean',
+                ]);
+
+                $metadata = [
+                    'blanks' => $fillInData['blanks'], // 结构：[{accepted_answers: ['O2', 'o2']}, ...]
+                    'case_sensitive' => $fillInData['case_sensitive'] ?? false,
+                ];
+                break;
+        }
+
         $question = $quiz->questions()->create([
-            'type' => 'QCM',
+            'type' => $data['type'],
             'texte' => $data['texte'],
-            'metadata' => [
-                'choixA' => $data['choixA'],
-                'choixB' => $data['choixB'],
-                'choixC' => $data['choixC'],
-                'choixD' => $data['choixD'],
-                'bonneReponse' => $data['bonneReponse'],
-            ],
+            'metadata' => $metadata,
             'explanation' => $data['explication'] ?? null,
         ]);
 
@@ -339,26 +405,59 @@ class QuizController extends Controller
             return response()->json(['error' => 'Interdit'], 403);
         }
 
-        $data = $request->validate([
+        // 1. 基础验证
+        $baseData = $request->validate([
+            'type' => 'required|in:QCM,TF,FILL_IN', // 允许修改题型
             'texte' => 'required|string',
-            'choixA' => 'required|string',
-            'choixB' => 'required|string',
-            'choixC' => 'required|string',
-            'choixD' => 'required|string',
-            'bonneReponse' => 'required|in:A,B,C,D',
             'explication' => 'nullable|string',
         ]);
 
+        $type = $baseData['type'];
+        $metadata = [];
+
+        // 2. 根据类型重新组装 metadata
+        switch ($type) {
+            case 'QCM':
+                $qcmData = $request->validate([
+                    'choixA' => 'required|string',
+                    'choixB' => 'required|string',
+                    'choixC' => 'required|string',
+                    'choixD' => 'required|string',
+                    'bonneReponse' => 'required|in:A,B,C,D',
+                ]);
+                $metadata = $qcmData;
+                break;
+
+            case 'TF':
+                $tfData = $request->validate([
+                    'bonneReponse' => 'required|in:A,B',
+                ]);
+                $metadata = [
+                    'options' => [['label' => 'Vrai', 'value' => 'A'], ['label' => 'Faux', 'value' => 'B']],
+                    'bonneReponse' => $tfData['bonneReponse']
+                ];
+                break;
+
+            case 'FILL_IN':
+                $fillInData = $request->validate([
+                    'blanks' => 'required|array|min:1',
+                    'blanks.*.accepted_answers' => 'required|array|min:1',
+                    'blanks.*.accepted_answers.*' => 'string',
+                    'case_sensitive' => 'boolean',
+                ]);
+                $metadata = [
+                    'blanks' => $fillInData['blanks'],
+                    'case_sensitive' => $fillInData['case_sensitive'] ?? false,
+                ];
+                break;
+        }
+
+        // 3. 执行更新
         $question->update([
-            'texte' => $data['texte'],
-            'metadata' => [
-                'choixA' => $data['choixA'],
-                'choixB' => $data['choixB'],
-                'choixC' => $data['choixC'],
-                'choixD' => $data['choixD'],
-                'bonneReponse' => $data['bonneReponse'],
-            ],
-            'explanation' => $data['explication'] ?? null,
+            'type' => $type,
+            'texte' => $baseData['texte'],
+            'metadata' => $metadata,
+            'explanation' => $baseData['explication'] ?? null,
         ]);
 
         return response()->json($question);
@@ -378,7 +477,7 @@ class QuizController extends Controller
     }
 
     /**
-     * RECHERCHE AVANCÃ‰E (POSTGRESQL)
+     * RECHERCHE
      */
     public function search(Request $request): JsonResponse
     {
@@ -386,23 +485,26 @@ class QuizController extends Controller
             $request->validate(['q' => 'required|string|min:2|max:100']);
             $term = $request->input('q');
 
+            // 🎯 修复：去掉 Join，改用 whereHas 搜索关联表，防止字段污染
             $quizzes = Quiz::query()
-                ->join('categories', 'quizzes.category_id', '=', 'categories.id')
-                ->whereRaw('quizzes.is_public IS TRUE')
+                ->whereRaw('is_public IS TRUE')
                 ->where(function ($query) use ($term) {
-                    $query->whereRaw("quizzes.search_vector @@ websearch_to_tsquery('french', ?)", [$term])
-                        ->orWhere('quizzes.titre', 'ILIKE', "%{$term}%")
-                        ->orWhere('quizzes.description', 'ILIKE', "%{$term}%")
-                        ->orWhere('categories.name', 'ILIKE', "%{$term}%")
-                        ->orWhereRaw("similarity(quizzes.titre, ?) > 0.3", [$term]);
+                    $query->whereRaw("search_vector @@ websearch_to_tsquery('french', ?)", [$term])
+                        ->orWhere('titre', 'ILIKE', "%{$term}%")
+                        ->orWhere('description', 'ILIKE', "%{$term}%")
+                        // 🎯 优雅地搜索分类名
+                        ->orWhereHas('categoryRelation', function($q) use ($term) {
+                            $q->where('name', 'ILIKE', "%{$term}%");
+                        })
+                        ->orWhereRaw("similarity(titre, ?) > 0.3", [$term]);
                 })
-                ->orderByRaw("ts_rank(quizzes.search_vector, websearch_to_tsquery('french', ?)) DESC", [$term])
+                ->orderByRaw("ts_rank(search_vector, websearch_to_tsquery('french', ?)) DESC", [$term])
+                // 🎯 确保只选择 Quiz 表的字段
                 ->select([
-                    'quizzes.id', 'quizzes.titre', 'quizzes.description', 'quizzes.category_id',
-                    'quizzes.code_quiz', 'quizzes.education_level', 'quizzes.is_public', 'quizzes.created_at',
-                    'quizzes.plays_count', 'quizzes.image_path'
+                    'id', 'titre', 'description', 'category_id',
+                    'code_quiz', 'education_level', 'is_public', 'created_at',
+                    'plays_count', 'image_path'
                 ])
-                ->selectRaw("ts_headline('french', coalesce(quizzes.description, ''), websearch_to_tsquery('french', ?), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as description_highlight", [$term])
                 ->with(['categoryRelation:id,name'])
                 ->withCount('questions')
                 ->limit(20)
@@ -419,13 +521,17 @@ class QuizController extends Controller
      */
     public function findByCode(string $code): JsonResponse
     {
+        // 🎯 修复：统一使用 categoryRelation 避免与可能存在的 category 字段冲突
         $quiz = Quiz::where('code_quiz', strtoupper($code))
-            ->with(['category'])
+            ->with(['categoryRelation:id,name']) // 只取需要的字段
             ->withCount('questions')
             ->first();
 
-        if (!$quiz) return response()->json(['error' => 'Quiz introuvable'], 404);
+        if (!$quiz) {
+            return response()->json(['error' => 'Quiz introuvable'], 404);
+        }
 
+        // 确保返回的是干净的 Quiz 模型数据
         return response()->json($quiz);
     }
 

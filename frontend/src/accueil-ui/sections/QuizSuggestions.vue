@@ -74,7 +74,6 @@ const prevSlide = () => {
 
 const getCardStyle = (index) => {
     if (quizzes.value.length === 0) return {};
-
     let diff = index - currentIndex.value;
     if (diff < 0) diff += quizzes.value.length;
 
@@ -87,6 +86,13 @@ const getCardStyle = (index) => {
         pointerEvents: diff === 0 ? 'auto' : 'none',
         transition: 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
     };
+};
+
+const onQuizImageError = (event) => {
+    const img = event?.target;
+    if (!img || img.dataset.fallbackApplied === '1') return;
+    img.dataset.fallbackApplied = '1';
+    img.src = '/images/Black_BlitzzQuiz 1.png';
 };
 
 const handleWheel = (e) => {
@@ -210,7 +216,7 @@ onUnmounted(() => {
                 >
                     <div class="quiz-card" @click="handleCardClick(quiz.id)" style="cursor: pointer;">
                         <div class="card-image-container">
-                            <img :src="quiz.image" :alt="quiz.title" draggable="false" />
+                            <img :src="quiz.image" :alt="quiz.title" draggable="false" @error="onQuizImageError" />
                         </div>
                         <div class="card-info">
                             <h3>{{ quiz.title }}</h3>
@@ -233,4 +239,8 @@ onUnmounted(() => {
 
 <style scoped>
 @import '../accueil-ui.css';
+
+.carousel-container {
+    overflow: visible;
+}
 </style>

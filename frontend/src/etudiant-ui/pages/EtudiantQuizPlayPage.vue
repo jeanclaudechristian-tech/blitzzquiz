@@ -107,7 +107,7 @@ export default {
       answers: [],
       loading: false,
       error: '',
-      finishing: false, // <--- nouveau flag
+      finishing: false,
     }
   },
   computed: {
@@ -164,10 +164,8 @@ export default {
     nextQuestion() {
       if (this.finishing) return
 
-      // rien choisi et pas en review → on ne fait rien
       if (!this.selectedChoice && !this.inReview) return
 
-      // 1er clic après le choix → verrouiller la réponse + montrer le feedback
       if (!this.inReview) {
         this.answers[this.currentIndex] = this.selectedChoice
         this.lockedChoice = true
@@ -176,7 +174,6 @@ export default {
         return
       }
 
-      // 2e clic → question suivante ou fin
       if (this.currentIndex < this.questions.length - 1) {
         this.currentIndex += 1
         this.selectedChoice = ''

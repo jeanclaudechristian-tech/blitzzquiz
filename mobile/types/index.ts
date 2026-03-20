@@ -91,7 +91,8 @@ export interface Result {
 }
 
 export interface QuestionModuleProps {
-    question: Question;
-    onAnswer: (answer: any, isCorrect: boolean) => void;
-    disabled?: boolean; // 答完后禁用，防止重复点击
+    question: any; // 或者具体的 Question 类型
+    // 🎯 将 isCorrect: boolean 修改为 pointsEarned: number
+    onAnswer: (answer: any, pointsEarned: number) => void;
+    disabled: boolean;
 }

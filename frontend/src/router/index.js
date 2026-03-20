@@ -214,18 +214,21 @@ router.beforeEach((to, from, next) => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAuthenticated = !!user.id;
   const userRole = user.role;
+  const isSuperAdmin = user.is_super === true;
 
-  if (to.path.startsWith("/admin")) {
+  if (to.path === "/admin/super") {
+    if (isAuthenticated && userRole === "ADMIN" && isSuperAdmin) {
+      next();
+    } else if (isAuthenticated && userRole === "ADMIN") {
+      next("/admin");
+    } else {
+      next("/connexion");
+    }
+  } else if (to.path.startsWith("/admin")) {
     if (isAuthenticated && userRole === "ADMIN") {
       next();
     } else {
       next("/connexion");
-    }
-  } else if (to.path === "/admin/super") {
-    if (user.role === "ADMIN") {
-      next();
-    } else {
-      next("/admin");
     }
   } else {
     next();

@@ -1,100 +1,93 @@
 <template>
   <div class="super-admin-view">
     <AppHeader />
+
     <main class="super-main">
       <header class="super-header">
-        <div class="badge-container">
-          <span class="super-badge">🛡️ Mode Super Admin</span>
-        </div>
-        <h1>Panneau Super Administrateur</h1>
-        <p class="subtitle">Accès complet et vue de tous les rôles</p>
+        <span class="super-badge">
+          <span class="badge-dot"></span>
+          Super admin
+        </span>
+        <h1>Panneau super administrateur</h1>
+        <p class="subtitle">Configuration avancée et gestion globale de la plateforme.</p>
       </header>
 
       <section class="view-switcher">
-        <h2>🔄 Changer de vue</h2>
+        <h2>Changer de vue</h2>
         <div class="switch-grid">
-          <button type="button" class="switch-btn student" @click="switchToStudent">
-            <span class="switch-icon">🎓</span>
-            <span class="switch-label">Vue Étudiant</span>
-            <span class="switch-desc">Tester l'expérience étudiant</span>
+          <button type="button" class="switch-btn" @click="switchToStudent">
+            <span class="material-symbols-outlined switch-icon" aria-hidden="true">school</span>
+            <span class="switch-label">Vue étudiant</span>
+            <span class="switch-desc">Tester le parcours étudiant.</span>
           </button>
-          <button type="button" class="switch-btn teacher" @click="switchToTeacher">
-            <span class="switch-icon">👨‍🏫</span>
-            <span class="switch-label">Vue Enseignant</span>
-            <span class="switch-desc">Tester la création de quiz</span>
+
+          <button type="button" class="switch-btn" @click="switchToTeacher">
+            <span class="material-symbols-outlined switch-icon" aria-hidden="true">cast_for_education</span>
+            <span class="switch-label">Vue enseignant</span>
+            <span class="switch-desc">Tester la création et la gestion des quiz.</span>
           </button>
-          <button type="button" class="switch-btn admin" @click="goToAdminDashboard">
-            <span class="switch-icon">⚙️</span>
-            <span class="switch-label">Dashboard Admin</span>
-            <span class="switch-desc">Retour au tableau de bord</span>
+
+          <button type="button" class="switch-btn" @click="goToAdminDashboard">
+            <span class="material-symbols-outlined switch-icon" aria-hidden="true">dashboard</span>
+            <span class="switch-label">Retour admin</span>
+            <span class="switch-desc">Revenir au tableau principal.</span>
           </button>
         </div>
       </section>
 
       <section class="full-access">
-        <h2>🔓 Accès complet</h2>
+        <h2>Portée des droits</h2>
         <div class="access-list">
-          <div class="access-item">
-            <span class="access-icon">✅</span>
+          <article class="access-item">
+            <span class="material-symbols-outlined access-icon">check_circle</span>
             <div class="access-content">
               <h3>Tous les quiz</h3>
-              <p>Accès et modification de tous les quiz de la plateforme</p>
+              <p>Consultation et modification sur l'ensemble du catalogue.</p>
             </div>
-          </div>
-          <div class="access-item">
-            <span class="access-icon">✅</span>
+          </article>
+
+          <article class="access-item">
+            <span class="material-symbols-outlined access-icon">check_circle</span>
             <div class="access-content">
               <h3>Tous les utilisateurs</h3>
-              <p>Gestion complète des comptes utilisateurs</p>
+              <p>Gestion complète des comptes, rôles et accès.</p>
             </div>
-          </div>
-          <div class="access-item">
-            <span class="access-icon">✅</span>
+          </article>
+
+          <article class="access-item">
+            <span class="material-symbols-outlined access-icon">check_circle</span>
             <div class="access-content">
               <h3>Tous les groupes</h3>
-              <p>Consultation et modification de tous les groupes</p>
+              <p>Visibilité et contrôle sur les groupes de la plateforme.</p>
             </div>
-          </div>
-          <div class="access-item">
-            <span class="access-icon">✅</span>
-            <div class="access-content">
-              <h3>Statistiques globales</h3>
-              <p>Rapports détaillés sur toutes les activités</p>
-            </div>
-          </div>
+          </article>
         </div>
       </section>
 
       <section class="admin-invitation">
-        <h2>✉️ Inviter un Administrateur</h2>
-        <p class="subtitle">Promouvoir un utilisateur existant ou créer un nouveau compte admin</p>
+        <h2>Inviter un administrateur</h2>
+        <p class="subtitle">Promotion d'un compte existant ou création d'un nouveau compte admin.</p>
 
         <div class="invitation-form">
           <input
-              v-model="inviteEmail"
-              type="email"
-              placeholder="Email du futur administrateur"
-              class="invitation-input"
-              :disabled="isInviting"
+            v-model="inviteEmail"
+            type="email"
+            placeholder="Email du futur administrateur"
+            class="invitation-input"
+            :disabled="isInviting"
           />
+
           <button
-              @click="handleInviteAdmin"
-              class="invitation-btn"
-              :disabled="isInviting || !inviteEmail"
+            type="button"
+            class="invitation-btn"
+            :disabled="isInviting || !inviteEmail"
+            @click="handleInviteAdmin"
           >
-            <span v-if="!isInviting">Envoyer l'invitation</span>
-            <span v-else class="mini-spinner"></span>
+            {{ isInviting ? 'Envoi...' : "Envoyer l'invitation" }}
           </button>
         </div>
-        <p v-if="inviteMessage" :class="['message', inviteStatus]">{{ inviteMessage }}</p>
-      </section>
 
-      <section class="quick-test">
-        <h2>🧪 Test rapide</h2>
-        <p>Testez n'importe quel quiz en un clic</p>
-        <button type="button" class="test-btn" @click="testQuiz">
-          Choisir un quiz à tester
-        </button>
+        <p v-if="inviteMessage" :class="['message', inviteStatus]">{{ inviteMessage }}</p>
       </section>
     </main>
   </div>
@@ -102,57 +95,47 @@
 
 <script>
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
-import { adminService } from '@/api/admin';
+import { adminService } from '@/api/admin'
 
 export default {
   name: 'SuperAdminView',
-  components: {
-    AppHeader
-  },
+  components: { AppHeader },
   data() {
     return {
       inviteEmail: '',
       isInviting: false,
       inviteMessage: '',
-      inviteStatus: '' // 'success' 或 'error'
+      inviteStatus: '',
     }
   },
   methods: {
     switchToStudent() {
-      // TODO (Laravel) : Activer temporairement la vue étudiant pour le super admin
-      // Stocker dans session : { superAdminMode: true, currentView: 'STUDENT' }
       this.$router.push('/etudiant')
     },
     switchToTeacher() {
-      // TODO (Laravel) : Activer temporairement la vue enseignant pour le super admin
-      // Stocker dans session : { superAdminMode: true, currentView: 'TEACHER' }
       this.$router.push('/enseignant')
     },
     goToAdminDashboard() {
       this.$router.push('/admin')
     },
     async handleInviteAdmin() {
-      if (!this.inviteEmail) return;
-      this.isInviting = true;
+      if (!this.inviteEmail || this.isInviting) return
+      this.isInviting = true
+      this.inviteMessage = ''
 
       try {
-        // 调用你新创的 admin.js 接口
-        const response = await adminService.inviteAdmin(this.inviteEmail);
-        this.inviteStatus = 'success';
-        this.inviteMessage = "L'invitation a été envoyée avec succès !";
-        this.inviteEmail = '';
+        await adminService.inviteAdmin(this.inviteEmail.trim())
+        this.inviteStatus = 'success'
+        this.inviteMessage = "Invitation envoyée avec succès."
+        this.inviteEmail = ''
       } catch (error) {
-        this.inviteStatus = 'error';
-        this.inviteMessage = error.response?.data?.message || "Erreur d'invitation";
+        this.inviteStatus = 'error'
+        this.inviteMessage = error?.response?.data?.message || "Erreur lors de l'invitation."
       } finally {
-        this.isInviting = false;
+        this.isInviting = false
       }
     },
-    testQuiz() {
-      // TODO (Laravel) : Afficher une modal avec liste des quiz disponibles
-      this.$router.push('/etudiant/catalogue')
-    }
-  }
+  },
 }
 </script>
 

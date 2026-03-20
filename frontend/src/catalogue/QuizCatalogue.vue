@@ -10,6 +10,18 @@ const showQuizModal = ref(false);
 const selectedQuizId = ref(null);
 const router = useRouter();
 const route = useRoute();
+const scopeMine = computed(() => route.query.scope === 'mine');
+
+const currentUserId = computed(() => {
+    try {
+        const raw = localStorage.getItem('user');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed?.id ?? null;
+    } catch {
+        return null;
+    }
+});
 
 // --- ÉTATS ---
 const quizzes = ref([]);
@@ -111,7 +123,8 @@ const loadQuizzes = async () => {
                 titre: q.titre,
                 category: catName || 'Général',
                 image: resolveQuizImage(q),
-                education_level: q.education_level || 'Tous'
+                education_level: q.education_level || 'Tous',
+                owner_id: q.owner_id ?? q.ownerId ?? null
             };
         });
     } catch (e) {
@@ -142,10 +155,16 @@ const filteredQuizzes = computed(() => {
 
         return matchCat && matchLvl;
     });
+    if (scopeMine.value && currentUserId.value != null) {
+        result = result.filter((q) => Number(q.owner_id) === Number(currentUserId.value));
+    }
     return sortBy.value === 'recent' ? result.slice().reverse() : result;
 });
 
 const dynamicTitle = computed(() => {
+    if (scopeMine.value) {
+        return 'MES QUIZ';
+    }
     let title = selectedCategory.value ? `QUIZ ${selectedCategory.value}` : 'TOUS LES QUIZ';
     if (selectedLevel.value !== 'Tous') title += ` - ${selectedLevel.value}`;
     return title.toUpperCase();
@@ -819,3 +838,4 @@ onUnmounted(() => {
     transform: translateY(100%);
 }
 </style>
+

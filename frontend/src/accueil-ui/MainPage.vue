@@ -12,16 +12,36 @@
               Défiez vos amis, testez vos connaissances et grimpez dans le classement.
             </p>
             <div class="hero-actions">
-              <button class="btn btn-primary" @click="$router.push('/catalogue')">Catalogue</button> 
+              <button class="btn btn-primary" @click="$router.push('/catalogue')">Catalogue</button>
               <button class="btn btn-secondary" @click="$router.push('/inscription')">S'inscrire</button>
             </div>
           </div>
         </main>
 
         <main v-else class="welcome-section">
-          <div class="welcome-container">
-            <h1 class="welcome-title">BONJOUR, <span class="text-blue">{{ userName }}</span></h1>
-            <p class="welcome-subtitle">Prêt à reprendre l'apprentissage là où tu t'es arrêté ?</p>
+          <div class="welcome-container welcome-remodel">
+            <div class="welcome-avatar" aria-hidden="true">
+              <svg
+                class="welcome-avatar-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="52"
+                height="52"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <h1 class="welcome-title-remodel">Bonjour, <span>{{ userName }}</span> !</h1>
+            <p class="welcome-subtitle-remodel">Prêt à reprendre l'apprentissage là où tu t'es arrêté ?</p>
+            <div class="welcome-actions-remodel">
+              <button class="btn btn-primary" @click="$router.push('/catalogue')">Explorer les quiz</button>
+            </div>
           </div>
         </main>
       </div>
@@ -130,34 +150,34 @@ export default {
   },
   methods: {
     checkUserAuth() {
-      const token = localStorage.getItem('token');
-      const userStr = localStorage.getItem('user');
-      
+      const token = localStorage.getItem('token')
+      const userStr = localStorage.getItem('user')
+
       if (token && token !== 'null' && token !== 'undefined') {
-        this.isLoggedIn = true;
+        this.isLoggedIn = true
         if (userStr) {
           try {
-            const userObj = JSON.parse(userStr);
-            this.userName = userObj.username || userObj.email?.split('@')[0] || 'Étudiant';
-          } catch (e) { 
-            this.userName = 'Étudiant'; 
+            const userObj = JSON.parse(userStr)
+            this.userName = userObj.username || userObj.email?.split('@')[0] || 'Étudiant'
+          } catch (e) {
+            this.userName = 'Étudiant'
           }
         }
       } else {
-        this.isLoggedIn = false;
-        this.userName = '';
+        this.isLoggedIn = false
+        this.userName = ''
       }
-    }
+    },
   },
   mounted() {
-    this.checkUserAuth();
+    this.checkUserAuth()
   },
-  // 🎯 L'UNIQUE AJOUT : Met à jour "Bonjour X" dès que tu reviens de la page de connexion
+  // Met à jour "Bonjour X" quand tu reviens de la page de connexion.
   watch: {
-    '$route'() {
-      this.checkUserAuth();
-    }
-  }
+    $route() {
+      this.checkUserAuth()
+    },
+  },
 }
 </script>
 
@@ -168,7 +188,16 @@ export default {
   width: 100%;
 }
 
-/* === 🎯 UNIFORMISATION DES LIENS (Bleu, Gras, Underline Hover Only) === */
+/* Ajustements de layout sur la section bienvenue. */
+.home-page .welcome-section {
+  padding-bottom: 84px;
+}
+
+.home-page .suggestion-section {
+  margin-top: 0;
+}
+
+/* Uniformisation des liens (bleu, gras, underline au hover). */
 .text-link-blue {
   color: var(--color-blue) !important;
   font-weight: 700 !important;
@@ -188,7 +217,78 @@ export default {
   margin-bottom: 20px;
 }
 
-/* === FAQ STYLE (Flèches Material Design) === */
+.welcome-remodel {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 30px 28px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.welcome-avatar {
+  width: 236px;
+  height: 236px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #1f2937;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+}
+
+.welcome-avatar-icon {
+  width: 128px;
+  height: 128px;
+}
+
+.welcome-title-remodel {
+  margin: 8px 0 4px;
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(1.65rem, 3.7vw, 2.9rem);
+  line-height: 1.06;
+  color: #121212;
+  letter-spacing: 0.35px;
+}
+
+.welcome-title-remodel span {
+  color: var(--color-blue);
+}
+
+.welcome-subtitle-remodel {
+  margin: 0;
+  font-family: var(--font-base);
+  font-size: clamp(1rem, 1.8vw, 1.16rem);
+  font-weight: 500;
+  color: #4b5563;
+  max-width: 700px;
+}
+
+.welcome-actions-remodel {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.welcome-actions-remodel .btn-primary {
+  background: #f5a623;
+  color: #1a1a1a;
+}
+
+.welcome-actions-remodel .btn-primary:hover {
+  background: #e29614;
+}
+
+/* FAQ style (flèches Material Design). */
 .faq-item summary {
   display: flex;
   justify-content: space-between;
@@ -219,7 +319,7 @@ export default {
   transform: rotate(180deg);
 }
 
-/* === CTA EINSTEIN === */
+/* CTA Einstein */
 .cta-image-wrapper {
   position: relative;
   display: flex;
@@ -237,6 +337,35 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .home-page .welcome-section {
+    padding-bottom: 54px;
+  }
+
+  .welcome-remodel {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .welcome-avatar {
+    width: 204px;
+    height: 204px;
+  }
+
+  .welcome-avatar-icon {
+    width: 112px;
+    height: 112px;
+  }
+
+  .welcome-actions-remodel {
+    width: 100%;
+  }
+
+  .welcome-actions-remodel .btn-primary {
+    width: 100%;
+    max-width: 280px;
+    padding: 12px 18px;
+  }
+
   .cta-image-wrapper {
     margin-top: 20px;
     min-width: 0;

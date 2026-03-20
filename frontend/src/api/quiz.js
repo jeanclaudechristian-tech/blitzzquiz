@@ -1,6 +1,9 @@
 import api from "./Axios";
 
-const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const RAW_API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const API_ORIGIN = RAW_API_URL.endsWith("/api")
+  ? RAW_API_URL.slice(0, -4)
+  : RAW_API_URL;
 const DEFAULT_QUIZ_IMAGE = "/images/Black_BlitzzQuiz 2.svg";
 
 const hasValidToken = () => {
@@ -16,32 +19,45 @@ const normalizeCategory = (quiz) =>
     ? quiz.category.name || quiz.category.NAME || "General"
     : quiz.category || "General";
 
+const resolveAssetUrl = (value) => {
+  if (!value) return null;
+
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    // If backend returns /storage URL with a wrong host/port, re-anchor to API origin.
+    try {
+      const parsed = new URL(value);
+      if (API_ORIGIN && parsed.pathname.startsWith("/storage/")) {
+        return `${API_ORIGIN}${parsed.pathname}`;
+      }
+    } catch (_error) {
+      return value;
+    }
+    return value;
+  }
+
+  if (value.startsWith("/images/")) {
+    return value;
+  }
+
+  if (value.startsWith("/storage/")) {
+    return API_ORIGIN ? `${API_ORIGIN}${value}` : value;
+  }
+
+  if (value.startsWith("/")) {
+    return API_ORIGIN ? `${API_ORIGIN}${value}` : value;
+  }
+
+  return API_ORIGIN ? `${API_ORIGIN}/storage/${value}` : `/storage/${value}`;
+};
+
 export const resolveQuizImage = (quiz) => {
   const rawImage = quiz?.image || quiz?.image_url || quiz?.thumbnail || null;
   if (rawImage) {
-    if (rawImage.startsWith("http://") || rawImage.startsWith("https://")) {
-      return rawImage;
-    }
-
-    if (rawImage.startsWith("/images/")) {
-      return rawImage;
-    }
-
-    if (rawImage.startsWith("/")) {
-      return API_ORIGIN ? `${API_ORIGIN}${rawImage}` : rawImage;
-    }
-
-    return API_ORIGIN ? `${API_ORIGIN}/storage/${rawImage}` : `/storage/${rawImage}`;
+    return resolveAssetUrl(rawImage) || DEFAULT_QUIZ_IMAGE;
   }
 
   if (quiz?.image_path) {
-    if (quiz.image_path.startsWith("http://") || quiz.image_path.startsWith("https://")) {
-      return quiz.image_path;
-    }
-
-    return API_ORIGIN
-      ? `${API_ORIGIN}/storage/${quiz.image_path}`
-      : `/storage/${quiz.image_path}`;
+    return resolveAssetUrl(quiz.image_path) || DEFAULT_QUIZ_IMAGE;
   }
 
   return DEFAULT_QUIZ_IMAGE;
@@ -89,6 +105,14 @@ export const quizService = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+    });
+
+    return response.data;
+  },
+
+  async setImageUrl(quizId, imageUrl) {
+    const response = await api.post(`/quizzes/${quizId}/image-url`, {
+      image_url: imageUrl,
     });
 
     return response.data;

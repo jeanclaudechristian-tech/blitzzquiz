@@ -1,94 +1,66 @@
-import { QCMModule } from '@/app/quiz/QCMQuestion';
-import { QuestionModuleProps } from '@/types';
-import {Alert, BackHandler, Platform, StyleSheet, View} from 'react-native';
-import { SafeAreaView } from 'react-native';
-import {useQuizzes} from "@/services/QuizContext";
-import { colors } from '@/components/blitzz/tokens';
-import {useEffect, useState} from "react";
-import {useLocalSearchParams, useRouter} from "expo-router";
-import Animated, {FadeIn, FadeInUp, FadeOut} from 'react-native-reanimated';
-import { DarkButton } from '@/components/blitzz/DarkButton';
-import { LoadingScreen } from '@/components/blitzz/LoadingScreen';
-import { Stack } from 'expo-router'; // 引入 Stack 来锁定 iOS 侧滑
-import { TouchableOpacity, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, BackHandler, Platform, StyleSheet, View, SafeAreaView, TouchableOpacity, Text } from 'react-native';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import Animated, { FadeIn, FadeOut, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
-// 🎯 组件映射字典
+import { useQuizzes } from "@/services/QuizContext";
+import { colors } from '@/components/blitzz/tokens';
+import { DarkButton } from '@/components/blitzz/DarkButton';
+import { LoadingScreen } from '@/components/blitzz/LoadingScreen';
+
+// 🎯 导入所有题型组件
+import { QCMModule } from '@/app/quiz/QCMQuestion';
+import { TFModule } from '@/app/quiz/TFQuestion';       // 确保路径正确
+import { FillInModule } from '@/app/quiz/FillInQuestion'; // 确保路径正确
+import { QuestionModuleProps } from '@/types';
+
+// 🎯 统一组件映射表
 const MODULE_MAP: Record<string, React.FC<QuestionModuleProps>> = {
     'QCM': QCMModule,
-    // 'TRUE_FALSE': TrueFalseModule,
+    'TF': TFModule,
+    'FILL_IN': FillInModule,
 };
 
 export default function QuizPlayer() {
-    const [isVisible, setIsVisible] = useState(true);
     const router = useRouter();
+    const { currentQuestions, submitScore } = useQuizzes();
 
-    const handleNav = (path: string, params?: any) => {
-        setIsVisible(false);
-        setTimeout(() => {
-            if (params) {
-                router.push({ pathname: path as any, params });
-            } else {
-                router.push(path as any);
-            }
-        }, 600);
-    };
-
-    const handleExitAttempt = () => {
-        Alert.alert(
-            "Quitter l'épreuve ?",
-            "Votre progression sera perdue.",
-            [
-                { text: "Rester", style: "cancel" },
-                {
-                    text: "Quitter",
-                    onPress: () => handleNav("/(tabs)/Home"),
-                    style: "destructive"
-                }
-            ]
-        );
-        return true;
-    };
-
-    // 🎯 2. 安卓物理键监听：直接引用 handleExitAttempt
-    useEffect(() => {
-        const subscription = BackHandler.addEventListener('hardwareBackPress', handleExitAttempt);
-        return () => subscription.remove();
-    }, []);
-
-    const [hasAnswered, setHasAnswered] = useState(false);
-    const [lastAnswerCorrect, setLastAnswerCorrect] = useState(false);
-
-    const { currentQuestions } = useQuizzes();
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [score, setScore] = useState(0); // 💡 支持浮点数总分
+    const [hasAnswered, setHasAnswered] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
 
     const currentQuestion = currentQuestions[currentIndex];
 
-    const [score, setScore] = useState(0);
-    const { submitScore } = useQuizzes();
+    // 退出确认逻辑
+    const handleExitAttempt = () => {
+        Alert.alert("Quitter l'épreuve ?", "Votre progression sera perdue.", [
+            { text: "Rester", style: "cancel" },
+            { text: "Quitter", onPress: () => router.push("/(tabs)/Home"), style: "destructive" }
+        ]);
+        return true;
+    };
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    useEffect(() => {
+        const sub = BackHandler.addEventListener('hardwareBackPress', handleExitAttempt);
+        return () => sub.remove();
+    }, []);
 
-    // 根据类型选择组件，找不到则回退到 QCM
-    const ActiveModule = MODULE_MAP[currentQuestion.type] || QCMModule;
-
-    const handleAnswer = (answer: any, isCorrect: boolean) => {
-        // 1. 记录得分（但不立即跳下一题）
-        if (isCorrect) setScore(prev => prev + 1);
-        setLastAnswerCorrect(isCorrect);
-        setHasAnswered(true); // ✅ 激活“下一题”按钮的位面
+    // 🎯 处理答案收集：无论是 1 分还是 0.5 分，直接累加
+    const handleAnswer = (answer: any, pointsEarned: number) => {
+        setScore(prev => prev + pointsEarned);
+        setHasAnswered(true);
     };
 
     const nextStep = async () => {
         if (currentIndex < currentQuestions.length - 1) {
-            // 前往下一题
             setHasAnswered(false);
             setCurrentIndex(prev => prev + 1);
         } else {
-            // 🏁 最终结算
-            // ✅ 开启加载动画
             setIsSubmitting(true);
-
+            // 🏁 最终百分比结算：(总得分 / 总题数) * 100
             const finalPercentage = Math.round((score / currentQuestions.length) * 100);
             const success = await submitScore(currentQuestion.quiz_id, finalPercentage);
 
@@ -102,23 +74,23 @@ export default function QuizPlayer() {
                 });
             } else {
                 setIsSubmitting(false);
-                Alert.alert("Erreur", "La soumission a échoué. Veuillez réessayer.");
+                Alert.alert("Erreur", "La soumission a échoué.");
             }
         }
     };
 
+    if (!currentQuestion) return <LoadingScreen />;
+
+    const ActiveModule = MODULE_MAP[currentQuestion.type] || QCMModule;
+
     return (
         <SafeAreaView style={styles.container}>
             <Stack.Screen options={{ gestureEnabled: false }} />
-            {isSubmitting ? (
-                // ✅ 提交期间，展示呼吸灯加载位面
-                <LoadingScreen />
-            ) : (
+            {isSubmitting ? <LoadingScreen /> : (
                 <View style={{ flex: 1 }}>
-                    {/* 🎯 4. 顶部 Header 位面 */}
                     {Platform.OS === 'ios' && (
                         <View style={styles.header}>
-                            <TouchableOpacity onPress={handleExitAttempt} style={styles.backButton}>
+                            <TouchableOpacity onPress={handleExitAttempt}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Ionicons name="chevron-back" size={24} color={colors.primary} />
                                     <Text style={styles.backText}>Annuler</Text>
@@ -144,7 +116,7 @@ export default function QuizPlayer() {
                             {hasAnswered && (
                                 <Animated.View entering={FadeInUp}>
                                     <DarkButton
-                                        label={currentIndex === currentQuestions.length - 1 ? "Terminer l'épreuve" : "Question Suivante"}
+                                        label={currentIndex === currentQuestions.length - 1 ? "Terminer" : "Suivant"}
                                         onPress={nextStep}
                                     />
                                 </Animated.View>
@@ -152,7 +124,6 @@ export default function QuizPlayer() {
                         </View>
                     </View>
                 </View>
-
             )}
         </SafeAreaView>
     );

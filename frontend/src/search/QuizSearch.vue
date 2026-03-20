@@ -87,10 +87,8 @@ function goToQuiz(quiz) {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const role = user?.role
 
-  if (role === 'STUDENT') {
-    router.push(`/etudiant/quiz/${quiz.id}`)
-  } else if (role === 'TEACHER' || role === 'ADMIN') {
-    router.push(`/enseignant/quiz/${quiz.id}/editer`)
+  if (role === 'STUDENT' || role === 'TEACHER' || role === 'ADMIN') {
+    router.push(`/etudiant/quiz/${quiz.id}/jouer`)
   }
 }
 </script>

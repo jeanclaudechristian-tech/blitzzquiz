@@ -27,6 +27,7 @@ const previewCode = ref(generatePreviewCode())
 const categories = ref([])
 const quizImageInput = ref(null)
 const quizImageFile = ref(null)
+const quizImageUrl = ref('')
 const quizImagePreview = ref('')
 const quizImageError = ref('')
 
@@ -49,9 +50,37 @@ const revokePreview = () => {
   }
 }
 
+const isValidHttpUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch (_error) {
+    return false
+  }
+}
+
+const isValidDimensions = (width, height) =>
+  width >= MIN_IMAGE_WIDTH &&
+  height >= MIN_IMAGE_HEIGHT &&
+  width <= MAX_IMAGE_WIDTH &&
+  height <= MAX_IMAGE_HEIGHT
+
+const loadImageDimensionsFromUrl = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => {
+      resolve({ width: image.width, height: image.height })
+    }
+    image.onerror = () => {
+      reject(new Error('invalid_image_url'))
+    }
+    image.src = url
+  })
+
 const resetQuizImage = () => {
   revokePreview()
   quizImageFile.value = null
+  quizImageUrl.value = ''
   quizImagePreview.value = ''
   quizImageError.value = ''
   if (quizImageInput.value) {
@@ -104,10 +133,59 @@ const onQuizImageSelected = async (event) => {
 
     revokePreview()
     quizImageFile.value = file
+    quizImageUrl.value = ''
     quizImagePreview.value = objectUrl
   } catch (error) {
     quizImageError.value = 'Impossible de lire cette image.'
     resetQuizImage()
+  }
+}
+
+const validateQuizImageUrl = async (value, applyPreview = true) => {
+  const imageUrl = (value || '').trim()
+  if (!imageUrl) return null
+
+  if (!isValidHttpUrl(imageUrl)) {
+    throw new Error('invalid_url')
+  }
+
+  const { width, height } = await loadImageDimensionsFromUrl(imageUrl)
+  if (!isValidDimensions(width, height)) {
+    throw new Error('invalid_dimensions')
+  }
+
+  if (applyPreview) {
+    revokePreview()
+    quizImageFile.value = null
+    if (quizImageInput.value) {
+      quizImageInput.value.value = ''
+    }
+    quizImagePreview.value = imageUrl
+  }
+
+  return imageUrl
+}
+
+const onQuizImageUrlBlur = async () => {
+  quizImageError.value = ''
+  if (!quizImageFile.value) {
+    revokePreview()
+    quizImagePreview.value = ''
+  }
+  try {
+    const imageUrl = await validateQuizImageUrl(quizImageUrl.value, true)
+    if (!imageUrl) return
+  } catch (error) {
+    if (error.message === 'invalid_url') {
+      quizImageError.value = 'URL invalide. Utilise une URL http(s).'
+      return
+    }
+    if (error.message === 'invalid_dimensions') {
+      quizImageError.value =
+        'Dimensions invalides. Utilise une image entre 640x360 et 4096x4096.'
+      return
+    }
+    quizImageError.value = 'Impossible de charger cette URL image.'
   }
 }
 
@@ -133,21 +211,21 @@ const setMode = (mode) => {
 const pageCopy = computed(() => {
   if (creationMode.value === 'groupe') {
     return {
-      overline: 'CREATION DE GROUPE',
-      title: 'Cree un groupe',
-      subtitle: 'Genere un code puis gere tes membres.',
+      overline: 'CRÉATION DE GROUPE',
+      title: 'Crée un groupe',
+      subtitle: 'Génère un code puis gère tes membres.',
     }
   }
 
   return {
-    overline: 'CREATION DE QUIZ',
-    title: 'Cree un quiz',
+    overline: 'CRÉATION DE QUIZ',
+    title: 'Crée un quiz',
     subtitle: 'Pose les bases puis passe aux questions.',
   }
 })
 
 const quizPrimaryLabel = computed(() =>
-  savingQuiz.value ? 'Creation...' : 'Creer et continuer',
+  savingQuiz.value ? 'Création...' : 'Créer et continuer',
 )
 
 const loadCategories = async () => {
@@ -161,13 +239,29 @@ const loadCategories = async () => {
 }
 
 const uploadQuizImageIfNeeded = async (quizId) => {
-  if (!quizImageFile.value) return true
-
   try {
-    await quizService.uploadImage(quizId, quizImageFile.value)
+    if (quizImageFile.value) {
+      await quizService.uploadImage(quizId, quizImageFile.value)
+      return true
+    }
+
+    const imageUrl = await validateQuizImageUrl(quizImageUrl.value, false)
+    if (imageUrl) {
+      await quizService.setImageUrl(quizId, imageUrl)
+    }
+
     return true
   } catch (error) {
-    console.error('Erreur upload image quiz', error.response?.data || error)
+    console.error('Erreur image quiz', error.response?.data || error)
+    if (error.message === 'invalid_url') {
+      quizError.value = 'Le quiz est cree, mais l URL image est invalide.'
+      return false
+    }
+    if (error.message === 'invalid_dimensions') {
+      quizError.value =
+        'Le quiz est cree, mais l image URL ne respecte pas les dimensions minimales.'
+      return false
+    }
     quizError.value =
       'Le quiz est cree, mais l image n a pas pu etre enregistree. Termine dans la page d edition.'
     return false
@@ -206,7 +300,7 @@ const createQuizAndContinue = async () => {
     const uploadOk = await uploadQuizImageIfNeeded(quiz.id)
 
     if (!uploadOk) {
-      router.push(`/enseignant/quiz/${quiz.id}/editer`)
+      router.push(`/enseignant/quiz/${quiz.id}/questions`)
       return
     }
 
@@ -222,7 +316,7 @@ const createQuizOnly = async () => {
   try {
     const quiz = await createQuiz()
     await uploadQuizImageIfNeeded(quiz.id)
-    router.push(`/enseignant/quiz/${quiz.id}/editer`)
+    openMyQuizzes()
   } catch (error) {
     if (error.message === 'invalid') return
     console.error('Erreur creation quiz', error.response?.data || error)
@@ -259,6 +353,25 @@ const openGroups = () => {
   router.push('/enseignant/groupes')
 }
 
+const openMyQuizzes = () => {
+  router.push({
+    path: '/catalogue',
+    query: { scope: 'mine' },
+  })
+}
+
+const headerLinkLabel = computed(() =>
+  creationMode.value === 'groupe' ? 'Mes groupes' : 'Mes quiz',
+)
+
+const onHeaderLinkClick = () => {
+  if (creationMode.value === 'groupe') {
+    openGroups()
+    return
+  }
+  openMyQuizzes()
+}
+
 onMounted(loadCategories)
 
 onBeforeUnmount(() => {
@@ -273,13 +386,12 @@ onBeforeUnmount(() => {
     <main class="teacher-create-main">
       <header class="create-header">
         <div class="header-copy">
-          <p class="page-overline">{{ pageCopy.overline }}</p>
           <h1>{{ pageCopy.title }}</h1>
           <p class="page-subtitle">{{ pageCopy.subtitle }}</p>
         </div>
 
-        <button type="button" class="header-link" @click="openGroups">
-          Mes groupes
+        <button type="button" class="header-link" @click="onHeaderLinkClick">
+          {{ headerLinkLabel }}
         </button>
       </header>
 
@@ -295,7 +407,7 @@ onBeforeUnmount(() => {
               id="quiz-title"
               v-model="quizForm.titre"
               type="text"
-              placeholder="Ex: Revision finale en mathematiques"
+              placeholder="Ex: Révision finale en mathématiques"
               required
             />
           </div>
@@ -324,10 +436,20 @@ onBeforeUnmount(() => {
               Formats: JPG, PNG, WebP. Max 5 Mo. Dimensions entre 640x360 et 4096x4096.
             </p>
 
+            <label for="quiz-image-url">Ou URL image (optionnel)</label>
+            <input
+              id="quiz-image-url"
+              v-model="quizImageUrl"
+              type="url"
+              placeholder="https://exemple.com/image-quiz.jpg"
+              @blur="onQuizImageUrlBlur"
+            />
+            <p class="field-help">Utilise un fichier local ou une URL, pas les deux.</p>
+
             <div v-if="quizImagePreview" class="image-preview">
-              <img :src="quizImagePreview" alt="Apercu image quiz" />
+              <img :src="quizImagePreview" alt="Aperçu image quiz" />
               <button type="button" class="image-clear-btn" @click="resetQuizImage">
-                Retirer l image
+                Retirer l'image
               </button>
             </div>
 
@@ -336,9 +458,9 @@ onBeforeUnmount(() => {
 
           <div class="field-row">
             <div class="field-group">
-              <label for="quiz-category">Categorie</label>
+              <label for="quiz-category">Catégorie</label>
               <select id="quiz-category" v-model="quizForm.categoryId">
-                <option value="">Choisir une categorie</option>
+                <option value="">Choisir une catégorie</option>
                 <option
                   v-for="category in categories"
                   :key="category.id"
@@ -350,19 +472,19 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="field-group">
-              <label for="quiz-level">Niveau d etude</label>
+              <label for="quiz-level">Niveau d'étude</label>
               <select id="quiz-level" v-model="quizForm.niveau">
                 <option value="">Choisir un niveau</option>
                 <option value="Primaire">Primaire</option>
                 <option value="Secondaire">Secondaire</option>
-                <option value="Collegiale">Collegiale</option>
+                <option value="Collegiale">Collégial</option>
                 <option value="Universitaire">Universitaire</option>
               </select>
             </div>
           </div>
 
           <div class="field-group field-group--wide">
-            <span class="field-label">Visibilite</span>
+            <span class="field-label">Visibilité</span>
             <div class="choice-row">
               <button
                 type="button"
@@ -378,7 +500,7 @@ onBeforeUnmount(() => {
                 :class="{ active: !quizForm.isPublic }"
                 @click="quizForm.isPublic = false"
               >
-                Prive
+                Privé
               </button>
             </div>
           </div>
@@ -414,7 +536,7 @@ onBeforeUnmount(() => {
 
           <div class="field-row field-row--group">
             <div class="field-group">
-              <span class="field-label">Visibilite</span>
+              <span class="field-label">Visibilité</span>
               <div class="choice-row">
                 <button
                   type="button"
@@ -430,7 +552,7 @@ onBeforeUnmount(() => {
                   :class="{ active: !groupForm.isPublic }"
                   @click="groupForm.isPublic = false"
                 >
-                  Prive
+                  Privé
                 </button>
               </div>
             </div>
@@ -445,7 +567,7 @@ onBeforeUnmount(() => {
 
           <div class="form-actions">
             <button type="submit" class="btn-primary" :disabled="savingGroup">
-              {{ savingGroup ? 'Creation...' : 'Creer le groupe' }}
+              {{ savingGroup ? 'Création...' : 'Créer le groupe' }}
             </button>
             <button type="button" class="btn-secondary" @click="openGroups">
               Voir mes groupes

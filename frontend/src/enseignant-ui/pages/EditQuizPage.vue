@@ -44,6 +44,16 @@
               Formats: JPG, PNG, WebP. Max 5 Mo. Dimensions entre 640x360 et 4096x4096.
             </p>
 
+            <label for="quiz-image-url">Ou URL image</label>
+            <input
+              id="quiz-image-url"
+              v-model="newImageUrl"
+              type="url"
+              placeholder="https://exemple.com/image-quiz.jpg"
+              @blur="onImageUrlBlur"
+            />
+            <p class="field-help">Utilise un fichier local ou une URL, pas les deux.</p>
+
             <div v-if="displayImage" class="image-preview">
               <img :src="displayImage" alt="Apercu image quiz" />
             </div>
@@ -68,10 +78,10 @@
               </button>
 
               <button
-                v-if="newImageFile"
+                v-if="newImageFile || newImageUrlPreview"
                 type="button"
                 class="image-action-btn"
-                @click="clearNewImage"
+                @click="clearPendingImage"
               >
                 Retirer nouvelle image
               </button>
@@ -219,6 +229,8 @@ export default {
       currentImage: '',
       newImageFile: null,
       newImagePreview: '',
+      newImageUrl: '',
+      newImageUrlPreview: '',
       removeImage: false,
       imageError: '',
     }
@@ -229,6 +241,7 @@ export default {
     },
     displayImage() {
       if (this.newImagePreview) return this.newImagePreview
+      if (this.newImageUrlPreview) return this.newImageUrlPreview
       if (this.removeImage) return ''
       return this.currentImage || ''
     },
@@ -253,12 +266,40 @@ export default {
       this.revokePreview()
       this.newImagePreview = ''
       this.newImageFile = null
-      this.imageError = ''
       this.resetInputFile()
     },
 
-    removeCurrentImage() {
+    clearNewImageUrl() {
+      this.newImageUrl = ''
+      this.newImageUrlPreview = ''
+    },
+
+    clearPendingImage() {
       this.clearNewImage()
+      this.clearNewImageUrl()
+      this.imageError = ''
+    },
+
+    isValidHttpUrl(value) {
+      try {
+        const url = new URL(value)
+        return url.protocol === 'http:' || url.protocol === 'https:'
+      } catch (_error) {
+        return false
+      }
+    },
+
+    isValidDimensions(width, height) {
+      return (
+        width >= MIN_IMAGE_WIDTH &&
+        height >= MIN_IMAGE_HEIGHT &&
+        width <= MAX_IMAGE_WIDTH &&
+        height <= MAX_IMAGE_HEIGHT
+      )
+    },
+
+    removeCurrentImage() {
+      this.clearPendingImage()
       this.removeImage = true
     },
 
@@ -279,6 +320,19 @@ export default {
         }
 
         image.src = objectUrl
+      })
+    },
+
+    async readDimensionsFromUrl(url) {
+      return new Promise((resolve, reject) => {
+        const image = new Image()
+        image.onload = () => {
+          resolve({ width: image.width, height: image.height })
+        }
+        image.onerror = () => {
+          reject(new Error('invalid_image_url'))
+        }
+        image.src = url
       })
     },
 
@@ -310,10 +364,41 @@ export default {
         this.revokePreview()
         this.newImagePreview = objectUrl
         this.newImageFile = file
+        this.clearNewImageUrl()
         this.removeImage = false
       } catch {
         this.imageError = 'Impossible de lire cette image.'
         this.clearNewImage()
+      }
+    },
+
+    async onImageUrlBlur() {
+      this.imageError = ''
+      const imageUrl = (this.newImageUrl || '').trim()
+      this.newImageUrlPreview = ''
+
+      if (!imageUrl) {
+        return
+      }
+
+      if (!this.isValidHttpUrl(imageUrl)) {
+        this.imageError = 'URL invalide. Utilise une URL http(s).'
+        return
+      }
+
+      try {
+        const { width, height } = await this.readDimensionsFromUrl(imageUrl)
+        if (!this.isValidDimensions(width, height)) {
+          this.imageError = 'Dimensions invalides. Utilise une image entre 640x360 et 4096x4096.'
+          return
+        }
+
+        this.clearNewImage()
+        this.newImageUrl = imageUrl
+        this.newImageUrlPreview = imageUrl
+        this.removeImage = false
+      } catch {
+        this.imageError = 'Impossible de charger cette URL image.'
       }
     },
 
@@ -346,7 +431,7 @@ export default {
 
         this.currentImage = quiz.image || ''
         this.removeImage = false
-        this.clearNewImage()
+        this.clearPendingImage()
 
         const { data: questions } = await api.get(`/quizzes/${id}/questions`)
         this.questionsCount = Array.isArray(questions) ? questions.length : 0
@@ -386,7 +471,14 @@ export default {
 
         await api.put(`/quizzes/${this.form.id}`, payload)
 
-        if (this.removeImage && this.currentImage && !this.newImageFile) {
+        if (this.newImageUrl.trim() && !this.newImageFile) {
+          await this.onImageUrlBlur()
+          if (!this.newImageUrlPreview) {
+            throw new Error('invalid_image_url')
+          }
+        }
+
+        if (this.removeImage && this.currentImage && !this.newImageFile && !this.newImageUrlPreview) {
           await quizService.removeImage(this.form.id)
           this.currentImage = ''
         }
@@ -394,15 +486,27 @@ export default {
         if (this.newImageFile) {
           const upload = await quizService.uploadImage(this.form.id, this.newImageFile)
           this.currentImage = upload?.image || this.currentImage
-          this.clearNewImage()
+          this.clearPendingImage()
+          this.removeImage = false
+        }
+
+        if (this.newImageUrlPreview) {
+          const result = await quizService.setImageUrl(this.form.id, this.newImageUrlPreview)
+          this.currentImage = result?.image || this.newImageUrlPreview
+          this.clearPendingImage()
           this.removeImage = false
         }
 
         this.$router.push('/enseignant')
       } catch (e) {
         console.error('Erreur mise a jour quiz', e.response?.data || e)
+        if (e.message === 'invalid_image_url' && this.imageError) {
+          this.error = this.imageError
+          return
+        }
         const imageApiError = e.response?.data?.errors?.image?.[0]
-        this.error = imageApiError || 'Erreur lors de la sauvegarde du quiz.'
+        const imageUrlApiError = e.response?.data?.errors?.image_url?.[0]
+        this.error = imageApiError || imageUrlApiError || 'Erreur lors de la sauvegarde du quiz.'
       } finally {
         this.saving = false
       }

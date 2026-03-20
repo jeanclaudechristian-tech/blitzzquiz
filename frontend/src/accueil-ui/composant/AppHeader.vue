@@ -57,7 +57,7 @@
             <a class="btn-code" @click.prevent="isCodeModalOpen = true" style="cursor: pointer;">CODE</a>
             <router-link to="/#section-hero" class="nav-link">Accueil</router-link>
             <router-link to="/catalogue" class="nav-link">Explorer</router-link> 
-            <router-link to="/#section-footer" class="nav-link">Aide</router-link>
+            <router-link v-if="!isLoggedIn" to="/#section-footer" class="nav-link">Aide</router-link>
 
             <template v-if="isLoggedIn">
               <router-link :to="userRole === 'TEACHER' ? '/enseignant/groupes' : '/etudiant/mes-groupes'"
@@ -74,7 +74,7 @@
 
             <template v-if="isLoggedIn">
               <router-link
-                  v-if="userRole === 'ADMIN' || userRole === 'TEACHER'"
+                  v-if="userRole === 'ADMIN'"
                   to="/admin"
                   class="nav-link link-admin-portal"
               >
@@ -136,7 +136,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { authService } from '@/api/auth';
 import { quizService } from '@/api/quiz';
 import './AppHeader.css';
@@ -144,7 +144,6 @@ import GuestModal from '../composant/GuestModal.vue';
 import CodeModal from './CodeModal.vue';
 import QuizModal from '../../quiz-ui/quiz.vue'; // Importation de la modale
 
-const router = useRouter();
 const route = useRoute();
 
 const isExpanded = ref(false);
@@ -218,14 +217,9 @@ const goToQuiz = (quiz) => {
     showGuestModal.value = true;
     return;
   }
-  
-  if (userRole.value === 'TEACHER' || userRole.value === 'ADMIN') {
-    router.push(`/enseignant/quiz/${quiz.id}/editer`);
-  } else {
-    // Correction: ouverture propre de la modale pour l'etudiant
-    selectedQuizId.value = quiz.id;
-    showQuizModal.value = true;
-  }
+
+  selectedQuizId.value = quiz.id;
+  showQuizModal.value = true;
 };
 
 const checkAuthStatus = () => {

@@ -4,14 +4,14 @@
     <main class="questions-main" v-if="quizLoaded">
       <header class="questions-header">
         <div class="questions-header-copy">
-          <p class="questions-kicker">Edition du quiz</p>
+          <p class="questions-kicker">Édition du quiz</p>
           <h1>Questions - {{ quizTitle }}</h1>
           <p class="questions-subtitle">
-            Ajoute, ajuste et reorganise les questions avant publication.
+            Ajoute, ajuste et réorganise les questions avant publication.
           </p>
         </div>
         <button type="button" class="link-button" @click="goBack">
-          Retour a l edition
+          Mes quiz
         </button>
       </header>
 
@@ -121,7 +121,7 @@
                 {{ primaryActionLabel }}
               </button>
               <button type="button" class="btn-secondary" @click="saveAll">
-                Enregistrer et retourner a l edition
+                Enregistrer et retourner mes quiz
               </button>
               <button
                 type="button"
@@ -165,6 +165,7 @@ export default {
       questions: [],
       currentIndex: null,
       form: {
+        type: 'QCM',
         texte: '',
         choixA: '',
         choixB: '',
@@ -179,7 +180,7 @@ export default {
   },
   computed: {
     primaryActionLabel() {
-      return this.currentIndex == null ? 'Ajouter la question' : 'Mettre a jour la question'
+      return this.currentIndex == null ? 'Ajouter la question' : 'Mettre à jour la question'
     },
   },
   methods: {
@@ -208,6 +209,7 @@ export default {
 
     resetForm() {
       this.form = {
+        type: 'QCM',
         texte: '',
         choixA: '',
         choixB: '',
@@ -226,6 +228,7 @@ export default {
 
       this.currentIndex = index
       this.form = {
+        type: q.type || 'QCM',
         texte: q.texte || '',
         choixA: q.metadata?.choixA || '',
         choixB: q.metadata?.choixB || '',
@@ -243,6 +246,7 @@ export default {
     async addOrUpdateQuestion() {
       this.error = ''
       const {
+        type,
         texte,
         choixA,
         choixB,
@@ -265,6 +269,7 @@ export default {
       }
 
       const payload = {
+        type: type || 'QCM',
         texte: texte.trim(),
         choixA: choixA.trim(),
         choixB: choixB.trim(),
@@ -334,8 +339,10 @@ export default {
       this.showPreview = true
     },
     goBack() {
-      const id = this.$route.params.id
-      this.$router.push(`/enseignant/quiz/${id}/editer`)
+      this.$router.push({
+        path: '/catalogue',
+        query: { scope: 'mine' },
+      })
     },
   },
   mounted() {
@@ -348,3 +355,5 @@ export default {
 <style scoped>
 @import './QuizQuestionsPage.css';
 </style>
+
+
