@@ -180,11 +180,14 @@ const loadQuizzes = async () => {
     isLoading.value = true;
     loadError.value = '';
     try {
-        // En mode "Mes quiz" on appelle GET /api/quizzes qui retourne
-        // uniquement les quiz de l'enseignant connecté avec questions_count et is_public
+        // En mode "Mes quiz", le backend peut inclure des quiz publics d'autres utilisateurs.
+        // On filtre explicitement côté frontend sur owner_id pour éviter les actions interdites (403).
         if (scopeMine.value) {
             const { data } = await api.get('/quizzes');
-            quizzes.value = data.map(mapQuiz);
+            const mine = data
+                .map(mapQuiz)
+                .filter((q) => currentUserId.value && q.owner_id === currentUserId.value);
+            quizzes.value = mine;
         } else {
             const token = localStorage.getItem('token');
             const raw = token
@@ -222,7 +225,6 @@ const filteredQuizzes = computed(() => {
 
         return matchCat && matchLvl;
     });
-    // En mode scopeMine, l'API retourne déjà uniquement les quiz de l'utilisateur
     return sortBy.value === 'recent' ? result.slice().reverse() : result;
 });
 
