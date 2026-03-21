@@ -17,7 +17,6 @@
               type="text"
               placeholder="Ex: Groupe Math 2024"
               required
-              :disabled="isSubmitting"
             />
           </div>
 
@@ -29,7 +28,6 @@
               v-model="formData.description"
               placeholder="Brève description du groupe..."
               rows="3"
-              :disabled="isSubmitting"
             ></textarea>
           </div>
 
@@ -41,7 +39,6 @@
                 type="button"
                 :class="['toggle-option', { active: formData.isPublic }]"
                 @click="formData.isPublic = true"
-                :disabled="isSubmitting"
               >
                 Public
               </button>
@@ -49,7 +46,6 @@
                 type="button"
                 :class="['toggle-option', { active: !formData.isPublic }]"
                 @click="formData.isPublic = false"
-                :disabled="isSubmitting"
               >
                 Privé
               </button>
@@ -62,7 +58,7 @@
             <div class="code-display">
               <input
                 type="text"
-                :value="displayedCode"
+                :value="groupeCode"
                 readonly
                 class="code-input"
               />
@@ -70,12 +66,12 @@
                 type="button"
                 class="copy-button"
                 @click="copyCode"
-                :disabled="!groupeCode || isSubmitting"
+                :disabled="!groupeCode"
               >
                 {{ codeCopied ? 'Copié !' : 'Copier' }}
               </button>
             </div>
-            <p class="help-text">Le code réel vient du backend après création.</p>
+            <p class="help-text">Ce code sera généré automatiquement (6 caractères)</p>
           </div>
 
           <!-- Message d'erreur -->
@@ -83,11 +79,11 @@
 
           <!-- Actions -->
           <div class="form-actions">
-            <button type="button" class="cancel-button" @click="goBack" :disabled="isSubmitting">
+            <button type="button" class="cancel-button" @click="goBack">
               Annuler
             </button>
-            <button type="submit" class="submit-button" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Création...' : 'Créer le groupe' }}
+            <button type="submit" class="submit-button">
+              Créer le groupe
             </button>
           </div>
         </form>
@@ -115,17 +111,19 @@ export default {
       groupeCode: '',
       codeCopied: false,
       error: '',
-      isSubmitting: false,
     }
   },
-  computed: {
-    displayedCode() {
-      return this.groupeCode || 'Généré à la création'
-    },
-  },
   methods: {
+    generateCode() {
+      // Génère un code de 6 caractères alphanumériques
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+      let code = ''
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      return code
+    },
     copyCode() {
-      if (!this.groupeCode || this.isSubmitting) return
       navigator.clipboard.writeText(this.groupeCode)
       this.codeCopied = true
       setTimeout(() => {
@@ -143,33 +141,30 @@ export default {
 
       // VERSION API (remplace tout le bloc localStorage)
       try {
-        this.isSubmitting = true
         const payload = {
           nom: this.formData.nom.trim(),
           is_public: this.formData.isPublic,
           // description à ajouter côté BD plus tard si tu veux
-          description: this.formData.description?.trim() || null,
+          description : this.formData.description?.trim()|| null,
         }
 
         const { data: groupe } = await groupService.create(payload)
-        this.groupeCode = groupe?.code_invitation || ''
 
         // Redirection vers la page détail du groupe créé
         this.$router.push(`/enseignant/groupes/${groupe.id}`)
       } catch (e) {
         console.error(e)
         this.error =
-          e.response?.data?.message ||
-          e.response?.data?.error ||
-          'Erreur lors de la création du groupe'
-      } finally {
-        this.isSubmitting = false
+          e.response?.data?.message || 'Erreur lors de la création du groupe'
       }
     },
     goBack() {
-      if (this.isSubmitting) return
       this.$router.push('/enseignant')
     },
+  },
+  mounted() {
+    // Génère un code au chargement de la page (visuel pour l'instant)
+    this.groupeCode = this.generateCode()
   },
 }
 </script>
