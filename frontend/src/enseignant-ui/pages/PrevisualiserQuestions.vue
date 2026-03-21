@@ -3,9 +3,6 @@
     <AppHeader />
     <main class="preview-main" v-if="quizLoaded">
       <header class="preview-header">
-        <button type="button" class="back-button" @click="goBack">
-          ← Retour à la création
-        </button>
         <h1>{{ quizTitle }}</h1>
       </header>
 
@@ -17,7 +14,7 @@
             class="btn-primary"
             @click="goToAddQuestions"
           >
-            ➕ Ajouter des questions
+               Ajouter des questions
           </button>
         </div>
 
@@ -89,7 +86,7 @@
             class="btn-secondary"
             @click="goToAddQuestions"
           >
-            ✏️ Modifier les questions
+               Modifier les questions
           </button>
           <button type="button" class="btn-primary" @click="goBack">
             Retour à la création

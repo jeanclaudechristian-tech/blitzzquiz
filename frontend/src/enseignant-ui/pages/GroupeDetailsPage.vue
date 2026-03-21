@@ -17,8 +17,10 @@ const showDeleteModal = ref(false);
 const showInviteModal = ref(false);
 const inviteEmail = ref('');
 const loading = ref(true);
+const pageError = ref('');
 const inviteError = ref('');
 const actionError = ref('');
+const actionLoading = ref(false);
 
 const currentUserId = computed(() => {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -88,13 +90,14 @@ const loadAllQuizzes = async () => {
 
 const loadPage = async () => {
     loading.value = true;
+    pageError.value = '';
     actionError.value = '';
 
     try {
         await Promise.all([loadGroup(), loadAssignedQuizzes(), loadAllQuizzes()]);
     } catch (error) {
         console.error('Erreur chargement groupe', error.response?.data || error);
-        router.push('/enseignant/groupes');
+        pageError.value = 'Impossible de charger les details du groupe.';
     } finally {
         loading.value = false;
     }
@@ -111,9 +114,10 @@ const copyCode = async () => {
 };
 
 const toggleVisibility = async () => {
-    if (!groupe.value) return;
+    if (!groupe.value || actionLoading.value) return;
 
     actionError.value = '';
+    actionLoading.value = true;
 
     try {
         const { data } = await groupService.update(groupe.value.id, {
@@ -124,13 +128,16 @@ const toggleVisibility = async () => {
     } catch (error) {
         console.error('Erreur changement visibilite', error.response?.data || error);
         actionError.value = 'Impossible de modifier la visibilite du groupe.';
+    } finally {
+        actionLoading.value = false;
     }
 };
 
 const assignQuiz = async () => {
-    if (!selectedQuizId.value || !groupe.value) return;
+    if (!selectedQuizId.value || !groupe.value || actionLoading.value) return;
 
     actionError.value = '';
+    actionLoading.value = true;
 
     try {
         await groupService.assignQuizToGroup(groupe.value.id, selectedQuizId.value);
@@ -139,14 +146,17 @@ const assignQuiz = async () => {
     } catch (error) {
         console.error('Erreur association quiz', error.response?.data || error);
         actionError.value = 'Impossible d associer ce quiz au groupe.';
+    } finally {
+        actionLoading.value = false;
     }
 };
 
 const removeQuiz = async (quizId) => {
-    if (!groupe.value) return;
+    if (!groupe.value || actionLoading.value) return;
     if (!confirm('Retirer ce quiz du groupe ?')) return;
 
     actionError.value = '';
+    actionLoading.value = true;
 
     try {
         await groupService.removeQuizFromGroup(groupe.value.id, quizId);
@@ -154,14 +164,17 @@ const removeQuiz = async (quizId) => {
     } catch (error) {
         console.error('Erreur retrait quiz', error.response?.data || error);
         actionError.value = 'Impossible de retirer ce quiz du groupe.';
+    } finally {
+        actionLoading.value = false;
     }
 };
 
 const removeMember = async (member) => {
-    if (!groupe.value || member.isOwner) return;
+    if (!groupe.value || member.isOwner || actionLoading.value) return;
     if (!confirm(`Retirer ${member.displayName} du groupe ?`)) return;
 
     actionError.value = '';
+    actionLoading.value = true;
 
     try {
         await groupService.removeMember(groupe.value.id, member.id);
@@ -170,17 +183,20 @@ const removeMember = async (member) => {
         console.error('Erreur retrait membre', error.response?.data || error);
         actionError.value =
             error.response?.data?.error || 'Impossible de retirer ce membre du groupe.';
+    } finally {
+        actionLoading.value = false;
     }
 };
 
 const inviteMember = async () => {
-    if (!groupe.value) return;
+    if (!groupe.value || actionLoading.value) return;
     if (!inviteEmail.value.trim()) {
         inviteError.value = 'Entre un courriel valide.';
         return;
     }
 
     inviteError.value = '';
+    actionLoading.value = true;
 
     try {
         await groupService.inviteMemberByEmail(groupe.value.id, inviteEmail.value.trim());
@@ -191,11 +207,14 @@ const inviteMember = async () => {
         console.error('Erreur invitation membre', error.response?.data || error);
         inviteError.value =
             error.response?.data?.error || 'Impossible d inviter ce membre.';
+    } finally {
+        actionLoading.value = false;
     }
 };
 
 const confirmDelete = async () => {
-    if (!groupe.value) return;
+    if (!groupe.value || actionLoading.value) return;
+    actionLoading.value = true;
 
     try {
         await groupService.destroy(groupe.value.id);
@@ -204,6 +223,8 @@ const confirmDelete = async () => {
         console.error('Erreur suppression groupe', error.response?.data || error);
         actionError.value = 'Impossible de supprimer le groupe.';
         showDeleteModal.value = false;
+    } finally {
+        actionLoading.value = false;
     }
 };
 
@@ -222,7 +243,7 @@ onMounted(loadPage);
     <div class="teacher-group-detail-page">
         <AppHeader />
 
-        <main v-if="groupe && !loading" class="teacher-group-detail-main">
+        <main v-if="groupe && !loading && !pageError" class="teacher-group-detail-main">
             <section class="detail-hero">
                 <div class="detail-hero-copy">
                     <button type="button" class="back-button" @click="goBack">
@@ -260,16 +281,26 @@ onMounted(loadPage);
                 </div>
 
                 <aside class="detail-hero-actions">
-                    <button type="button" class="hero-action hero-action--primary" @click="showInviteModal = true">
+                    <button
+                        type="button"
+                        class="hero-action hero-action--primary"
+                        :disabled="actionLoading"
+                        @click="showInviteModal = true"
+                    >
                         Inviter un membre
                     </button>
-                    <button type="button" class="hero-action" @click="toggleVisibility">
+                    <button type="button" class="hero-action" :disabled="actionLoading" @click="toggleVisibility">
                         Rendre {{ groupe.isPublic ? 'prive' : 'public' }}
                     </button>
-                    <button type="button" class="hero-action" @click="goToCreate">
+                    <button type="button" class="hero-action" :disabled="actionLoading" @click="goToCreate">
                         Nouveau groupe
                     </button>
-                    <button type="button" class="hero-action hero-action--danger" @click="showDeleteModal = true">
+                    <button
+                        type="button"
+                        class="hero-action hero-action--danger"
+                        :disabled="actionLoading"
+                        @click="showDeleteModal = true"
+                    >
                         Supprimer le groupe
                     </button>
                 </aside>
@@ -304,6 +335,7 @@ onMounted(loadPage);
                                     v-if="!member.isOwner"
                                     type="button"
                                     class="remove-button"
+                                    :disabled="actionLoading"
                                     @click="removeMember(member)"
                                 >
                                     Retirer
@@ -332,7 +364,7 @@ onMounted(loadPage);
                         <button
                             type="button"
                             class="mini-action mini-action--solid"
-                            :disabled="!selectedQuizId"
+                            :disabled="!selectedQuizId || actionLoading"
                             @click="assignQuiz"
                         >
                             Associer
@@ -349,7 +381,7 @@ onMounted(loadPage);
                                 </span>
                             </div>
 
-                            <button type="button" class="remove-button" @click="removeQuiz(quiz.id)">
+                            <button type="button" class="remove-button" :disabled="actionLoading" @click="removeQuiz(quiz.id)">
                                 Retirer
                             </button>
                         </div>
@@ -360,8 +392,22 @@ onMounted(loadPage);
             </section>
         </main>
 
-        <div v-else class="detail-loading">
+        <div v-else-if="loading" class="detail-loading">
             <div class="spinner"></div>
+        </div>
+        <div v-else class="detail-loading detail-error-wrap">
+            <div class="detail-error-card">
+                <h2>Chargement impossible</h2>
+                <p>{{ pageError || 'Impossible de charger cette page.' }}</p>
+                <div class="detail-error-actions">
+                    <button type="button" class="modal-btn modal-btn--primary" @click="loadPage">
+                        Réessayer
+                    </button>
+                    <button type="button" class="modal-btn" @click="goBack">
+                        Mes groupes
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div v-if="showInviteModal" class="modal-overlay" @click.self="showInviteModal = false">
@@ -374,8 +420,8 @@ onMounted(loadPage);
                     <button type="button" class="modal-btn" @click="showInviteModal = false">
                         Annuler
                     </button>
-                    <button type="button" class="modal-btn modal-btn--primary" @click="inviteMember">
-                        Envoyer
+                    <button type="button" class="modal-btn modal-btn--primary" :disabled="actionLoading" @click="inviteMember">
+                        {{ actionLoading ? 'Envoi...' : 'Envoyer' }}
                     </button>
                 </div>
             </div>
@@ -389,8 +435,8 @@ onMounted(loadPage);
                     <button type="button" class="modal-btn" @click="showDeleteModal = false">
                         Annuler
                     </button>
-                    <button type="button" class="modal-btn modal-btn--danger" @click="confirmDelete">
-                        Supprimer
+                    <button type="button" class="modal-btn modal-btn--danger" :disabled="actionLoading" @click="confirmDelete">
+                        {{ actionLoading ? 'Suppression...' : 'Supprimer' }}
                     </button>
                 </div>
             </div>

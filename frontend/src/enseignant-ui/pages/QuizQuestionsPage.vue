@@ -97,7 +97,7 @@
               <label>Choix de réponse *</label>
               <div class="choices-grid">
                 <div class="choice-item">
-                  <span class="choice-label">A</span>
+                  <span class="choice-label" translate="no">A</span>
                   <input
                     v-model="form.choixA"
                     type="text"
@@ -105,7 +105,7 @@
                   />
                 </div>
                 <div class="choice-item">
-                  <span class="choice-label">B</span>
+                  <span class="choice-label" translate="no">B</span>
                   <input
                     v-model="form.choixB"
                     type="text"
@@ -113,7 +113,7 @@
                   />
                 </div>
                 <div class="choice-item">
-                  <span class="choice-label">C</span>
+                  <span class="choice-label" translate="no">C</span>
                   <input
                     v-model="form.choixC"
                     type="text"
@@ -121,7 +121,7 @@
                   />
                 </div>
                 <div class="choice-item">
-                  <span class="choice-label">D</span>
+                  <span class="choice-label" translate="no">D</span>
                   <input
                     v-model="form.choixD"
                     type="text"
@@ -141,7 +141,7 @@
                     :value="opt"
                     v-model="form.bonneReponse"
                   />
-                  <span>{{ opt }}</span>
+                  <span translate="no">{{ opt }}</span>
                 </label>
               </div>
               <div v-else-if="isTf" class="answer-radios">
@@ -203,7 +203,7 @@
                 {{ primaryActionLabel }}
               </button>
               <button type="button" class="btn-secondary" @click="saveAll">
-                Enregistrer
+                <span translate="no">Enregistrer</span>
               </button>
               <button
                 type="button"
