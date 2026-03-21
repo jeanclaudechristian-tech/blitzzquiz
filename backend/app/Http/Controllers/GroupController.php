@@ -14,6 +14,16 @@ use Illuminate\Validation\Rule;
 
 class GroupController extends Controller
 {
+    /**
+     * Normalize is_public for Postgres writes while keeping API contract unchanged.
+     */
+    private function normalizeIsPublic(Request $request, array &$validated): void
+    {
+        if ($request->has('is_public')) {
+            $validated['is_public'] = $request->boolean('is_public') ? 'true' : 'false';
+        }
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -77,9 +87,11 @@ class GroupController extends Controller
         $validated = $request->validate([
             'nom' => 'required|string|max:100',
             'is_public' => 'boolean',
+            'description' => 'nullable|string|max:255',
         ]);
+        $this->normalizeIsPublic($request, $validated);
 
-        $isPublic = $validated['is_public'] ?? true;
+        $isPublic = $validated['is_public'] ?? 'true';
 
         $userID = Auth::id();
 
@@ -109,7 +121,9 @@ class GroupController extends Controller
         $validated = $request->validate([
             'nom' => 'string|max:100',
             'is_public' => 'boolean',
+            'description' => 'nullable|string|max:255',
         ]);
+        $this->normalizeIsPublic($request, $validated);
 
         if (array_key_exists('is_public', $validated)) {
             $group->is_public = $validated['is_public'];
@@ -117,6 +131,10 @@ class GroupController extends Controller
 
         if (array_key_exists('nom', $validated)) {
             $group->nom = $validated['nom'];
+        }
+
+        if (array_key_exists('description', $validated)) {
+            $group->description = $validated['description'];
         }
 
         $group->save();
