@@ -25,6 +25,8 @@ const savingQuiz = ref(false)
 const savingGroup = ref(false)
 const previewCode = ref(generatePreviewCode())
 const categories = ref([])
+const categoriesLoading = ref(false)
+const categoriesError = ref('')
 const quizImageInput = ref(null)
 const quizImageFile = ref(null)
 const quizImageUrl = ref('')
@@ -229,12 +231,17 @@ const quizPrimaryLabel = computed(() =>
 )
 
 const loadCategories = async () => {
+  categoriesLoading.value = true
+  categoriesError.value = ''
   try {
     const { data } = await api.get('/categories')
     categories.value = Array.isArray(data) ? data : []
   } catch (error) {
     console.error('Erreur chargement categories', error.response?.data || error)
     categories.value = []
+    categoriesError.value = 'Impossible de charger les categories.'
+  } finally {
+    categoriesLoading.value = false
   }
 }
 
@@ -460,7 +467,9 @@ onBeforeUnmount(() => {
             <div class="field-group">
               <label for="quiz-category">Catégorie</label>
               <select id="quiz-category" v-model="quizForm.categoryId">
-                <option value="">Choisir une catégorie</option>
+                <option value="" :disabled="categoriesLoading">
+                  {{ categoriesLoading ? 'Chargement des categories...' : 'Choisir une catégorie' }}
+                </option>
                 <option
                   v-for="category in categories"
                   :key="category.id"
@@ -469,6 +478,15 @@ onBeforeUnmount(() => {
                   {{ category.name }}
                 </option>
               </select>
+              <button
+                v-if="categoriesError"
+                type="button"
+                class="inline-retry-btn"
+                @click="loadCategories"
+              >
+                Réessayer de charger les catégories
+              </button>
+              <p v-if="categoriesError" class="form-error">{{ categoriesError }}</p>
             </div>
 
             <div class="field-group">

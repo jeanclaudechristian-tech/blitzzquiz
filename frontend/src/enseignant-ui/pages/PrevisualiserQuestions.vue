@@ -98,6 +98,16 @@
       </div>
     </main>
 
+    <div v-else-if="loadError" class="loading-state">
+      <div class="load-error-card">
+        <h2>Chargement impossible</h2>
+        <p>{{ loadError }}</p>
+        <button type="button" class="btn-primary" @click="retryLoad">
+          Réessayer
+        </button>
+      </div>
+    </div>
+
     <div v-else class="loading-state">
       <div class="loading-skeleton" aria-busy="true" aria-live="polite">
         <div class="skeleton-header">
@@ -130,11 +140,20 @@ export default {
   data() {
     return {
       quizLoaded: false,
+      loadError: '',
       quizTitle: '',
       questions: [],
     }
   },
   methods: {
+    normalizeQuestions(rawQuestions) {
+      const list = Array.isArray(rawQuestions) ? rawQuestions.slice() : []
+      return list.sort((a, b) => {
+        const aPos = Number(a?.position ?? a?.order ?? a?.id ?? 0)
+        const bPos = Number(b?.position ?? b?.order ?? b?.id ?? 0)
+        return aPos - bPos
+      })
+    },
     async loadQuizData() {
       const quizId = this.$route.params.id
       if (!quizId) {
@@ -143,6 +162,9 @@ export default {
         return
       }
 
+      this.quizLoaded = false
+      this.loadError = ''
+
       try {
         // Chargement parallèle pour réduire le temps d'attente
         const [{ data: quiz }, { data: questions }] = await Promise.all([
@@ -150,13 +172,15 @@ export default {
           api.get(`/quizzes/${quizId}/questions`),
         ])
         this.quizTitle = quiz?.titre || 'Quiz sans titre'
-        this.questions = Array.isArray(questions) ? questions : []
+        this.questions = this.normalizeQuestions(questions)
+        this.quizLoaded = true
       } catch (e) {
         console.error('Erreur chargement prévisualisation', e.response?.data || e)
-        this.questions = []
+        this.loadError = "Impossible de charger la prévisualisation pour le moment."
       }
-
-      this.quizLoaded = true
+    },
+    retryLoad() {
+      this.loadQuizData()
     },
     goBack() {
       this.$router.push('/enseignant')

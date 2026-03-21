@@ -203,7 +203,7 @@
                 {{ primaryActionLabel }}
               </button>
               <button type="button" class="btn-secondary" @click="saveAll">
-                Enregistrer et retourner mes quiz
+                Enregistrer
               </button>
               <button
                 type="button"
@@ -215,28 +215,6 @@
             </div>
           </form>
 
-          <transition name="fade-up">
-            <div v-if="showPreview" class="preview-card">
-              <h3>Aperçu</h3>
-              <p class="preview-question">{{ form.texte }}</p>
-              <ul v-if="isQcm" class="preview-choices">
-                <li><strong>A.</strong> {{ form.choixA }}</li>
-                <li><strong>B.</strong> {{ form.choixB }}</li>
-                <li><strong>C.</strong> {{ form.choixC }}</li>
-                <li><strong>D.</strong> {{ form.choixD }}</li>
-              </ul>
-              <ul v-else-if="isTf" class="preview-choices">
-                <li><strong>A.</strong> Vrai</li>
-                <li><strong>B.</strong> Faux</li>
-              </ul>
-              <ul v-else class="preview-choices">
-                <li v-for="slot in fillInSlots" :key="slot">
-                  <strong>Trou #{{ slot }} :</strong>
-                  {{ form.fillInAnswers[slot] || 'Aucune réponse renseignée' }}
-                </li>
-              </ul>
-            </div>
-          </transition>
         </section>
       </section>
       <transition name="fade-up">
@@ -284,7 +262,6 @@ export default {
         choices: '',
         fillIn: '',
       },
-      showPreview: false,
       saveState: 'idle',
       deletingQuestionId: null,
       originalFormSnapshot: '',
@@ -435,7 +412,6 @@ export default {
       }
       this.currentIndex = null
       this.error = ''
-      this.showPreview = false
       this.clearFieldErrors()
       this.saveState = 'idle'
       this.markSavedSnapshot()
@@ -468,7 +444,6 @@ export default {
       }
       this.syncFillInAnswers()
       this.clearFieldErrors()
-      this.showPreview = false
       this.markSavedSnapshot()
       this.saveState = 'saved'
     },
@@ -574,7 +549,6 @@ export default {
           const { data } = await api.put(`/questions/${qId}`, payload)
           this.questions.splice(this.currentIndex, 1, data)
         }
-        this.showPreview = true
         this.markSavedSnapshot()
         this.saveState = 'saved'
         if (!silent && !fromAuto) {
@@ -630,7 +604,7 @@ export default {
       this.goBack()
     },
     preview() {
-      this.showPreview = true
+      this.$router.push(`/enseignant/quiz/${this.$route.params.id}/previsualiser`)
     },
     goBack() {
       this.$router.push({
