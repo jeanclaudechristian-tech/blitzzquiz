@@ -620,7 +620,7 @@
 
 .quiz-list-header {
     display: grid;
-    grid-template-columns: 2.5fr 110px 100px 1fr;
+    grid-template-columns: 2.2fr 110px 100px minmax(240px, 1.3fr);
     padding: 13px 20px;
     background: #f9fafb;
     border-bottom: 2px solid #f3f4f6;
@@ -633,7 +633,7 @@
 
 .quiz-list-row {
     display: grid;
-    grid-template-columns: 2.5fr 110px 100px 1fr;
+    grid-template-columns: 2.2fr 110px 100px minmax(240px, 1.3fr);
     padding: 16px 20px;
     align-items: center;
     border-bottom: 1px solid #f3f4f6;
@@ -748,28 +748,38 @@
 .row-actions {
     display: flex;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
 }
 
 .act-btn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 7px 11px;
+    padding: 8px 11px;
+    width: 100%;
     border-radius: 7px;
     border: 2px solid #e5e7eb;
     background: #ffffff;
     color: #374151;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.76rem;
+    font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
+    font-size: 0.8rem;
     font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    font-variant-ligatures: none;
+    font-feature-settings: 'liga' 0, 'calt' 0;
     cursor: pointer;
-    white-space: nowrap;
+    white-space: normal;
+    line-height: 1.2;
+    text-align: left;
     transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .act-btn .material-symbols-outlined {
     font-size: 14px;
+    font-family: 'Material Symbols Outlined';
+    flex-shrink: 0;
 }
 
 .act-btn:hover {

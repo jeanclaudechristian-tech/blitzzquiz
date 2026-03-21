@@ -35,7 +35,12 @@
               {{ q.texte }}
             </div>
 
-            <div class="question-text fill-in-text" v-else v-html="renderFillInText(q)"></div>
+            <div class="question-text fill-in-text" v-else>
+              <template v-for="(part, pIndex) in getFillInParts(q)" :key="`${q.id || index}-part-${pIndex}`">
+                <span v-if="part.type === 'text'">{{ part.value }}</span>
+                <span v-else class="preview-blank-tag">{{ part.value }}</span>
+              </template>
+            </div>
 
             <div class="choices-preview">
               <template v-if="q.type === 'QCM'">
@@ -64,7 +69,7 @@
                   <div v-for="(blank, bIndex) in q.metadata?.blanks" :key="bIndex" class="fill-in-answer-item">
                     <span class="answer-num">#{{ bIndex + 1 }}</span>
                     <span class="answer-tags">
-                      {{ blank.accepted_answers.join(' / ') }}
+                      {{ Array.isArray(blank?.accepted_answers) ? blank.accepted_answers.join(' / ') : '-' }}
                     </span>
                   </div>
                 </div>
@@ -94,7 +99,21 @@
     </main>
 
     <div v-else class="loading-state">
-      <p>Chargement des questions...</p>
+      <div class="loading-skeleton" aria-busy="true" aria-live="polite">
+        <div class="skeleton-header">
+          <div class="skeleton-pill"></div>
+          <div class="skeleton-title"></div>
+        </div>
+        <div class="skeleton-container">
+          <div class="skeleton-card" v-for="n in 3" :key="n">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line medium"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        </div>
+        <p>Chargement des questions...</p>
+      </div>
     </div>
   </div>
 </template>
@@ -125,14 +144,12 @@ export default {
       }
 
       try {
-        // Titre du quiz
-        const { data: quiz } = await api.get(`/quizzes/${quizId}`)
-        this.quizTitle = quiz.titre || 'Quiz sans titre'
-
-        // Questions du quiz
-        const { data: questions } = await api.get(
-          `/quizzes/${quizId}/questions`,
-        )
+        // Chargement parallèle pour réduire le temps d'attente
+        const [{ data: quiz }, { data: questions }] = await Promise.all([
+          api.get(`/quizzes/${quizId}`),
+          api.get(`/quizzes/${quizId}/questions`),
+        ])
+        this.quizTitle = quiz?.titre || 'Quiz sans titre'
         this.questions = Array.isArray(questions) ? questions : []
       } catch (e) {
         console.error('Erreur chargement prévisualisation', e.response?.data || e)
@@ -147,12 +164,29 @@ export default {
     goToAddQuestions() {
       this.$router.push(`/enseignant/quiz/${this.$route.params.id}/questions`)
     },
-    renderFillInText(q) {
-      if (!q.texte) return '';
-      // 将 [[1]] 替换为带编号的蓝色小方块占位符
-      return q.texte.replace(/\[\[(\d+)\]\]/g, (match, number) => {
-        return `<span class="preview-blank-tag">${number}</span>`;
-      });
+    getFillInParts(q) {
+      const text = typeof q?.texte === 'string' ? q.texte : ''
+      if (!text) return [{ type: 'text', value: '' }]
+
+      const parts = []
+      const regex = /\[\[(\d+)\]\]/g
+      let lastIndex = 0
+      let match = regex.exec(text)
+
+      while (match) {
+        if (match.index > lastIndex) {
+          parts.push({ type: 'text', value: text.slice(lastIndex, match.index) })
+        }
+        parts.push({ type: 'blank', value: match[1] })
+        lastIndex = regex.lastIndex
+        match = regex.exec(text)
+      }
+
+      if (lastIndex < text.length) {
+        parts.push({ type: 'text', value: text.slice(lastIndex) })
+      }
+
+      return parts
     },
   },
   mounted() {
