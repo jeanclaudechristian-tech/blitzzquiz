@@ -70,6 +70,16 @@
   transform: translateY(-2px);
 }
 
+.header-link:disabled,
+.choice-btn:disabled,
+.creation-toggle-btn:disabled,
+.inline-retry-btn:disabled,
+.image-clear-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .creation-card {
   background: #ffffff;
   border: 1px solid #e7edf4;

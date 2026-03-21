@@ -1,9 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '../../api/Axios'
 import { groupService } from '../../api/groups'
 import { quizService } from '../../api/quiz'
+import { categoryService } from '../../api/categories'
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue'
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
@@ -16,14 +16,13 @@ const router = useRouter()
 const route = useRoute()
 
 const normalizeMode = (mode) => (mode === 'groupe' ? 'groupe' : 'quiz')
-const generatePreviewCode = () => Math.random().toString(36).slice(2, 8).toUpperCase()
 
 const creationMode = ref(normalizeMode(route.query.mode))
 const quizError = ref('')
 const groupError = ref('')
 const savingQuiz = ref(false)
 const savingGroup = ref(false)
-const previewCode = ref(generatePreviewCode())
+const previewCode = ref('')
 const categories = ref([])
 const categoriesLoading = ref(false)
 const categoriesError = ref('')
@@ -191,17 +190,20 @@ const onQuizImageUrlBlur = async () => {
   }
 }
 
+const isSubmitting = computed(() => savingQuiz.value || savingGroup.value)
+
 watch(
   () => route.query.mode,
   (mode) => {
     creationMode.value = normalizeMode(mode)
     if (creationMode.value === 'groupe') {
-      previewCode.value = generatePreviewCode()
+      previewCode.value = ''
     }
   },
 )
 
 const setMode = (mode) => {
+  if (isSubmitting.value) return
   const normalizedMode = normalizeMode(mode)
   creationMode.value = normalizedMode
   router.replace({
@@ -234,8 +236,7 @@ const loadCategories = async () => {
   categoriesLoading.value = true
   categoriesError.value = ''
   try {
-    const { data } = await api.get('/categories')
-    categories.value = Array.isArray(data) ? data : []
+    categories.value = await categoryService.list()
   } catch (error) {
     console.error('Erreur chargement categories', error.response?.data || error)
     categories.value = []
@@ -294,11 +295,30 @@ const createQuiz = async () => {
   }
 
   try {
-    const { data } = await api.post('/quizzes', payload)
-    return data
+    return await quizService.create(payload)
+  } catch (error) {
+    console.error('Erreur creation quiz', error.response?.data || error)
+    quizError.value =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      'Erreur lors de la creation du quiz.'
+    throw error
   } finally {
     savingQuiz.value = false
   }
+}
+
+const resetQuizForm = () => {
+  quizForm.value = {
+    titre: '',
+    description: '',
+    categoryId: '',
+    niveau: '',
+    isPublic: false,
+  }
+  quizError.value = ''
+  quizImageError.value = ''
+  resetQuizImage()
 }
 
 const createQuizAndContinue = async () => {
@@ -314,8 +334,12 @@ const createQuizAndContinue = async () => {
     router.push(`/enseignant/quiz/${quiz.id}/questions`)
   } catch (error) {
     if (error.message === 'invalid') return
-    console.error('Erreur creation quiz', error.response?.data || error)
-    quizError.value = 'Erreur lors de la creation du quiz.'
+    if (!quizError.value) {
+      quizError.value =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Erreur lors de la creation du quiz.'
+    }
   }
 }
 
@@ -323,11 +347,15 @@ const createQuizOnly = async () => {
   try {
     const quiz = await createQuiz()
     await uploadQuizImageIfNeeded(quiz.id)
-    openMyQuizzes()
+    resetQuizForm()
   } catch (error) {
     if (error.message === 'invalid') return
-    console.error('Erreur creation quiz', error.response?.data || error)
-    quizError.value = 'Erreur lors de la creation du quiz.'
+    if (!quizError.value) {
+      quizError.value =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Erreur lors de la creation du quiz.'
+    }
   }
 }
 
@@ -346,11 +374,14 @@ const createGroup = async () => {
       nom: groupForm.value.nom.trim(),
       is_public: groupForm.value.isPublic,
     })
+    previewCode.value = group?.code_invitation || ''
     router.push(`/enseignant/groupes/${group.id}`)
   } catch (error) {
     console.error('Erreur creation groupe', error.response?.data || error)
     groupError.value =
-      error.response?.data?.message || 'Erreur lors de la creation du groupe.'
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      'Erreur lors de la creation du groupe.'
   } finally {
     savingGroup.value = false
   }
@@ -397,7 +428,7 @@ onBeforeUnmount(() => {
           <p class="page-subtitle">{{ pageCopy.subtitle }}</p>
         </div>
 
-        <button type="button" class="header-link" @click="onHeaderLinkClick">
+        <button type="button" class="header-link" @click="onHeaderLinkClick" :disabled="isSubmitting">
           {{ headerLinkLabel }}
         </button>
       </header>
@@ -416,6 +447,7 @@ onBeforeUnmount(() => {
               type="text"
               placeholder="Ex: Révision finale en mathématiques"
               required
+              :disabled="savingQuiz"
             />
           </div>
 
@@ -426,6 +458,7 @@ onBeforeUnmount(() => {
               v-model="quizForm.description"
               rows="5"
               placeholder="Ajoute un contexte ou des consignes."
+              :disabled="savingQuiz"
             ></textarea>
           </div>
 
@@ -438,6 +471,7 @@ onBeforeUnmount(() => {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               @change="onQuizImageSelected"
+              :disabled="savingQuiz"
             />
             <p class="field-help">
               Formats: JPG, PNG, WebP. Max 5 Mo. Dimensions entre 640x360 et 4096x4096.
@@ -450,12 +484,18 @@ onBeforeUnmount(() => {
               type="url"
               placeholder="https://exemple.com/image-quiz.jpg"
               @blur="onQuizImageUrlBlur"
+              :disabled="savingQuiz"
             />
             <p class="field-help">Utilise un fichier local ou une URL, pas les deux.</p>
 
             <div v-if="quizImagePreview" class="image-preview">
               <img :src="quizImagePreview" alt="Aperçu image quiz" />
-              <button type="button" class="image-clear-btn" @click="resetQuizImage">
+              <button
+                type="button"
+                class="image-clear-btn"
+                @click="resetQuizImage"
+                :disabled="savingQuiz"
+              >
                 Retirer l'image
               </button>
             </div>
@@ -466,7 +506,7 @@ onBeforeUnmount(() => {
           <div class="field-row">
             <div class="field-group">
               <label for="quiz-category">Catégorie</label>
-              <select id="quiz-category" v-model="quizForm.categoryId">
+              <select id="quiz-category" v-model="quizForm.categoryId" :disabled="categoriesLoading || savingQuiz">
                 <option value="" :disabled="categoriesLoading">
                   {{ categoriesLoading ? 'Chargement des categories...' : 'Choisir une catégorie' }}
                 </option>
@@ -483,6 +523,7 @@ onBeforeUnmount(() => {
                 type="button"
                 class="inline-retry-btn"
                 @click="loadCategories"
+                :disabled="categoriesLoading || savingQuiz"
               >
                 Réessayer de charger les catégories
               </button>
@@ -491,7 +532,7 @@ onBeforeUnmount(() => {
 
             <div class="field-group">
               <label for="quiz-level">Niveau d'étude</label>
-              <select id="quiz-level" v-model="quizForm.niveau">
+              <select id="quiz-level" v-model="quizForm.niveau" :disabled="savingQuiz">
                 <option value="">Choisir un niveau</option>
                 <option value="Primaire">Primaire</option>
                 <option value="Secondaire">Secondaire</option>
@@ -509,6 +550,7 @@ onBeforeUnmount(() => {
                 class="choice-btn"
                 :class="{ active: quizForm.isPublic }"
                 @click="quizForm.isPublic = true"
+                :disabled="savingQuiz"
               >
                 Public
               </button>
@@ -517,6 +559,7 @@ onBeforeUnmount(() => {
                 class="choice-btn"
                 :class="{ active: !quizForm.isPublic }"
                 @click="quizForm.isPublic = false"
+                :disabled="savingQuiz"
               >
                 Privé
               </button>
@@ -549,6 +592,7 @@ onBeforeUnmount(() => {
               type="text"
               placeholder="Ex: Groupe sciences 2026"
               required
+              :disabled="savingGroup"
             />
           </div>
 
@@ -561,6 +605,7 @@ onBeforeUnmount(() => {
                   class="choice-btn"
                   :class="{ active: groupForm.isPublic }"
                   @click="groupForm.isPublic = true"
+                  :disabled="savingGroup"
                 >
                   Public
                 </button>
@@ -569,6 +614,7 @@ onBeforeUnmount(() => {
                   class="choice-btn"
                   :class="{ active: !groupForm.isPublic }"
                   @click="groupForm.isPublic = false"
+                  :disabled="savingGroup"
                 >
                   Privé
                 </button>
@@ -577,7 +623,7 @@ onBeforeUnmount(() => {
 
             <div class="code-preview">
               <span class="field-label">Code</span>
-              <strong>{{ previewCode }}</strong>
+              <strong>{{ previewCode || 'Généré à la création' }}</strong>
             </div>
           </div>
 
@@ -587,12 +633,13 @@ onBeforeUnmount(() => {
             <button type="submit" class="btn-primary" :disabled="savingGroup">
               {{ savingGroup ? 'Création...' : 'Créer le groupe' }}
             </button>
-            <button type="button" class="btn-secondary" @click="openGroups">
+            <button type="button" class="btn-secondary" @click="openGroups" :disabled="savingGroup">
               Voir mes groupes
             </button>
           </div>
         </form>
       </section>
+
     </main>
 
     <nav class="creation-toggle" aria-label="Type de creation">
@@ -601,6 +648,7 @@ onBeforeUnmount(() => {
         class="creation-toggle-btn"
         :class="{ active: creationMode === 'quiz' }"
         @click="setMode('quiz')"
+        :disabled="isSubmitting"
       >
         Quiz
       </button>
@@ -609,6 +657,7 @@ onBeforeUnmount(() => {
         class="creation-toggle-btn"
         :class="{ active: creationMode === 'groupe' }"
         @click="setMode('groupe')"
+        :disabled="isSubmitting"
       >
         Groupe
       </button>
