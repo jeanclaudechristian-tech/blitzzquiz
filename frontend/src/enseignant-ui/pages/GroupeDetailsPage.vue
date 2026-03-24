@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../api/Axios';
 import AppHeader from '../../accueil-ui/composant/AppHeader.vue';
@@ -12,6 +12,10 @@ const groupe = ref(null);
 const allQuizzes = ref([]);
 const assignedQuizzes = ref([]);
 const selectedQuizId = ref('');
+const selectedResultQuizId = ref('');
+const rankingRows = ref([]);
+const rankingLoading = ref(false);
+const rankingError = ref('');
 const codeCopied = ref(false);
 const showDeleteModal = ref(false);
 const showInviteModal = ref(false);
@@ -49,6 +53,91 @@ const availableQuizzes = computed(() => {
     return allQuizzes.value.filter((quiz) => !assignedIds.has(quiz.id));
 });
 
+const selectedResultQuiz = computed(() =>
+    assignedQuizzes.value.find((quiz) => String(quiz.id) === String(selectedResultQuizId.value)) || null
+);
+
+const resultRows = computed(() => {
+    const rankingByUser = new Map(
+        rankingRows.value.map((row) => [
+            Number(row.user_id || row.user?.id),
+            {
+                score: Number(row.score ?? 0),
+                attemptsCount: Number(row.attempts_count ?? 1),
+                date: row.date_tentative || row.created_at || null
+            }
+        ])
+    );
+
+    return memberRows.value
+        .map((member) => {
+            const result = rankingByUser.get(Number(member.id));
+            return {
+                ...member,
+                score: result ? result.score : null,
+                attemptsCount: result ? result.attemptsCount : 0,
+                date: result?.date || null
+            };
+        })
+        .sort((a, b) => {
+            const scoreA = a.score ?? -1;
+            const scoreB = b.score ?? -1;
+            if (scoreA !== scoreB) return scoreB - scoreA;
+            return a.displayName.localeCompare(b.displayName, 'fr', { sensitivity: 'base' });
+        });
+});
+
+const syncResultQuizSelection = () => {
+    if (!assignedQuizzes.value.length) {
+        selectedResultQuizId.value = '';
+        rankingRows.value = [];
+        rankingError.value = '';
+        return;
+    }
+
+    const assignedIds = new Set(assignedQuizzes.value.map((quiz) => String(quiz.id)));
+    if (!assignedIds.has(String(selectedResultQuizId.value))) {
+        selectedResultQuizId.value = String(assignedQuizzes.value[0].id);
+    }
+};
+
+const loadQuizRanking = async (quizId) => {
+    if (!groupe.value || !quizId) return;
+
+    rankingLoading.value = true;
+    rankingError.value = '';
+
+    try {
+        const { data } = await groupService.getQuizRanking(groupe.value.id, quizId);
+        rankingRows.value = Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Erreur chargement resultats groupe', error.response?.data || error);
+        rankingRows.value = [];
+        rankingError.value =
+            error.response?.data?.error || 'Impossible de charger les resultats pour ce quiz.';
+    } finally {
+        rankingLoading.value = false;
+    }
+};
+
+const formatResultDate = (value) => {
+    if (!value) return 'Aucune tentative';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Date indisponible';
+    return parsed.toLocaleDateString('fr-CA', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+};
+
+const scoreClass = (score) => {
+    if (score === null) return 'result-score--none';
+    if (score >= 80) return 'result-score--excellent';
+    if (score >= 60) return 'result-score--good';
+    return 'result-score--low';
+};
+
 const loadGroup = async () => {
     const { data } = await groupService.show(route.params.id);
 
@@ -73,6 +162,8 @@ const loadAssignedQuizzes = async () => {
         questionsCount: quiz.questions_count ?? 0,
         isPublic: Boolean(quiz.is_public)
     }));
+
+    syncResultQuizSelection();
 };
 
 const loadAllQuizzes = async () => {
@@ -95,6 +186,10 @@ const loadPage = async () => {
 
     try {
         await Promise.all([loadGroup(), loadAssignedQuizzes(), loadAllQuizzes()]);
+        syncResultQuizSelection();
+        if (selectedResultQuizId.value) {
+            await loadQuizRanking(selectedResultQuizId.value);
+        }
     } catch (error) {
         console.error('Erreur chargement groupe', error.response?.data || error);
         pageError.value = 'Impossible de charger les details du groupe.';
@@ -143,6 +238,9 @@ const assignQuiz = async () => {
         await groupService.assignQuizToGroup(groupe.value.id, selectedQuizId.value);
         selectedQuizId.value = '';
         await loadAssignedQuizzes();
+        if (selectedResultQuizId.value) {
+            await loadQuizRanking(selectedResultQuizId.value);
+        }
     } catch (error) {
         console.error('Erreur association quiz', error.response?.data || error);
         actionError.value = 'Impossible d associer ce quiz au groupe.';
@@ -160,7 +258,10 @@ const removeQuiz = async (quizId) => {
 
     try {
         await groupService.removeQuizFromGroup(groupe.value.id, quizId);
-        assignedQuizzes.value = assignedQuizzes.value.filter((quiz) => quiz.id !== quizId);
+        await loadAssignedQuizzes();
+        if (selectedResultQuizId.value) {
+            await loadQuizRanking(selectedResultQuizId.value);
+        }
     } catch (error) {
         console.error('Erreur retrait quiz', error.response?.data || error);
         actionError.value = 'Impossible de retirer ce quiz du groupe.';
@@ -235,6 +336,16 @@ const goBack = () => {
 const goToCreate = () => {
     router.push({ path: '/enseignant', query: { mode: 'groupe' } });
 };
+
+watch(selectedResultQuizId, async (quizId) => {
+    if (!quizId) {
+        rankingRows.value = [];
+        rankingError.value = '';
+        return;
+    }
+
+    await loadQuizRanking(quizId);
+});
 
 onMounted(loadPage);
 </script>
@@ -388,6 +499,62 @@ onMounted(loadPage);
                     </div>
 
                     <p v-else class="empty-copy">Aucun quiz n est encore associe a ce groupe.</p>
+                </article>
+
+                <article class="detail-card detail-card--results">
+                    <header class="detail-card-head">
+                        <div>
+                            <p class="detail-card-kicker">Resultats</p>
+                            <h2>Notes des membres par quiz</h2>
+                        </div>
+                    </header>
+
+                    <p v-if="!assignedQuizzes.length" class="empty-copy">
+                        Associe d abord un quiz au groupe pour voir les notes.
+                    </p>
+
+                    <template v-else>
+                        <div class="assign-bar">
+                            <select v-model="selectedResultQuizId" class="quiz-select">
+                                <option disabled value="">Choisir un quiz assigne</option>
+                                <option v-for="quiz in assignedQuizzes" :key="quiz.id" :value="String(quiz.id)">
+                                    {{ quiz.titre }} ({{ quiz.questionsCount }} questions)
+                                </option>
+                            </select>
+                            <div class="results-meta">
+                                {{ selectedResultQuiz ? `${selectedResultQuiz.questionsCount} question(s)` : '--' }}
+                            </div>
+                        </div>
+
+                        <p v-if="rankingError" class="action-error">{{ rankingError }}</p>
+                        <p v-else-if="rankingLoading" class="empty-copy">Chargement des resultats...</p>
+
+                        <div v-else class="results-list">
+                            <div v-for="(row, index) in resultRows" :key="row.id" class="result-row">
+                                <div class="result-rank">
+                                    <strong>{{ row.score === null ? '--' : `#${index + 1}` }}</strong>
+                                </div>
+
+                                <div class="result-member">
+                                    <strong>{{ row.displayName }}</strong>
+                                    <span>{{ row.email }}</span>
+                                </div>
+
+                                <div class="result-score-wrap">
+                                    <strong :class="['result-score', scoreClass(row.score)]">
+                                        {{ row.score === null ? 'Aucune tentative' : `${row.score}%` }}
+                                    </strong>
+                                    <span class="result-meta">
+                                        {{
+                                            row.score === null
+                                                ? 'Pas encore de note'
+                                                : `${row.attemptsCount} tentative(s) · ${formatResultDate(row.date)}`
+                                        }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </article>
             </section>
         </main>

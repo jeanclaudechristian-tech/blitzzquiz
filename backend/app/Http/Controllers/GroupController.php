@@ -207,6 +207,12 @@ class GroupController extends Controller
         ]);
 
         $quizId = (int) $validated['quiz_id'];
+        $quiz = Quiz::findOrFail($quizId);
+
+        // Securite serveur: un enseignant ne peut assigner que ses quiz.
+        if ((int) $quiz->owner_id !== (int) Auth::id()) {
+            return response()->json(['error' => 'Tu peux assigner uniquement tes quiz'], 403);
+        }
 
         // Crée l'assignation si elle n'existe pas encore
         $assignment = Assignment::firstOrCreate(

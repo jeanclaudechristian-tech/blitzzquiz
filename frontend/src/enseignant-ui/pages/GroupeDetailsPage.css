@@ -194,6 +194,10 @@
   padding: 24px;
 }
 
+.detail-card--results {
+  grid-column: 1 / -1;
+}
+
 .detail-card-head {
   display: flex;
   align-items: flex-start;
@@ -214,6 +218,11 @@
   gap: 12px;
 }
 
+.results-list {
+  display: grid;
+  gap: 10px;
+}
+
 .member-row,
 .quiz-row {
   display: flex;
@@ -226,10 +235,26 @@
   background: #f9fafb;
 }
 
+.result-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #edf2f7;
+  background: #f9fafb;
+}
+
 .member-main,
 .quiz-main {
   display: grid;
   gap: 6px;
+}
+
+.result-member {
+  display: grid;
+  gap: 4px;
 }
 
 .member-main strong,
@@ -238,10 +263,78 @@
   font-weight: 800;
 }
 
+.result-member strong {
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
 .member-main span,
 .quiz-main span,
 .empty-copy {
   color: #6b7280;
+}
+
+.result-member span,
+.result-meta {
+  color: #6b7280;
+}
+
+.result-rank {
+  width: 52px;
+  min-height: 52px;
+  border-radius: 14px;
+  border: 1px solid #dbe4ef;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.result-rank strong {
+  font-size: 1.05rem;
+}
+
+.result-score-wrap {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  text-align: right;
+}
+
+.result-score {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.result-score--none {
+  color: #6b7280;
+}
+
+.result-score--excellent {
+  color: #15803d;
+}
+
+.result-score--good {
+  color: #0f62ff;
+}
+
+.result-score--low {
+  color: #b42318;
+}
+
+.results-meta {
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background: #f9fafb;
+  color: #6b7280;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  min-width: 180px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .member-side {
@@ -446,6 +539,17 @@
     align-items: stretch;
   }
 
+  .result-row {
+    grid-template-columns: 1fr;
+    justify-items: flex-start;
+    text-align: left;
+  }
+
+  .result-score-wrap {
+    justify-items: flex-start;
+    text-align: left;
+  }
+
   .assign-bar,
   .modal-actions {
     grid-template-columns: 1fr;
@@ -460,7 +564,8 @@
   .hero-action,
   .mini-action,
   .remove-button,
-  .modal-btn {
+  .modal-btn,
+  .results-meta {
     width: 100%;
   }
 
