@@ -4,6 +4,18 @@ const RAW_API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 const API_ORIGIN = RAW_API_URL.endsWith("/api")
   ? RAW_API_URL.slice(0, -4)
   : RAW_API_URL;
+const RAW_SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").replace(
+  /\/+$/,
+  ""
+);
+const SUPABASE_ORIGIN = (() => {
+  if (!RAW_SUPABASE_URL) return "";
+  try {
+    return new URL(RAW_SUPABASE_URL).origin;
+  } catch (_error) {
+    return "";
+  }
+})();
 
 const hasValidToken = () => {
   const token = localStorage.getItem("token");
@@ -26,6 +38,19 @@ const isBlitzzPlaceholder = (value) => {
   );
 };
 
+const isSupabaseStorageUrl = (parsedUrl) => {
+  const hostname = parsedUrl.hostname.toLowerCase();
+  if (hostname.endsWith(".supabase.co")) return true;
+  if (
+    SUPABASE_ORIGIN &&
+    parsedUrl.origin === SUPABASE_ORIGIN &&
+    parsedUrl.pathname.startsWith("/storage/v1/object/")
+  ) {
+    return true;
+  }
+  return false;
+};
+
 const resolveAssetUrl = (value) => {
   if (!value) return null;
   if (isBlitzzPlaceholder(value)) return null;
@@ -34,8 +59,12 @@ const resolveAssetUrl = (value) => {
     // If backend returns /storage URL with a wrong host/port, re-anchor to API origin.
     try {
       const parsed = new URL(value);
-      if (API_ORIGIN && parsed.pathname.startsWith("/storage/")) {
-        return `${API_ORIGIN}${parsed.pathname}`;
+      if (
+        API_ORIGIN &&
+        parsed.pathname.startsWith("/storage/") &&
+        !isSupabaseStorageUrl(parsed)
+      ) {
+        return `${API_ORIGIN}${parsed.pathname}${parsed.search}`;
       }
     } catch (_error) {
       return value;
