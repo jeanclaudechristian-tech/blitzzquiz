@@ -38,6 +38,12 @@ const openQuiz = (quizId) => {
   })
 }
 
+const hideBrokenImage = (event) => {
+  const img = event?.target
+  if (!img) return
+  img.style.display = 'none'
+}
+
 const loadGroupeQuizzes = async () => {
   const groupeId = route.params.id;
   if (!groupeId || groupeId === 'undefined') return router.push('/etudiant/mes-groupes');
@@ -125,7 +131,13 @@ onMounted(loadGroupeQuizzes)
         <div v-else-if="quizzes.length > 0" class="catalogue-quiz-grid">
           <div v-for="quiz in quizzes" :key="quiz.id" class="mini-quiz-card" @click="openQuiz(quiz.id)">
             <div class="card-inner">
-              <img :src="quiz.image" alt="" draggable="false" />
+              <img
+                v-if="quiz.image"
+                :src="quiz.image"
+                alt=""
+                draggable="false"
+                @error="hideBrokenImage"
+              />
               <div class="card-info-overlay">
                 <h3 class="q-title">{{ quiz.titre }}</h3>
                 <span class="q-cat">{{ quiz.category }}</span>

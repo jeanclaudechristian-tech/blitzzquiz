@@ -4,7 +4,6 @@ const RAW_API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 const API_ORIGIN = RAW_API_URL.endsWith("/api")
   ? RAW_API_URL.slice(0, -4)
   : RAW_API_URL;
-const DEFAULT_QUIZ_IMAGE = "/images/Black_BlitzzQuiz 2.svg";
 
 const hasValidToken = () => {
   const token = localStorage.getItem("token");
@@ -43,6 +42,10 @@ const resolveAssetUrl = (value) => {
     return API_ORIGIN ? `${API_ORIGIN}${value}` : value;
   }
 
+  if (value.startsWith("storage/")) {
+    return API_ORIGIN ? `${API_ORIGIN}/${value}` : `/${value}`;
+  }
+
   if (value.startsWith("/")) {
     return API_ORIGIN ? `${API_ORIGIN}${value}` : value;
   }
@@ -53,14 +56,14 @@ const resolveAssetUrl = (value) => {
 export const resolveQuizImage = (quiz) => {
   const rawImage = quiz?.image || quiz?.image_url || quiz?.thumbnail || null;
   if (rawImage) {
-    return resolveAssetUrl(rawImage) || DEFAULT_QUIZ_IMAGE;
+    return resolveAssetUrl(rawImage) || null;
   }
 
   if (quiz?.image_path) {
-    return resolveAssetUrl(quiz.image_path) || DEFAULT_QUIZ_IMAGE;
+    return resolveAssetUrl(quiz.image_path) || null;
   }
 
-  return DEFAULT_QUIZ_IMAGE;
+  return null;
 };
 
 const listQuizzes = async () => {

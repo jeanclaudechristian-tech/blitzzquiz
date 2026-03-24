@@ -90,9 +90,8 @@ const getCardStyle = (index) => {
 
 const onQuizImageError = (event) => {
     const img = event?.target;
-    if (!img || img.dataset.fallbackApplied === '1') return;
-    img.dataset.fallbackApplied = '1';
-    img.src = '/images/Black_BlitzzQuiz 1.png';
+    if (!img) return;
+    img.style.display = 'none';
 };
 
 const handleWheel = (e) => {
@@ -216,7 +215,13 @@ onUnmounted(() => {
                 >
                     <div class="quiz-card" @click="handleCardClick(quiz.id)" style="cursor: pointer;">
                         <div class="card-image-container">
-                            <img :src="quiz.image" :alt="quiz.title" draggable="false" @error="onQuizImageError" />
+                            <img
+                                v-if="quiz.image"
+                                :src="quiz.image"
+                                :alt="quiz.title"
+                                draggable="false"
+                                @error="onQuizImageError"
+                            />
                         </div>
                         <div class="card-info">
                             <h3>{{ quiz.title }}</h3>

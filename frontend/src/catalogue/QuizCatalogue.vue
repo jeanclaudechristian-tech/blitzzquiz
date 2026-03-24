@@ -113,6 +113,12 @@ const handleQuizClick = (quizId) => {
     }
 };
 
+const hideBrokenImage = (event) => {
+    const img = event?.target;
+    if (!img) return;
+    img.style.display = 'none';
+};
+
 // --- 🎯 LOGIQUE SCROLL & SOURIS ---
 const updateHeaderVisibility = () => {
     headerRafId = null;
@@ -348,7 +354,13 @@ onUnmounted(() => {
                             <!-- Image + Titre -->
                             <div class="row-title-cell">
                                 <div class="row-thumb">
-                                    <img :src="quiz.image" alt="" draggable="false" />
+                                    <img
+                                        v-if="quiz.image"
+                                        :src="quiz.image"
+                                        alt=""
+                                        draggable="false"
+                                        @error="hideBrokenImage"
+                                    />
                                     <div class="row-thumb-overlay">
                                         <h3>{{ quiz.titre }}</h3>
                                         <span>{{ quiz.category }}</span>
@@ -398,7 +410,13 @@ onUnmounted(() => {
                         <div v-for="quiz in filteredQuizzes" :key="quiz.id" class="quiz-card"
                             @click="handleQuizClick(quiz.id)">
                             <div class="card-inner">
-                                <img :src="quiz.image" alt="" draggable="false" />
+                                <img
+                                    v-if="quiz.image"
+                                    :src="quiz.image"
+                                    alt=""
+                                    draggable="false"
+                                    @error="hideBrokenImage"
+                                />
                                 <div class="card-info-bottom">
                                     <h3 class="q-title">{{ quiz.titre }}</h3>
                                     <span class="q-cat">{{ quiz.category }}</span>
