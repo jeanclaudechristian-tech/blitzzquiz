@@ -16,6 +16,7 @@ const isLoggedIn = ref(false);
 const showGuestModal = ref(false);
 const showQuizModal = ref(false);
 const selectedQuizId = ref(null);
+const cardToneByQuizId = ref({});
 
 let autoPlayInterval = null;
 let inactivityTimeout = null;
@@ -39,6 +40,7 @@ const loadQuizzes = async () => {
     try {
         const data = await quizService.getSuggestionQuizzes(8);
         quizzes.value = data.quizzes;
+        cardToneByQuizId.value = {};
         // Toujours se baser sur le token local pour eviter un etat stale en keep-alive.
         syncAuthState();
     } catch (error) {
@@ -92,6 +94,54 @@ const onQuizImageError = (event) => {
     const img = event?.target;
     if (!img) return;
     img.style.display = 'none';
+};
+
+const getCardTone = (quizId) => cardToneByQuizId.value[quizId] || 'light';
+
+const analyzeImageTone = (event, quizId) => {
+    const img = event?.target;
+    if (!img || !quizId) return;
+
+    try {
+        const sampleWidth = 48;
+        const sampleHeight = 48;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
+
+        canvas.width = sampleWidth;
+        canvas.height = sampleHeight;
+        ctx.drawImage(img, 0, 0, sampleWidth, sampleHeight);
+
+        const data = ctx.getImageData(0, 0, sampleWidth, sampleHeight).data;
+
+        // Focus on lower-left area where overlay text is rendered.
+        let totalLuma = 0;
+        let count = 0;
+        for (let y = Math.floor(sampleHeight * 0.58); y < sampleHeight; y += 1) {
+            for (let x = 0; x < Math.floor(sampleWidth * 0.65); x += 1) {
+                const i = (y * sampleWidth + x) * 4;
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                totalLuma += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                count += 1;
+            }
+        }
+
+        if (!count) return;
+        const avgLuma = totalLuma / count;
+        cardToneByQuizId.value = {
+            ...cardToneByQuizId.value,
+            [quizId]: avgLuma >= 155 ? 'dark' : 'light'
+        };
+    } catch (_error) {
+        // Cross-origin images can block pixel reads; keep default readable style.
+        cardToneByQuizId.value = {
+            ...cardToneByQuizId.value,
+            [quizId]: 'light'
+        };
+    }
 };
 
 const handleWheel = (e) => {
@@ -213,13 +263,20 @@ onUnmounted(() => {
                     class="quiz-card-wrapper"
                     :style="getCardStyle(index)"
                 >
-                    <div class="quiz-card" @click="handleCardClick(quiz.id)" style="cursor: pointer;">
+                    <div
+                        class="quiz-card"
+                        :class="`quiz-card--tone-${getCardTone(quiz.id)}`"
+                        @click="handleCardClick(quiz.id)"
+                        style="cursor: pointer;"
+                    >
                         <div class="card-image-container">
                             <img
                                 v-if="quiz.image"
                                 :src="quiz.image"
                                 :alt="quiz.title"
+                                crossorigin="anonymous"
                                 draggable="false"
+                                @load="analyzeImageTone($event, quiz.id)"
                                 @error="onQuizImageError"
                             />
                         </div>

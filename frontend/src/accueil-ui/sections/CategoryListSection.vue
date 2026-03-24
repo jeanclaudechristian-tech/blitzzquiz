@@ -176,7 +176,7 @@ const handleClick = (label) => {
 
 .subtitle-copy {
   font-family: var(--font-base);
-  font-size: 1.1rem;
+  font-size: 1.16rem;
   color: #6b7280;
   max-width: 650px;
   margin: 0 auto;
@@ -336,6 +336,10 @@ const handleClick = (label) => {
 @media (max-width: 768px) {
   .title-copy {
     font-size: 2rem;
+  }
+
+  .subtitle-copy {
+    font-size: 1.08rem;
   }
 
   .slider-btn {
