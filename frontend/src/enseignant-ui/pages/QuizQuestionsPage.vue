@@ -4,10 +4,10 @@
     <main class="questions-main" v-if="quizLoaded">
       <header class="questions-header">
         <div class="questions-header-copy">
-          <p class="questions-kicker">Édition du quiz</p>
+          <p class="questions-kicker">Edition du quiz</p>
           <h1>Questions - {{ quizTitle }}</h1>
           <p class="questions-subtitle">
-            Ajoute, ajuste et réorganise les questions avant publication.
+            Ajoute, ajuste et reorganise les questions avant publication.
           </p>
         </div>
         <button type="button" class="link-button" @click="goBack">
@@ -16,30 +16,28 @@
       </header>
 
       <section class="questions-layout">
-        <!-- ── Sidebar ── -->
         <aside class="questions-list">
           <div class="questions-list-header">
             <h2>Questions ({{ questions.length }})</h2>
           </div>
 
-            <div v-for="(q, index) in questions" :key="q.id"
-            :class="['question-item', { active: index === currentIndex }]" @click="loadQuestion(index)">
+          <div
+            v-for="(q, index) in questions"
+            :key="q.id"
+            :class="['question-item', { active: index === currentIndex }]"
+            @click="loadQuestion(index)"
+          >
             <span>Q{{ index + 1 }}</span>
             <button type="button" class="question-delete" @click.stop="deleteQuestion(index)">
               Supprimer
             </button>
           </div>
 
-          <button
-            type="button"
-            class="add-question-btn"
-            @click="newQuestion"
-          >
+          <button type="button" class="add-question-btn" @click="newQuestion">
             + Nouvelle question
           </button>
         </aside>
 
-        <!-- ── Form ── -->
         <section class="question-form">
           <form @submit.prevent="addOrUpdateQuestion">
             <div class="field-group">
@@ -53,53 +51,55 @@
             </div>
 
             <div class="field-group">
-              <label>Choix de réponse *</label>
-              <div class="choices-grid">
-                <div class="choice-item">
-                  <span class="choice-label">A</span>
-                  <input
-                    v-model="form.choixA"
-                    type="text"
-                    placeholder="Choix A"
-                  />
-                </div>
-                <div class="choice-item">
-                  <span class="choice-label">B</span>
-                  <input
-                    v-model="form.choixB"
-                    type="text"
-                    placeholder="Choix B"
-                  />
-                </div>
-                <div class="choice-item">
-                  <span class="choice-label">C</span>
-                  <input
-                    v-model="form.choixC"
-                    type="text"
-                    placeholder="Choix C"
-                  />
-                </div>
-                <div class="choice-item">
-                  <span class="choice-label">D</span>
-                  <input
-                    v-model="form.choixD"
-                    type="text"
-                    placeholder="Choix D"
-                  />
-                </div>
-              </div>
+              <label for="question-type">Type de question *</label>
+              <select id="question-type" v-model="form.type" @change="onTypeChange">
+                <option value="QCM">QCM (A, B, C, D)</option>
+                <option value="TF">Vrai / Faux</option>
+              </select>
             </div>
 
             <div class="field-group">
-              <label>Bonne réponse *</label>
-              <div class="answer-radios">
-                <label v-for="opt in ['A','B','C','D']" :key="opt">
-                  <input
-                    type="radio"
-                    :value="opt"
-                    v-model="form.bonneReponse"
-                  />
-                  <span>{{ opt }}</span>
+              <label>Choix de reponse *</label>
+              <template v-if="form.type === 'TF'">
+                <div class="choices-grid choices-grid--tf">
+                  <div class="choice-item choice-item--readonly">
+                    <span class="choice-label">A</span>
+                    <input type="text" value="Vrai" readonly />
+                  </div>
+                  <div class="choice-item choice-item--readonly">
+                    <span class="choice-label">B</span>
+                    <input type="text" value="Faux" readonly />
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="choices-grid">
+                  <div class="choice-item">
+                    <span class="choice-label">A</span>
+                    <input v-model="form.choixA" type="text" placeholder="Choix A" />
+                  </div>
+                  <div class="choice-item">
+                    <span class="choice-label">B</span>
+                    <input v-model="form.choixB" type="text" placeholder="Choix B" />
+                  </div>
+                  <div class="choice-item">
+                    <span class="choice-label">C</span>
+                    <input v-model="form.choixC" type="text" placeholder="Choix C" />
+                  </div>
+                  <div class="choice-item">
+                    <span class="choice-label">D</span>
+                    <input v-model="form.choixD" type="text" placeholder="Choix D" />
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <div class="field-group">
+              <label>Bonne reponse *</label>
+              <div class="answer-radios" :class="{ 'answer-radios--two': form.type === 'TF' }">
+                <label v-for="opt in answerOptions" :key="opt.value">
+                  <input type="radio" :value="opt.value" v-model="form.bonneReponse" />
+                  <span>{{ opt.label }}</span>
                 </label>
               </div>
             </div>
@@ -110,7 +110,7 @@
                 id="explication"
                 v-model="form.explication"
                 rows="2"
-                placeholder="Expliquez pourquoi cette réponse est correcte…"
+                placeholder="Explique pourquoi cette reponse est correcte..."
               />
             </div>
 
@@ -123,25 +123,27 @@
               <button type="button" class="btn-secondary" @click="saveAll">
                 Enregistrer et retourner mes quiz
               </button>
-              <button
-                type="button"
-                class="link-button"
-                @click="preview"
-              >
-                Prévisualiser
+              <button type="button" class="link-button" @click="preview">
+                Previsualiser
               </button>
             </div>
           </form>
 
           <transition name="fade-up">
             <div v-if="showPreview" class="preview-card">
-              <h3>Aperçu</h3>
+              <h3>Apercu</h3>
               <p class="preview-question">{{ form.texte }}</p>
               <ul class="preview-choices">
-                <li><strong>A.</strong> {{ form.choixA }}</li>
-                <li><strong>B.</strong> {{ form.choixB }}</li>
-                <li><strong>C.</strong> {{ form.choixC }}</li>
-                <li><strong>D.</strong> {{ form.choixD }}</li>
+                <template v-if="form.type === 'TF'">
+                  <li><strong>A.</strong> Vrai</li>
+                  <li><strong>B.</strong> Faux</li>
+                </template>
+                <template v-else>
+                  <li><strong>A.</strong> {{ form.choixA }}</li>
+                  <li><strong>B.</strong> {{ form.choixB }}</li>
+                  <li><strong>C.</strong> {{ form.choixC }}</li>
+                  <li><strong>D.</strong> {{ form.choixD }}</li>
+                </template>
               </ul>
             </div>
           </transition>
@@ -180,10 +182,57 @@ export default {
   },
   computed: {
     primaryActionLabel() {
-      return this.currentIndex == null ? 'Ajouter la question' : 'Mettre à jour la question'
+      return this.currentIndex == null ? 'Ajouter la question' : 'Mettre a jour la question'
+    },
+    answerOptions() {
+      if (this.form.type === 'TF') {
+        return [
+          { value: 'A', label: 'Vrai' },
+          { value: 'B', label: 'Faux' },
+        ]
+      }
+
+      return [
+        { value: 'A', label: 'A' },
+        { value: 'B', label: 'B' },
+        { value: 'C', label: 'C' },
+        { value: 'D', label: 'D' },
+      ]
     },
   },
   methods: {
+    normalizeType(type) {
+      return type === 'TF' ? 'TF' : 'QCM'
+    },
+
+    onTypeChange() {
+      if (this.form.type === 'TF') {
+        this.form.choixA = 'Vrai'
+        this.form.choixB = 'Faux'
+        this.form.choixC = ''
+        this.form.choixD = ''
+
+        if (!['A', 'B'].includes(this.form.bonneReponse)) {
+          this.form.bonneReponse = 'A'
+        }
+        return
+      }
+
+      if (!['A', 'B', 'C', 'D'].includes(this.form.bonneReponse)) {
+        this.form.bonneReponse = 'A'
+      }
+
+      if (
+        this.form.choixA === 'Vrai' &&
+        this.form.choixB === 'Faux' &&
+        !this.form.choixC &&
+        !this.form.choixD
+      ) {
+        this.form.choixA = ''
+        this.form.choixB = ''
+      }
+    },
+
     async loadQuizMeta() {
       const id = this.$route.params.id
       try {
@@ -226,17 +275,21 @@ export default {
       const q = this.questions[index]
       if (!q) return
 
+      const normalizedType = this.normalizeType(q.type)
+
       this.currentIndex = index
       this.form = {
-        type: q.type || 'QCM',
+        type: normalizedType,
         texte: q.texte || '',
-        choixA: q.metadata?.choixA || '',
-        choixB: q.metadata?.choixB || '',
-        choixC: q.metadata?.choixC || '',
-        choixD: q.metadata?.choixD || '',
+        choixA: normalizedType === 'TF' ? 'Vrai' : q.metadata?.choixA || '',
+        choixB: normalizedType === 'TF' ? 'Faux' : q.metadata?.choixB || '',
+        choixC: normalizedType === 'TF' ? '' : q.metadata?.choixC || '',
+        choixD: normalizedType === 'TF' ? '' : q.metadata?.choixD || '',
         bonneReponse: q.metadata?.bonneReponse || 'A',
         explication: q.explanation || '',
       }
+
+      this.onTypeChange()
     },
 
     newQuestion() {
@@ -256,37 +309,43 @@ export default {
         explication,
       } = this.form
 
+      if (!texte.trim()) {
+        this.error = 'Veuillez saisir le texte de la question.'
+        return
+      }
+
       if (
-        !texte.trim() ||
-        !choixA.trim() ||
-        !choixB.trim() ||
-        !choixC.trim() ||
-        !choixD.trim()
+        type === 'QCM' &&
+        (!choixA.trim() || !choixB.trim() || !choixC.trim() || !choixD.trim())
       ) {
-        this.error =
-          'Veuillez remplir le texte de la question et les 4 choix.'
+        this.error = 'Veuillez remplir les 4 choix pour une question QCM.'
+        return
+      }
+
+      if (type === 'TF' && !['A', 'B'].includes(bonneReponse)) {
+        this.error = 'Veuillez choisir la bonne reponse (Vrai ou Faux).'
         return
       }
 
       const payload = {
-        type: type || 'QCM',
+        type: this.normalizeType(type),
         texte: texte.trim(),
-        choixA: choixA.trim(),
-        choixB: choixB.trim(),
-        choixC: choixC.trim(),
-        choixD: choixD.trim(),
         bonneReponse,
         explication: explication?.trim() ?? '',
+      }
+
+      if (payload.type === 'QCM') {
+        payload.choixA = choixA.trim()
+        payload.choixB = choixB.trim()
+        payload.choixC = choixC.trim()
+        payload.choixD = choixD.trim()
       }
 
       const quizId = this.$route.params.id
 
       try {
         if (this.currentIndex == null || !this.questions[this.currentIndex]?.id) {
-          const { data } = await api.post(
-            `/quizzes/${quizId}/questions`,
-            payload,
-          )
+          const { data } = await api.post(`/quizzes/${quizId}/questions`, payload)
           this.questions.push(data)
           this.currentIndex = this.questions.length - 1
         } else {
@@ -296,12 +355,8 @@ export default {
         }
         this.showPreview = true
       } catch (e) {
-        console.error(
-          'Erreur enregistrement question',
-          e.response?.data || e,
-        )
-        this.error =
-          "Erreur lors de l'enregistrement de la question."
+        console.error('Erreur enregistrement question', e.response?.data || e)
+        this.error = "Erreur lors de l'enregistrement de la question."
       }
     },
 
@@ -324,11 +379,8 @@ export default {
         if (this.currentIndex === index) this.resetForm()
         else if (this.currentIndex > index) this.currentIndex -= 1
       } catch (e) {
-        console.error(
-          'Erreur suppression question',
-          e.response?.data || e,
-        )
-        alert("Impossible de supprimer la question.")
+        console.error('Erreur suppression question', e.response?.data || e)
+        alert('Impossible de supprimer la question.')
       }
     },
 
@@ -355,5 +407,3 @@ export default {
 <style scoped>
 @import './QuizQuestionsPage.css';
 </style>
-
-

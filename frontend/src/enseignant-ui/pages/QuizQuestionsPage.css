@@ -185,7 +185,8 @@
 }
 
 .field-group textarea,
-.field-group input[type='text'] {
+.field-group input[type='text'],
+.field-group select {
   width: 100%;
   border: 1px solid #dbe4ef;
   border-radius: 14px;
@@ -205,7 +206,8 @@
 }
 
 .field-group textarea:focus,
-.field-group input[type='text']:focus {
+.field-group input[type='text']:focus,
+.field-group select:focus {
   border-color: #00a3ff;
   box-shadow: 0 0 0 3px rgba(0, 163, 255, 0.08);
 }
@@ -240,10 +242,20 @@
   flex: 1;
 }
 
+.choice-item--readonly input {
+  color: #374151;
+  background: #f8fafc;
+  cursor: default;
+}
+
 .answer-radios {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.answer-radios--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .answer-radios label {

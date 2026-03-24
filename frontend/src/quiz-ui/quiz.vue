@@ -68,17 +68,27 @@
                   </div>
                 </template>
 
-                <div class="choices-grid">
-                  <button v-for="opt in ['A', 'B', 'C', 'D']" :key="opt" type="button" :class="[
-                    'choice-btn',
-                    {
-                      selected: selectedChoice === opt && index === currentIndex,
-                      correct: showFeedback && index === currentIndex && opt === question.metadata?.bonneReponse,
-                      wrong: showFeedback && index === currentIndex && selectedChoice === opt && opt !== question.metadata?.bonneReponse,
-                    },
-                  ]" @click="index === currentIndex ? selectChoice(opt) : null">
-                    <span class="choice-label">{{ opt }}</span>
-                    <span class="choice-text">{{ choiceText(opt, question) }}</span>
+                <div v-if="question.type !== 'FILL_IN'" class="choices-grid">
+                  <button
+                    v-for="opt in getQuestionOptions(question)"
+                    :key="opt.value"
+                    type="button"
+                    :class="[
+                      'choice-btn',
+                      {
+                        selected: selectedChoice === opt.value && index === currentIndex,
+                        correct: showFeedback && index === currentIndex && opt.value === question.metadata?.bonneReponse,
+                        wrong:
+                          showFeedback &&
+                          index === currentIndex &&
+                          selectedChoice === opt.value &&
+                          opt.value !== question.metadata?.bonneReponse,
+                      },
+                    ]"
+                    @click="index === currentIndex ? selectChoice(opt.value) : null"
+                  >
+                    <span class="choice-label">{{ opt.value }}</span>
+                    <span class="choice-text">{{ opt.label }}</span>
                   </button>
                 </div>
 
@@ -243,9 +253,38 @@ export default {
       return accepted.includes(studentInput) ? 'is-correct' : 'is-wrong';
     },
 
-    choiceText(opt, question) {
-      if (question.type === 'TF') return opt === 'A' ? 'Vrai' : (opt === 'B' ? 'Faux' : '');
-      return question.metadata?.[`choix${opt}`] || '';
+    getQuestionOptions(question) {
+      if (!question) return [];
+
+      const normalizedType = String(question.type || '').toUpperCase();
+
+      if (normalizedType === 'TF') {
+        const options = Array.isArray(question.metadata?.options)
+          ? question.metadata.options
+          : [];
+
+        if (options.length >= 2) {
+          return options
+            .map((opt, index) => ({
+              value: opt?.value || (index === 0 ? 'A' : index === 1 ? 'B' : ''),
+              label: String(opt?.label || '').trim(),
+            }))
+            .filter((opt) => opt.value && opt.label);
+        }
+
+        return [
+          { value: 'A', label: 'Vrai' },
+          { value: 'B', label: 'Faux' },
+        ];
+      }
+
+      const qcmOptions = ['A', 'B', 'C', 'D'].map((opt) => ({
+        value: opt,
+        label: String(question.metadata?.[`choix${opt}`] || '').trim(),
+      }));
+
+      const nonEmptyQcmOptions = qcmOptions.filter((opt) => opt.label);
+      return nonEmptyQcmOptions.length > 0 ? nonEmptyQcmOptions : qcmOptions;
     },
     explanationText(question) {
       return (

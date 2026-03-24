@@ -57,7 +57,6 @@
             <a class="btn-code" @click.prevent="isCodeModalOpen = true" style="cursor: pointer;">CODE</a>
             <router-link to="/#section-hero" class="nav-link">Accueil</router-link>
             <router-link to="/catalogue" class="nav-link">Explorer</router-link> 
-            <router-link v-if="!isLoggedIn" to="/#section-footer" class="nav-link">Aide</router-link>
 
             <template v-if="isLoggedIn">
               <router-link :to="userRole === 'TEACHER' ? '/enseignant/groupes' : '/etudiant/mes-groupes'"
