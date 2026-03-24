@@ -110,7 +110,7 @@
                   C'est quoi BlitzzQuiz ?
                   <span class="material-symbols-outlined faq-icon">expand_more</span>
                 </summary>
-                <div class="faq-content">Plateforme interactive pour créer et jouer à des quiz en temps réel.</div>
+                <div class="faq-content">Plateforme interactive pour créer et jouer à des quiz.</div>
               </details>
               <details class="faq-item">
                 <summary>

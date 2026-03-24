@@ -41,4 +41,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'supabase' => [
+        'url' => rtrim((string) env('SUPABASE_URL', ''), '/'),
+        'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY'),
+        'storage_bucket' => env('SUPABASE_STORAGE_BUCKET', 'quiz-images'),
+        'storage_prefix' => trim((string) env('SUPABASE_STORAGE_PREFIX', ''), '/'),
+    ],
+
 ];

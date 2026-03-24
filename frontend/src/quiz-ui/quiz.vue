@@ -105,8 +105,9 @@
 
               <footer class="play-footer" style="justify-content: center;">
                 <button 
-                  v-if="index === currentIndex && (selectedChoice || inReview)"
+                  v-if="index === currentIndex"
                   class="next-btn"
+                  :disabled="!canSubmitCurrentQuestion(question, index)"
                   @click="nextQuestion"
                 >
                   {{ inReview ? (index === questions.length - 1 ? 'Voir le resultat' : 'Question suivante') : 'Valider la reponse' }}
@@ -298,12 +299,29 @@ export default {
     selectChoice(opt) {
       if (!this.showFeedback) this.selectedChoice = opt;
     },
+    canSubmitCurrentQuestion(question, qIdx) {
+      if (qIdx !== this.currentIndex) return false;
+      if (this.inReview) return true;
+
+      if (question?.type === 'FILL_IN') {
+        const ans = this.answers[qIdx];
+        if (!ans || typeof ans !== 'object') return false;
+        return Object.values(ans).some((value) => String(value || '').trim() !== '');
+      }
+
+      return Boolean(this.selectedChoice);
+    },
 
     nextQuestion() {
-      if (!this.selectedChoice && !this.inReview) return;
+      const currentQuestion = this.questions[this.currentIndex];
+      if (!this.canSubmitCurrentQuestion(currentQuestion, this.currentIndex)) return;
 
       if (!this.inReview) {
-        this.answers[this.currentIndex] = this.selectedChoice;
+        if (currentQuestion?.type === 'FILL_IN') {
+          this.answers[this.currentIndex] = { ...(this.answers[this.currentIndex] || {}) };
+        } else {
+          this.answers[this.currentIndex] = this.selectedChoice;
+        }
         this.showFeedback = true;
         this.inReview = true;
         return;

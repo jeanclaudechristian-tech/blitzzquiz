@@ -45,6 +45,10 @@ class Quiz extends Model
             return $this->image_path;
         }
 
+        if (!Storage::disk('public')->exists($this->image_path)) {
+            return null;
+        }
+
         return Storage::disk('public')->url($this->image_path);
     }
 
@@ -90,4 +94,3 @@ class Quiz extends Model
             );
     }
 }
-

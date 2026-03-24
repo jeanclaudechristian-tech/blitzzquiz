@@ -18,8 +18,17 @@ const normalizeCategory = (quiz) =>
     ? quiz.category.name || quiz.category.NAME || "General"
     : quiz.category || "General";
 
+const isBlitzzPlaceholder = (value) => {
+  const normalized = String(value || "").toLowerCase();
+  return (
+    normalized.includes("black_blitzzquiz") ||
+    normalized.includes("logoblitzzquiz")
+  );
+};
+
 const resolveAssetUrl = (value) => {
   if (!value) return null;
+  if (isBlitzzPlaceholder(value)) return null;
 
   if (value.startsWith("http://") || value.startsWith("https://")) {
     // If backend returns /storage URL with a wrong host/port, re-anchor to API origin.

@@ -6,6 +6,7 @@ use App\Models\Quiz;
 use App\Models\Question;
 use App\Models\Result;
 use App\Models\Category;
+use App\Services\SupabaseStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\Storage;
 
 class QuizController extends Controller
 {
+    public function __construct(
+        private readonly SupabaseStorageService $supabaseStorage,
+    ) {
+    }
+
     /**
      * Normalize is_public for Postgres writes while keeping API contract unchanged.
      */
@@ -38,6 +44,9 @@ class QuizController extends Controller
         }
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            if ($this->supabaseStorage->isManagedPublicUrl($path)) {
+                $this->supabaseStorage->deleteByPublicUrl($path);
+            }
             return;
         }
 
@@ -237,7 +246,9 @@ class QuizController extends Controller
         ]);
 
         $oldPath = $quiz->image_path;
-        $newPath = $validated['image']->store('quiz-images', 'public');
+        $newPath = $this->supabaseStorage->enabled()
+            ? $this->supabaseStorage->uploadUploadedFile($validated['image'])
+            : $validated['image']->store('quiz-images', 'public');
 
         $quiz->image_path = $newPath;
         $quiz->save();
