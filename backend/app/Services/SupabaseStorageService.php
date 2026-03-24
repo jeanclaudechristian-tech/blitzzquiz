@@ -40,12 +40,12 @@ class SupabaseStorageService
         $objectPath = $this->buildObjectPath($filename);
 
         $endpoint = $this->storageObjectEndpoint($objectPath);
+        $mimeType = $this->resolveMimeType($file);
 
         $response = Http::withHeaders($this->authHeaders([
             'x-upsert' => 'true',
-            'content-type' => $file->getMimeType() ?: 'application/octet-stream',
         ]))
-            ->withBody($file->get(), $file->getMimeType() ?: 'application/octet-stream')
+            ->withBody($file->get(), $mimeType)
             ->post($endpoint);
 
         if (!$response->successful()) {
@@ -143,5 +143,25 @@ class SupabaseStorageService
             'authorization' => 'Bearer '.$this->serviceRoleKey,
             'apikey' => $this->serviceRoleKey,
         ], $extra);
+    }
+
+    private function resolveMimeType(UploadedFile $file): string
+    {
+        $raw = trim((string) ($file->getClientMimeType() ?: $file->getMimeType() ?: ''));
+
+        if ($raw !== '' && preg_match('/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/i', $raw) === 1) {
+            return strtolower($raw);
+        }
+
+        $ext = strtolower((string) ($file->guessExtension() ?: $file->getClientOriginalExtension() ?: ''));
+        $byExt = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+        ];
+
+        return $byExt[$ext] ?? 'application/octet-stream';
     }
 }
