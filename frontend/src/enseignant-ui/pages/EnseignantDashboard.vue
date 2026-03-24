@@ -43,7 +43,6 @@ const quizForm = ref({
 
 const groupForm = ref({
   nom: '',
-  isPublic: true,
 })
 
 const revokePreview = () => {
@@ -227,7 +226,7 @@ const pageCopy = computed(() => {
 })
 
 const quizPrimaryLabel = computed(() =>
-  savingQuiz.value ? 'Création...' : 'Créer et continuer',
+  savingQuiz.value ? 'Creation...' : 'Creer et voir mes quiz',
 )
 
 const loadCategories = async () => {
@@ -307,11 +306,11 @@ const createQuizAndContinue = async () => {
     const uploadOk = await uploadQuizImageIfNeeded(quiz.id)
 
     if (!uploadOk) {
-      router.push(`/enseignant/quiz/${quiz.id}/questions`)
+      openMyQuizzes()
       return
     }
 
-    router.push(`/enseignant/quiz/${quiz.id}/questions`)
+    openMyQuizzes()
   } catch (error) {
     if (error.message === 'invalid') return
     console.error('Erreur creation quiz', error.response?.data || error)
@@ -322,8 +321,12 @@ const createQuizAndContinue = async () => {
 const createQuizOnly = async () => {
   try {
     const quiz = await createQuiz()
-    await uploadQuizImageIfNeeded(quiz.id)
-    openMyQuizzes()
+    const uploadOk = await uploadQuizImageIfNeeded(quiz.id)
+    if (!uploadOk) {
+      openMyQuizzes()
+      return
+    }
+    router.push(`/enseignant/quiz/${quiz.id}/questions`)
   } catch (error) {
     if (error.message === 'invalid') return
     console.error('Erreur creation quiz', error.response?.data || error)
@@ -344,7 +347,7 @@ const createGroup = async () => {
   try {
     const { data: group } = await groupService.create({
       nom: groupForm.value.nom.trim(),
-      is_public: groupForm.value.isPublic,
+      is_public: false,
     })
     router.push(`/enseignant/groupes/${group.id}`)
   } catch (error) {
@@ -539,7 +542,7 @@ onBeforeUnmount(() => {
               :disabled="savingQuiz"
               @click="createQuizOnly"
             >
-              Enregistrer seulement
+              Creer puis modifier les questions
             </button>
           </div>
         </form>
@@ -557,36 +560,11 @@ onBeforeUnmount(() => {
             />
           </div>
 
-          <div class="field-row field-row--group">
-            <div class="field-group">
-              <span class="field-label">Visibilité</span>
-              <div class="choice-row">
-                <button
-                  type="button"
-                  class="choice-btn"
-                  :class="{ active: groupForm.isPublic }"
-                  @click="groupForm.isPublic = true"
-                  :disabled="savingGroup"
-                >
-                  Public
-                </button>
-                <button
-                  type="button"
-                  class="choice-btn"
-                  :class="{ active: !groupForm.isPublic }"
-                  @click="groupForm.isPublic = false"
-                  :disabled="savingGroup"
-                >
-                  Privé
-                </button>
-              </div>
-            </div>
-
-            <div class="code-preview">
-              <span class="field-label">Code</span>
-              <strong>{{ previewCode }}</strong>
-            </div>
+          <div class="code-preview field-group--wide">
+            <span class="field-label">Code</span>
+            <strong>{{ previewCode }}</strong>
           </div>
+          <p class="field-help">Tous les groupes sont prives.</p>
 
           <p v-if="groupError" class="form-error">{{ groupError }}</p>
 

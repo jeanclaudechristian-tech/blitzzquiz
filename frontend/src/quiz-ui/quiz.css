@@ -77,15 +77,33 @@
 .empty-state-card {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 14px;
   font-family: 'Inter', sans-serif;
   font-size: 1.2rem;
   color: #1a1a1a;
+  text-align: center;
+  padding: 28px;
+}
+
+.empty-state-card h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  line-height: 1.1;
+}
+
+.empty-state-card p {
+  margin: 0;
+  max-width: 46ch;
+  color: #6b7280;
+  line-height: 1.5;
 }
 
 .error-text {
   color: #e74c3c;
+  font-weight: 600;
 }
 
 .play-header {
@@ -131,6 +149,8 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .question-text {
@@ -140,6 +160,17 @@
   color: #1a1a1a;
   margin-bottom: 24px;
   text-align: center;
+}
+
+.question-prompt {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.32rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 18px;
+  text-align: center;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .choices-grid {
@@ -157,12 +188,6 @@
   border-radius: 12px;
   background: #f8fbff;
   padding: 12px 14px;
-}
-
-.answer-explanation-slot {
-  margin-top: 14px;
-  min-height: var(--explanation-slot-height);
-  max-height: var(--explanation-slot-height);
 }
 
 .answer-explanation-title {
@@ -259,10 +284,9 @@
   /* On ajuste le conteneur principal pour qu'il s'adapte à l'écran */
   .quiz-stack-track {
     width: 92vw;
-    height: 75vh; /* Prend 75% de l'écran, peu importe le téléphone */
+    height: min(80dvh, 650px); /* Prend 75% de l'écran, peu importe le téléphone */
     max-height: 650px;
-    min-height: 480px;
-    --explanation-slot-height: 78px;
+    min-height: 0;
   }
   
   /* On réduit les paddings globaux pour gagner de la place */
@@ -272,7 +296,6 @@
 
   .play-body {
     padding: 15px 20px;
-    overflow-y: auto; /* CRUCIAL : permet de scroller les choix si l'écran est tout petit */
   }
 
   .play-footer {
@@ -283,6 +306,11 @@
   .question-text {
     font-size: 1.25rem;
     margin-bottom: 20px;
+  }
+
+  .question-prompt {
+    font-size: 1.1rem;
+    margin-bottom: 14px;
   }
 
   .choices-grid {
@@ -313,3 +341,4 @@
     font-size: 0.85rem;
   }
 }
+

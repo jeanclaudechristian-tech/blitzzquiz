@@ -145,7 +145,6 @@ const loadGroup = async () => {
         id: data.id,
         nom: data.nom,
         description: data.description || '',
-        isPublic: Boolean(data.is_public),
         code: data.code_invitation,
         ownerId: data.owner_id,
         members: Array.isArray(data.members) ? data.members : []
@@ -208,25 +207,6 @@ const copyCode = async () => {
     }, 1600);
 };
 
-const toggleVisibility = async () => {
-    if (!groupe.value || actionLoading.value) return;
-
-    actionError.value = '';
-    actionLoading.value = true;
-
-    try {
-        const { data } = await groupService.update(groupe.value.id, {
-            is_public: !groupe.value.isPublic
-        });
-        groupe.value.isPublic = Boolean(data.is_public);
-        groupe.value.code = data.code_invitation ?? groupe.value.code;
-    } catch (error) {
-        console.error('Erreur changement visibilite', error.response?.data || error);
-        actionError.value = 'Impossible de modifier la visibilite du groupe.';
-    } finally {
-        actionLoading.value = false;
-    }
-};
 
 const assignQuiz = async () => {
     if (!selectedQuizId.value || !groupe.value || actionLoading.value) return;
@@ -363,9 +343,6 @@ onMounted(loadPage);
                     </button>
 
                     <div class="hero-badges">
-                        <span class="hero-pill" :class="{ 'hero-pill--private': !groupe.isPublic }">
-                            {{ groupe.isPublic ? 'Public' : 'Prive' }}
-                        </span>
                         <button type="button" class="hero-code" @click="copyCode">
                             {{ codeCopied ? 'Code copie' : `Code ${groupe.code}` }}
                         </button>
@@ -399,9 +376,6 @@ onMounted(loadPage);
                         @click="showInviteModal = true"
                     >
                         Inviter un membre
-                    </button>
-                    <button type="button" class="hero-action" :disabled="actionLoading" @click="toggleVisibility">
-                        Rendre {{ groupe.isPublic ? 'prive' : 'public' }}
                     </button>
                     <button type="button" class="hero-action" :disabled="actionLoading" @click="goToCreate">
                         Nouveau groupe

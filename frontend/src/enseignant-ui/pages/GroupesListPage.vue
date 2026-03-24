@@ -27,7 +27,6 @@ const loadGroupes = async () => {
       nom: group.nom ?? group.name,
       owner_id: group.owner_id,
       code: group.code_invitation ?? group.code,
-      isPublic: Boolean(group.is_public),
       nbMembres:
         group.nb_membres ??
         group.members_count ??
@@ -87,7 +86,7 @@ onMounted(loadGroupes)
             <div class="card-info">
               <h3>{{ group.nom }}</h3>
               <p>
-                {{ group.nbMembres }} Membres • Code: {{ group.code }} • {{ group.isPublic ? 'Public' : 'Privé' }}
+                {{ group.nbMembres }} Membres - Code: {{ group.code }}
               </p>
             </div>
 
@@ -116,3 +115,4 @@ onMounted(loadGroupes)
 <style scoped>
 @import './GroupesListPage.css';
 </style>
+

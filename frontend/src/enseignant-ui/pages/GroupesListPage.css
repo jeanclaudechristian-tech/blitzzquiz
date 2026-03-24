@@ -73,6 +73,13 @@
 }
 
 .card-info {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  padding: 0;
+  background: transparent;
   min-width: 0;
 }
 

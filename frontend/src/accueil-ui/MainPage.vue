@@ -194,7 +194,7 @@ export default {
 }
 
 .home-page .suggestion-section {
-  margin-top: 0;
+  margin-top: -24px;
 }
 
 /* Uniformisation des liens (bleu, gras, underline au hover). */

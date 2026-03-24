@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div class="guest-modal-backdrop" v-if="quizLoaded || loading || error" @click.self="closeModal">
+    <div class="guest-modal-backdrop">
 
       <button class="guest-modal-close-floating" @click="closeModal">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -51,6 +51,10 @@
               </header>
 
               <section class="play-body">
+                <h2 v-if="question.type !== 'FILL_IN'" class="question-prompt">
+                  {{ resolveQuestionText(question) }}
+                </h2>
+
                 <template v-if="question.type === 'FILL_IN'">
                   <div class="fill-in-render">
                     <template v-for="(part, pIdx) in question.parts" :key="pIdx">
@@ -92,14 +96,12 @@
                   </button>
                 </div>
 
-                <div class="answer-explanation-slot">
-                  <div
-                    v-if="showFeedback && index === currentIndex"
-                    class="answer-explanation"
-                  >
-                    <p class="answer-explanation-title">Explication</p>
-                    <p class="answer-explanation-text">{{ explanationText(question) }}</p>
-                  </div>
+                <div
+                  v-if="showFeedback && index === currentIndex"
+                  class="answer-explanation"
+                >
+                  <p class="answer-explanation-title">Explication</p>
+                  <p class="answer-explanation-text">{{ explanationText(question) }}</p>
                 </div>
               </section>
 
@@ -133,9 +135,15 @@
             </footer>
           </div>
 
-          <div class="play-card-3d empty-state-card" v-if="!quizLoaded && (loading || error)">
-            <p v-if="loading">Chargement du quiz...</p>
-            <p v-else-if="error" class="error-text">{{ error }}</p>
+          <div class="play-card-3d empty-state-card" v-if="!quizLoaded && loading">
+            <h2>Chargement du quiz...</h2>
+            <p>Patiente quelques secondes.</p>
+          </div>
+
+          <div class="play-card-3d empty-state-card" v-else-if="!quizLoaded && error">
+            <h2>{{ error.includes('ne contient pas encore') ? 'Quiz sans question' : 'Quiz indisponible' }}</h2>
+            <p class="error-text">{{ error }}</p>
+            <button class="result-action-btn" @click="closeModal">Fermer</button>
           </div>
 
         </div>
@@ -209,6 +217,9 @@ export default {
     },
     async loadQuizData() {
       this.loading = true;
+      this.error = '';
+      this.quizLoaded = false;
+      this.quizState = 'loading';
       const id = this.quizId || this.$route.params.id;
       try {
         const [quizRes, questionsRes] = await Promise.all([
@@ -218,7 +229,10 @@ export default {
 
         this.quizDetails = quizRes.data;
         // 🎯 预处理填空题文本，防止渲染时丢失焦点
-        this.questions = (questionsRes.data || []).map(q => {
+        this.questions = (questionsRes.data || []).map((rawQuestion) => {
+          const q = { ...rawQuestion };
+          q.texte = this.resolveQuestionText(q);
+
           if (q.type === 'FILL_IN' && q.texte) {
             q.parts = q.texte.split(/(\[\[\d+\]\])/g);
           }
@@ -229,8 +243,12 @@ export default {
           this.quizLoaded = true;
           this.quizState = 'lobby';
           this.answers = new Array(this.questions.length).fill(null);
+        } else {
+          this.error = 'Ce quiz ne contient pas encore de questions.';
         }
-      } catch (e) { this.error = "Erreur chargement"; }
+      } catch (e) {
+        this.error = "Erreur chargement";
+      }
       finally { this.loading = false; }
     },
 
@@ -286,6 +304,22 @@ export default {
 
       const nonEmptyQcmOptions = qcmOptions.filter((opt) => opt.label);
       return nonEmptyQcmOptions.length > 0 ? nonEmptyQcmOptions : qcmOptions;
+    },
+    resolveQuestionText(question) {
+      const candidates = [
+        question?.texte,
+        question?.text,
+        question?.question,
+        question?.label,
+      ];
+
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+          return candidate.trim();
+        }
+      }
+
+      return 'Question introuvable';
     },
     explanationText(question) {
       return (
@@ -453,7 +487,7 @@ export default {
   padding: 2px 10px;
   margin: 0 5px;
   border-radius: 4px;
-  width: 120px;
+  width: clamp(78px, 20vw, 120px);
   font-family: 'Inter', sans-serif;
   font-weight: 700;
   color: #00A3FF;
@@ -476,10 +510,10 @@ export default {
 
 .fill-in-render {
   font-size: 1.4rem;
-  line-height: 2;
+  line-height: 1.9;
   color: #1a1a1a;
   text-align: center;
-  padding: 10px;
+  padding: 10px 4px;
   font-family: 'Inter', sans-serif;
 }
 
@@ -524,6 +558,17 @@ export default {
     top: 20px;
     right: 20px;
     padding: 6px;
+  }
+
+  :deep(.play-fill-input) {
+    width: 92px;
+    margin: 2px 4px;
+  }
+
+  .fill-in-render {
+    font-size: 1.08rem;
+    line-height: 1.7;
+    padding: 8px 0;
   }
 }
 

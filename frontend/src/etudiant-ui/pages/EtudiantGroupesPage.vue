@@ -268,6 +268,16 @@ onMounted(loadGroups)
   margin-right: 20px;
 }
 
+.card-info {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  padding: 0;
+  background: transparent;
+}
+
 .card-info h3 {
   margin: 0;
   font-size: 1.4rem;

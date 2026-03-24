@@ -31,26 +31,6 @@
             ></textarea>
           </div>
 
-          <!-- Visibilité -->
-          <div class="form-group">
-            <label>Visibilité</label>
-            <div class="visibility-toggle">
-              <button
-                type="button"
-                :class="['toggle-option', { active: formData.isPublic }]"
-                @click="formData.isPublic = true"
-              >
-                Public
-              </button>
-              <button
-                type="button"
-                :class="['toggle-option', { active: !formData.isPublic }]"
-                @click="formData.isPublic = false"
-              >
-                Privé
-              </button>
-            </div>
-          </div>
 
           <!-- Code du groupe (généré automatiquement) -->
           <div class="form-group">
@@ -106,7 +86,6 @@ export default {
       formData: {
         nom: '',
         description: '',
-        isPublic: true,
       },
       groupeCode: '',
       codeCopied: false,
@@ -143,7 +122,7 @@ export default {
       try {
         const payload = {
           nom: this.formData.nom.trim(),
-          is_public: this.formData.isPublic,
+          is_public: false,
           // description à ajouter côté BD plus tard si tu veux
           description : this.formData.description?.trim()|| null,
         }
@@ -172,3 +151,4 @@ export default {
 <style scoped>
 @import './GroupeCreatePage.css';
 </style>
+
