@@ -70,6 +70,16 @@
   transform: translateY(-2px);
 }
 
+.header-link:disabled,
+.choice-btn:disabled,
+.creation-toggle-btn:disabled,
+.inline-retry-btn:disabled,
+.image-clear-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .creation-card {
   background: #ffffff;
   border: 1px solid #e7edf4;
@@ -230,6 +240,25 @@
   margin: -4px 0 0;
   color: #b42318;
   font-weight: 700;
+}
+
+.inline-retry-btn {
+  justify-self: start;
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111111;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.inline-retry-btn:hover {
+  border-color: #00a3ff;
+  transform: translateY(-1px);
 }
 
 .form-actions {

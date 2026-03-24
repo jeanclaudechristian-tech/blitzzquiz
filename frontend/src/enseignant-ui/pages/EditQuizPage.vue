@@ -2,13 +2,35 @@
   <div class="edit-quiz-page">
     <AppHeader />
     <main class="edit-main">
+      <section v-if="isLoading" class="edit-card skeleton-card" aria-busy="true">
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-subtitle"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-large"></div>
+        <div class="skeleton-row">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+        <div class="skeleton-line skeleton-actions"></div>
+        <div class="skeleton-line skeleton-actions"></div>
+      </section>
+
+      <section v-else-if="loadError" class="edit-card state-card">
+        <h2>Chargement impossible</h2>
+        <p>{{ loadError }}</p>
+        <button type="button" class="btn-primary" @click="reloadPageState">
+          Reessayer
+        </button>
+      </section>
+
       <section v-if="quizLoaded" class="edit-card">
         <header class="edit-card-header">
           <h1>Editer le quiz</h1>
           <p class="subtitle">Modifie les informations de base de ton quiz</p>
         </header>
 
-        <form class="edit-form" @submit.prevent="saveQuiz(false)">
+        <form class="edit-form" @submit.prevent="saveQuiz">
           <div class="field-group">
             <label for="titre">Titre du quiz *</label>
             <input
@@ -120,30 +142,22 @@
           <div class="visibility-section">
             <div class="field-group visibility-group">
               <span class="field-label">Visibilite</span>
-              <button
-                type="button"
-                class="toggle"
-                :class="{ active: form.isPublic }"
-                @click="form.isPublic = !form.isPublic"
-              >
-                <span class="toggle-thumb"></span>
-                <span class="toggle-label">
-                  {{ form.isPublic ? 'Public' : 'Prive' }}
-                </span>
-              </button>
-            </div>
-
-            <div v-if="!form.isPublic" class="code-block">
-              <p class="code-label">Code du quiz</p>
-              <div class="code-row">
-                <span class="code-value">{{ form.code_quiz }}</span>
+              <div class="visibility-toggle-simple" role="group" aria-label="Visibilite">
                 <button
                   type="button"
-                  class="copy-btn"
-                  @click="copyCode"
-                  title="Copier le code"
+                  class="vis-btn"
+                  :class="{ active: form.isPublic }"
+                  @click="form.isPublic = true"
                 >
-                  Copier
+                  Public
+                </button>
+                <button
+                  type="button"
+                  class="vis-btn"
+                  :class="{ active: !form.isPublic }"
+                  @click="form.isPublic = false"
+                >
+                  Prive
                 </button>
               </div>
             </div>
@@ -151,44 +165,31 @@
 
           <p v-if="error" class="form-error">{{ error }}</p>
 
-          <p v-if="!hasQuestions" class="form-warning">
-            Tu dois creer au moins une question avant d enregistrer le quiz.
-          </p>
-
           <div class="actions">
             <div class="primary-actions">
               <button
-                type="button"
+                type="submit"
                 class="btn-primary"
-                @click="saveQuiz(false)"
-                :disabled="!hasQuestions || saving"
-                :title="!hasQuestions ? 'Ajoute des questions avant d enregistrer' : ''"
+                :disabled="saving"
               >
-                Enregistrer le quiz
-              </button>
-              <button
-                type="button"
-                class="btn-publish"
-                @click="saveQuiz(true)"
-                :disabled="!hasQuestions || saving"
-                :title="!hasQuestions ? 'Ajoute des questions avant de publier' : ''"
-              >
-                Publier
-              </button>
-              <button
-                type="button"
-                class="btn-secondary"
-                @click="goToQuestions"
-              >
-                Gerer les questions
+                {{ saving ? 'Modification...' : 'Modifier quiz' }}
               </button>
             </div>
-            <button type="button" class="btn-cancel" @click="goBack">
-              Retour a la creation
+
+            <button type="button" class="btn-back-quiz" @click="goBackToMyQuizzes">
+              <span class="material-symbols-outlined">west</span>
+              Retour vers mes quiz
             </button>
           </div>
         </form>
       </section>
+
+      <Transition name="toast-fade">
+        <div v-if="successMessage" class="toast-success" role="status" aria-live="polite">
+          <span class="material-symbols-outlined">check_circle</span>
+          <span>{{ successMessage }}</span>
+        </div>
+      </Transition>
     </main>
   </div>
 </template>
@@ -212,6 +213,8 @@ export default {
   data() {
     return {
       quizLoaded: false,
+      isLoading: true,
+      loadError: '',
       form: {
         id: null,
         titre: '',
@@ -226,6 +229,7 @@ export default {
       questionsCount: 0,
       error: '',
       saving: false,
+      successMessage: '',
       currentImage: '',
       newImageFile: null,
       newImagePreview: '',
@@ -233,20 +237,66 @@ export default {
       newImageUrlPreview: '',
       removeImage: false,
       imageError: '',
+      initialSnapshot: null,
+      redirectTimer: null,
     }
   },
   computed: {
-    hasQuestions() {
-      return this.questionsCount > 0
-    },
     displayImage() {
       if (this.newImagePreview) return this.newImagePreview
       if (this.newImageUrlPreview) return this.newImageUrlPreview
       if (this.removeImage) return ''
       return this.currentImage || ''
     },
+    normalizedFormState() {
+      return this.snapshotFromForm()
+    },
+    isDirty() {
+      if (!this.initialSnapshot) return false
+
+      const current = JSON.stringify(this.normalizedFormState)
+      const initial = JSON.stringify(this.initialSnapshot)
+      const hasPendingImageChanges = !!this.newImageFile || !!this.newImageUrlPreview || this.removeImage
+      return current !== initial || hasPendingImageChanges
+    },
   },
   methods: {
+    sanitizeText(value) {
+      return String(value ?? '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    },
+
+    sanitizeMultilineText(value) {
+      return String(value ?? '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/\r\n/g, '\n')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+    },
+
+    normalizeNullable(value) {
+      const sanitized = this.sanitizeText(value)
+      return sanitized === '' ? '' : sanitized
+    },
+
+    snapshotFromForm() {
+      return {
+        titre: this.sanitizeText(this.form.titre),
+        description: this.sanitizeMultilineText(this.form.description),
+        categoryId: this.form.categoryId ? String(this.form.categoryId) : '',
+        niveau: this.form.niveau ? String(this.form.niveau).trim() : '',
+        isPublic: !!this.form.isPublic,
+        code_quiz: this.form.code_quiz ? String(this.form.code_quiz).trim() : '',
+      }
+    },
+
+    markSnapshot() {
+      this.initialSnapshot = this.snapshotFromForm()
+    },
+
     generateCode() {
       return Math.random().toString(36).substring(2, 8).toUpperCase()
     },
@@ -414,6 +464,9 @@ export default {
 
     async loadQuiz() {
       const id = this.$route.params.id
+      this.isLoading = true
+      this.loadError = ''
+      this.quizLoaded = false
 
       try {
         const { data: quiz } = await api.get(`/quizzes/${id}`)
@@ -436,40 +489,73 @@ export default {
         const { data: questions } = await api.get(`/quizzes/${id}/questions`)
         this.questionsCount = Array.isArray(questions) ? questions.length : 0
 
+        this.markSnapshot()
         this.quizLoaded = true
       } catch (e) {
         console.error('Erreur chargement quiz', e.response?.data || e)
-        this.$router.push('/enseignant')
+        this.loadError = 'Impossible de charger les informations du quiz.'
+      } finally {
+        this.isLoading = false
       }
     },
 
-    async saveQuiz(publish = false) {
-      this.error = ''
+    buildPatchPayload() {
+      const current = this.snapshotFromForm()
+      const initial = this.initialSnapshot || {}
 
-      if (!this.form.titre.trim()) {
+      const payload = {}
+      const nullableKeys = new Set(['description', 'category_id', 'education_level'])
+
+      const mapEntries = [
+        ['titre', 'titre', current.titre],
+        ['description', 'description', current.description],
+        ['categoryId', 'category_id', current.categoryId ? Number(current.categoryId) : ''],
+        ['niveau', 'education_level', current.niveau],
+        ['isPublic', 'is_public', current.isPublic],
+        ['code_quiz', 'code_quiz', current.code_quiz],
+      ]
+
+      for (const [snapshotKey, payloadKey, value] of mapEntries) {
+        const initialValue = snapshotKey === 'categoryId'
+          ? (initial[snapshotKey] ? Number(initial[snapshotKey]) : '')
+          : initial[snapshotKey]
+
+        const hasChanged = value !== initialValue
+        if (!hasChanged) continue
+
+        if (nullableKeys.has(payloadKey)) {
+          payload[payloadKey] = value === '' ? null : value
+        } else {
+          payload[payloadKey] = value
+        }
+      }
+
+      return payload
+    },
+
+    async saveQuiz() {
+      this.error = ''
+      this.successMessage = ''
+
+      const cleanTitle = this.sanitizeText(this.form.titre)
+      if (!cleanTitle) {
         this.error = 'Le titre du quiz est obligatoire.'
         return
       }
 
-      if (!this.hasQuestions) {
-        this.error = 'Tu dois creer au moins une question avant d enregistrer le quiz.'
-        return
-      }
+      this.form.titre = cleanTitle
+      this.form.description = this.sanitizeMultilineText(this.form.description)
+      this.form.niveau = this.normalizeNullable(this.form.niveau)
+      this.form.categoryId = this.form.categoryId ? String(this.form.categoryId).trim() : ''
+      this.form.code_quiz = this.form.code_quiz ? String(this.form.code_quiz).trim() : this.generateCode()
 
       this.saving = true
 
       try {
-        const payload = {
-          titre: this.form.titre.trim(),
-          description: this.form.description.trim(),
-          category_id: this.form.categoryId ? Number(this.form.categoryId) : null,
-          education_level: this.form.niveau || null,
-          is_public: this.form.isPublic,
-          code_quiz: this.form.code_quiz,
-          statut: publish ? 'Publie' : this.form.statut || 'Brouillon',
+        const payload = this.buildPatchPayload()
+        if (Object.keys(payload).length > 0) {
+          await api.put(`/quizzes/${this.form.id}`, payload)
         }
-
-        await api.put(`/quizzes/${this.form.id}`, payload)
 
         if (this.newImageUrl.trim() && !this.newImageFile) {
           await this.onImageUrlBlur()
@@ -497,7 +583,11 @@ export default {
           this.removeImage = false
         }
 
-        this.$router.push('/enseignant')
+        this.markSnapshot()
+        this.successMessage = 'Quiz modifie avec succes'
+        this.redirectTimer = window.setTimeout(() => {
+          this.goBackToMyQuizzes()
+        }, 850)
       } catch (e) {
         console.error('Erreur mise a jour quiz', e.response?.data || e)
         if (e.message === 'invalid_image_url' && this.imageError) {
@@ -512,24 +602,40 @@ export default {
       }
     },
 
-    goToQuestions() {
-      this.$router.push(`/enseignant/quiz/${this.form.id}/questions`)
+    reloadPageState() {
+      this.loadCategories()
+      this.loadQuiz()
     },
 
-    goBack() {
-      this.$router.push('/enseignant')
+    goBackToMyQuizzes() {
+      this.$router.push({ path: '/catalogue', query: { scope: 'mine' } })
     },
+  },
+  beforeRouteLeave(_to, _from, next) {
+    if (this.saving) {
+      next(false)
+      return
+    }
 
-    copyCode() {
-      if (!this.form.code_quiz) return
-      navigator.clipboard?.writeText(this.form.code_quiz).catch(() => {})
-    },
+    if (this.isDirty) {
+      const shouldLeave = window.confirm(
+        'Tu as des modifications non enregistrees. Quitter sans sauvegarder ?'
+      )
+      next(shouldLeave)
+      return
+    }
+
+    next()
   },
   mounted() {
     this.loadCategories()
     this.loadQuiz()
   },
   beforeUnmount() {
+    if (this.redirectTimer) {
+      window.clearTimeout(this.redirectTimer)
+      this.redirectTimer = null
+    }
     this.revokePreview()
   },
 }

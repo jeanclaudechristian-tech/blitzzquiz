@@ -50,7 +50,7 @@ const goToCreateGroup = () => {
 }
 
 const goToCreateHub = () => {
-  router.push('/enseignant')
+  router.push({ path: '/enseignant', query: { mode: 'groupe' } })
 }
 
 onMounted(loadGroupes)

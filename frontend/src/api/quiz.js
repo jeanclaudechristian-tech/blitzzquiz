@@ -89,6 +89,11 @@ const formatCatalogueQuiz = (quiz) => ({
 });
 
 export const quizService = {
+  async create(payload) {
+    const response = await api.post("/quizzes", payload);
+    return response.data;
+  },
+
   async list() {
     return listQuizzes();
   },

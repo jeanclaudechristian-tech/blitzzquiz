@@ -163,6 +163,11 @@
   box-shadow: 0 4px 14px rgba(38, 154, 255, 0.28);
 }
 
+.toggle-option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ─ Code display ─ */
 .code-display {
   display: flex;
@@ -260,6 +265,13 @@
   box-shadow: 0 4px 12px rgba(80, 202, 255, 0.2);
 }
 
+.cancel-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .submit-button {
   padding: 10px 24px;
   border-radius: 999px;
@@ -277,6 +289,13 @@
   background: linear-gradient(135deg, #269aff, #1b6fb8);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(27, 111, 184, 0.38);
+}
+
+.submit-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* ─────────────────────────────────────────

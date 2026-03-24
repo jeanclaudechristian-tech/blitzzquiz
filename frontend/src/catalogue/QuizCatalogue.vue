@@ -2,12 +2,43 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { quizService, resolveQuizImage } from '../api/quiz';
+import api from '../api/Axios';
 import AppHeader from '../accueil-ui/composant/AppHeader.vue';
-import QuizModal from '../quiz-ui/quiz.vue'; // 🎯 Vérifie bien que le chemin est correct
-// 🎯 1. IMPORT DU MODAL
+import QuizModal from '../quiz-ui/quiz.vue';
 import GuestModal from '../accueil-ui/composant/GuestModal.vue';
 const showQuizModal = ref(false);
 const selectedQuizId = ref(null);
+
+// ── Actions mode "Mes quiz" ──────────────────────────────────
+const deleteModal  = ref(false);
+const quizToDelete = ref(null);
+const deleting     = ref(false);
+
+const editQuiz      = (id) => router.push(`/enseignant/quiz/${id}/editer`);
+const editQuestions = (id) => router.push(`/enseignant/quiz/${id}/questions`);
+
+const askDelete = (quiz) => {
+    quizToDelete.value = quiz;
+    deleteModal.value  = true;
+};
+const cancelDelete = () => {
+    quizToDelete.value = null;
+    deleteModal.value  = false;
+};
+const confirmDelete = async () => {
+    if (!quizToDelete.value) return;
+    deleting.value = true;
+    try {
+        await api.delete(`/quizzes/${quizToDelete.value.id}`);
+        quizzes.value = quizzes.value.filter(q => q.id !== quizToDelete.value.id);
+        deleteModal.value  = false;
+        quizToDelete.value = null;
+    } catch (e) {
+        console.error('Erreur suppression quiz', e);
+    } finally {
+        deleting.value = false;
+    }
+};
 const router = useRouter();
 const route = useRoute();
 const scopeMine = computed(() => route.query.scope === 'mine');
@@ -26,6 +57,7 @@ const currentUserId = computed(() => {
 // --- ÉTATS ---
 const quizzes = ref([]);
 const isLoading = ref(true);
+const loadError = ref('');
 
 // 🎯 1. ÉTAT POUR AFFICHER LE MODAL
 const showGuestModal = ref(false);
@@ -33,8 +65,11 @@ const showGuestModal = ref(false);
 // 🎯 ÉTATS DU HEADER & MOBILE
 const isHeaderHidden = ref(false);
 const isMobileFilterOpen = ref(false);
-let lastScrollY = 0;
 let isMouseInHeader = false;
+let previousScrollY = 0;
+let latestScrollY = 0;
+let latestMouseY = Number.POSITIVE_INFINITY;
+let headerRafId = null;
 
 // --- FILTRES ---
 const sortBy = ref('recent');
@@ -79,63 +114,98 @@ const handleQuizClick = (quizId) => {
 };
 
 // --- 🎯 LOGIQUE SCROLL & SOURIS ---
-const handleScroll = () => {
-    const currentScrollY = window.scrollY;
-    if (currentScrollY <= 80) {
-        isHeaderHidden.value = false;
-    } else if (currentScrollY > lastScrollY) {
-        isHeaderHidden.value = true;
-    } else {
-        isHeaderHidden.value = false;
-    }
-    lastScrollY = currentScrollY;
-};
+const updateHeaderVisibility = () => {
+    headerRafId = null;
 
-const handleMouseMove = (e) => {
-    if (window.scrollY <= 80) {
+    if (latestScrollY <= 80) {
         isHeaderHidden.value = false;
+        isMouseInHeader = false;
+        previousScrollY = latestScrollY;
         return;
     }
-    if (e.clientY < 120) {
+
+    if (latestMouseY < 120) {
         isHeaderHidden.value = false;
         isMouseInHeader = true;
+        previousScrollY = latestScrollY;
+        return;
+    }
+
+    if (latestScrollY > previousScrollY) {
+        isHeaderHidden.value = true;
+        isMouseInHeader = false;
+    } else if (latestScrollY < previousScrollY) {
+        isHeaderHidden.value = false;
     } else if (isMouseInHeader) {
         isHeaderHidden.value = true;
         isMouseInHeader = false;
     }
+
+    previousScrollY = latestScrollY;
+};
+
+const scheduleHeaderVisibilityUpdate = () => {
+    if (headerRafId !== null) return;
+    headerRafId = window.requestAnimationFrame(updateHeaderVisibility);
+};
+
+const handleScroll = () => {
+    latestScrollY = window.scrollY;
+    scheduleHeaderVisibilityUpdate();
+};
+
+const handleMouseMove = (e) => {
+    latestMouseY = e.clientY;
+    scheduleHeaderVisibilityUpdate();
 };
 
 // --- DATA ---
+const mapQuiz = (q) => {
+    const catName = (q.category && typeof q.category === 'object')
+        ? (q.category.name || q.category.NAME)
+        : q.category;
+    return {
+        id: q.id,
+        titre: q.titre,
+        category: catName || 'Général',
+        image: resolveQuizImage(q),
+        education_level: q.education_level || 'Tous',
+        owner_id: q.owner_id ?? q.ownerId ?? null,
+        is_public: q.is_public ?? true,
+        questions_count: q.questions_count ?? 0,
+    };
+};
+
 const loadQuizzes = async () => {
     isLoading.value = true;
+    loadError.value = '';
     try {
-        const token = localStorage.getItem('token');
-        const response = token
-            ? { data: await quizService.list() }
-            : { data: await quizService.listPublic() };
-
-        quizzes.value = response.data.map(q => {
-            // 🎯 FIX: Extraction du nom de la catégorie (JSON bleu)
-            const catName = (q.category && typeof q.category === 'object') ? (q.category.name || q.category.NAME) : q.category;
-
-            return {
-                id: q.id,
-                titre: q.titre,
-                category: catName || 'Général',
-                image: resolveQuizImage(q),
-                education_level: q.education_level || 'Tous',
-                owner_id: q.owner_id ?? q.ownerId ?? null
-            };
-        });
+        // En mode "Mes quiz", le backend peut inclure des quiz publics d'autres utilisateurs.
+        // On filtre explicitement côté frontend sur owner_id pour éviter les actions interdites (403).
+        if (scopeMine.value) {
+            const { data } = await api.get('/quizzes');
+            const mine = data
+                .map(mapQuiz)
+                .filter((q) => currentUserId.value && q.owner_id === currentUserId.value);
+            quizzes.value = mine;
+        } else {
+            const token = localStorage.getItem('token');
+            const raw = token
+                ? await quizService.list()
+                : await quizService.listPublic();
+            quizzes.value = raw.map(mapQuiz);
+        }
     } catch (e) {
         console.error("Erreur de chargement", e);
         quizzes.value = [];
+        loadError.value = "Impossible de charger les quiz pour le moment.";
     } finally {
         isLoading.value = false;
     }
 };
 
 watch(() => route.query.category, (newCat) => { selectedCategory.value = newCat || ''; });
+watch(() => route.query.scope, () => { loadQuizzes(); });
 
 const filteredQuizzes = computed(() => {
     let result = quizzes.value.filter((q) => {
@@ -155,9 +225,6 @@ const filteredQuizzes = computed(() => {
 
         return matchCat && matchLvl;
     });
-    if (scopeMine.value && currentUserId.value != null) {
-        result = result.filter((q) => Number(q.owner_id) === Number(currentUserId.value));
-    }
     return sortBy.value === 'recent' ? result.slice().reverse() : result;
 });
 
@@ -171,6 +238,8 @@ const dynamicTitle = computed(() => {
 });
 
 onMounted(() => {
+    latestScrollY = window.scrollY;
+    previousScrollY = latestScrollY;
     loadQuizzes();
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
@@ -179,6 +248,10 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
     window.removeEventListener('mousemove', handleMouseMove);
+    if (headerRafId !== null) {
+        window.cancelAnimationFrame(headerRafId);
+        headerRafId = null;
+    }
 });
 </script>
 
@@ -235,32 +308,111 @@ onUnmounted(() => {
 
             <main class="quiz-grid-area">
                 <header class="header-text">
-                    <h1 class="anton-title">{{ dynamicTitle }}</h1>
-                    <p class="count-text">{{ filteredQuizzes.length }} QUIZ DISPONIBLES</p>
+                    <div class="header-row">
+                        <div>
+                            <h1 class="anton-title">{{ dynamicTitle }}</h1>
+                            <p class="count-text">{{ filteredQuizzes.length }} QUIZ {{ scopeMine ? '' : 'DISPONIBLES' }}</p>
+                        </div>
+                        <button v-if="scopeMine" class="btn-nouveau-quiz" @click="router.push('/enseignant')">
+                            <span class="material-symbols-outlined">add</span>
+                            Nouveau quiz
+                        </button>
+                    </div>
                 </header>
 
                 <div v-if="isLoading" class="loader">
                     <div class="spinner"></div>
                 </div>
+                <div v-else-if="loadError" class="status-state status-state--error">
+                    <span class="material-symbols-outlined icon">error</span>
+                    <h2>Chargement impossible</h2>
+                    <p>{{ loadError }}</p>
+                    <button class="retry-btn" @click="loadQuizzes">Reessayer</button>
+                </div>
 
-                <div v-else class="grid-3">
-                    <div v-for="quiz in filteredQuizzes" :key="quiz.id" class="quiz-card"
-                        @click="handleQuizClick(quiz.id)">
-                        <div class="card-inner">
-                            <img :src="quiz.image" alt="" draggable="false" />
-                            <div class="card-info-bottom">
-                                <h3 class="q-title">{{ quiz.titre }}</h3>
-                                <span class="q-cat">{{ quiz.category }}</span>
+                <!-- ── Mode Liste (Mes quiz) ── -->
+                <template v-else-if="scopeMine">
+                    <div v-if="filteredQuizzes.length > 0" class="quiz-list-wrapper">
+                        <div class="quiz-list-header">
+                            <span>Titre</span>
+                            <span>Visibilité</span>
+                            <span>Questions</span>
+                            <span>Actions</span>
+                        </div>
+                        <div
+                            v-for="(quiz, i) in filteredQuizzes"
+                            :key="quiz.id"
+                            class="quiz-list-row"
+                            :style="{ animationDelay: `${i * 0.055}s` }"
+                        >
+                            <!-- Image + Titre -->
+                            <div class="row-title-cell">
+                                <div class="row-thumb">
+                                    <img :src="quiz.image" alt="" draggable="false" />
+                                    <div class="row-thumb-overlay">
+                                        <h3>{{ quiz.titre }}</h3>
+                                        <span>{{ quiz.category }}</span>
+                                    </div>
+                                </div>
+                                <span class="row-titre-text">{{ quiz.titre }}</span>
+                            </div>
+
+                            <!-- Visibilité -->
+                            <span>
+                                <span class="pill" :class="quiz.is_public ? 'pill--public' : 'pill--prive'">
+                                    {{ quiz.is_public ? 'Public' : 'Privé' }}
+                                </span>
+                            </span>
+
+                            <!-- Questions -->
+                            <span class="row-questions">{{ quiz.questions_count }}</span>
+
+                            <!-- Actions -->
+                            <div class="row-actions">
+                                <button class="act-btn" @click="editQuiz(quiz.id)">
+                                    <span class="material-symbols-outlined">edit</span>
+                                    Modifier quiz
+                                </button>
+                                <button class="act-btn" @click="editQuestions(quiz.id)">
+                                    <span class="material-symbols-outlined">quiz</span>
+                                    Modifier questions
+                                </button>
+                                <button class="act-btn act-btn--danger" @click="askDelete(quiz)">
+                                    <span class="material-symbols-outlined">delete</span>
+                                    Supprimer
+                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div v-if="!isLoading && filteredQuizzes.length === 0" class="empty-state">
-                    <span class="material-symbols-outlined icon">search_off</span>
-                    <h2>Aucun résultat</h2>
-                    <p>Essayez de modifier vos filtres de recherche.</p>
-                </div>
+                    <div v-else class="empty-state">
+                        <span class="material-symbols-outlined icon">quiz</span>
+                        <h2>Aucun quiz</h2>
+                        <p>Tu n'as pas encore créé de quiz.</p>
+                    </div>
+                </template>
+
+                <!-- ── Mode Grille (Catalogue normal) ── -->
+                <template v-else>
+                    <div class="grid-3">
+                        <div v-for="quiz in filteredQuizzes" :key="quiz.id" class="quiz-card"
+                            @click="handleQuizClick(quiz.id)">
+                            <div class="card-inner">
+                                <img :src="quiz.image" alt="" draggable="false" />
+                                <div class="card-info-bottom">
+                                    <h3 class="q-title">{{ quiz.titre }}</h3>
+                                    <span class="q-cat">{{ quiz.category }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="filteredQuizzes.length === 0" class="empty-state">
+                        <span class="material-symbols-outlined icon">search_off</span>
+                        <h2>Aucun résultat</h2>
+                        <p>Essayez de modifier vos filtres de recherche.</p>
+                    </div>
+                </template>
             </main>
 
         </div>
@@ -274,6 +426,30 @@ onUnmounted(() => {
         </button>
 
         <GuestModal v-if="showGuestModal" @close="showGuestModal = false" />
+
+        <!-- Modale suppression quiz -->
+        <Transition name="modal-fade">
+            <div v-if="deleteModal" class="modal-overlay" @click.self="cancelDelete">
+                <div class="modal-box">
+                    <div class="modal-icon-del">
+                        <span class="material-symbols-outlined">delete</span>
+                    </div>
+                    <h2 class="modal-title">Supprimer ce quiz ?</h2>
+                    <p class="modal-desc">
+                        Tu vas supprimer <strong>{{ quizToDelete?.titre }}</strong>.
+                        Cette action est irréversible.
+                    </p>
+                    <div class="modal-actions">
+                        <button class="modal-btn modal-btn--cancel" @click="cancelDelete">Annuler</button>
+                        <button class="modal-btn modal-btn--confirm" @click="confirmDelete" :disabled="deleting">
+                            <span v-if="deleting" class="mini-spinner"></span>
+                            <span v-else class="material-symbols-outlined">delete</span>
+                            {{ deleting ? 'Suppression...' : 'Supprimer' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Transition>
 
         <QuizModal 
             v-if="showQuizModal" 
@@ -330,512 +506,5 @@ onUnmounted(() => {
     </div>
 </template>
 
-<style scoped>
-/* ==========================================================================
-   IMPORT DES POLICES
-   ========================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-/* ==========================================================================
-   🎯 CONTRÔLE ABSOLU DU HEADER (Animations d'apparition/disparition)
-   ========================================================================== */
-:deep(.header-container) {
-    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease !important;
-}
-
-:deep(.header-container.force-hide) {
-    transform: translateY(-150px) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-
-:deep(.header-container.force-show) {
-    transform: translateY(0) !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-}
-
-/* ==========================================================================
-   PAGE & LAYOUT GLOBAL
-   ========================================================================== */
-.catalogue-page {
-    background: #fff;
-    min-height: 100vh;
-    padding-top: 130px;
-    font-family: 'Inter', sans-serif !important;
-}
-
-.main-layout {
-    display: flex;
-    align-items: flex-start;
-    max-width: 1250px;
-    margin: 0 auto;
-    padding: 0 20px;
-    padding-bottom: 100px;
-}
-
-/* ==========================================================================
-   SIDEBAR FIXE (FLOTTANTE ET INDÉPENDANTE)
-   ========================================================================== */
-.sidebar-wrapper {
-    width: 260px;
-    flex-shrink: 0;
-}
-
-.fixed-sidebar-content {
-    position: fixed;
-    top: 130px;
-    width: 260px;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.filter-panel {
-    background-color: #50CAFF !important;
-    border-radius: 12px;
-    padding: 24px 20px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 30px rgba(80, 202, 255, 0.2);
-    max-height: calc(100vh - 220px);
-    overflow-y: auto;
-    scrollbar-width: none;
-}
-
-.filter-panel::-webkit-scrollbar {
-    display: none;
-}
-
-.f-group {
-    margin-bottom: 25px;
-}
-
-.no-mb {
-    margin-bottom: 0;
-}
-
-.f-label {
-    display: block;
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 12px;
-}
-
-.bento {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.stack {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.f-btn {
-    background: rgba(255, 255, 255, 0.2) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    color: #fff !important;
-    font-weight: 600 !important;
-    font-family: 'Inter', sans-serif !important;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.f-btn:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-}
-
-.f-btn.active {
-    background: #ffffff !important;
-    color: #00A3FF !important;
-    font-weight: 800 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.f-btn.large {
-    width: calc(50% - 4px);
-    padding: 10px 0;
-    font-size: 0.85rem;
-}
-
-.f-btn.small {
-    width: calc(33.33% - 6px);
-    padding: 8px 0;
-    font-size: 0.75rem;
-}
-
-.f-btn.full {
-    width: 100%;
-    padding: 10px 15px;
-    justify-content: flex-start;
-}
-
-.retour-btn-fixed {
-    background: #111111 !important;
-    color: #ffffff !important;
-    border: none;
-    border-radius: 12px;
-    padding: 14px;
-    width: 100%;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.retour-btn-fixed:hover {
-    background: #333333 !important;
-    transform: translateY(-2px);
-}
-
-/* ==========================================================================
-   ZONE GRILLE DE QUIZ
-   ========================================================================== */
-.quiz-grid-area {
-    flex-grow: 1;
-    margin-left: 50px;
-    min-width: 0;
-}
-
-.header-text {
-    margin-bottom: 40px;
-}
-
-.anton-title {
-    font-family: 'Anton', sans-serif !important;
-    font-size: 4.5rem;
-    line-height: 1;
-    color: #1a1a1a;
-    margin: 0;
-    text-transform: uppercase;
-}
-
-.count-text {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    color: #9ca3af;
-    margin-top: 8px;
-    font-size: 0.9rem;
-}
-
-/* --- GRILLE --- */
-.grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-    align-items: start !important;
-    grid-auto-rows: max-content !important;
-}
-
-/* --- CARTES 16:9 --- */
-.quiz-card {
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    width: 100%;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    height: auto !important;
-    min-height: 0 !important;
-    box-shadow: none !important;
-}
-
-.quiz-card:hover {
-    transform: translateY(-6px);
-}
-
-.card-inner {
-    position: relative;
-    aspect-ratio: 16 / 9 !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-    background: #111 !important;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
-    width: 100% !important;
-    height: auto !important;
-    margin: 0 !important;
-}
-
-.card-inner img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    opacity: 0.85 !important;
-    transition: transform 0.3s ease;
-    display: block !important;
-}
-
-.quiz-card:hover .card-inner img {
-    transform: scale(1.05);
-}
-
-/* OVERLAY TEXTE */
-.card-info-bottom {
-    position: absolute !important;
-    inset: 0 !important;
-    padding: 15px 20px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 60%) !important;
-    pointer-events: none !important;
-    border: none !important;
-}
-
-.q-title {
-    font-family: 'Inter', sans-serif !important;
-    color: #ffffff !important;
-    font-weight: 800 !important;
-    font-size: 1.15rem !important;
-    margin: 0 0 4px 0 !important;
-    line-height: 1.2 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-.q-cat {
-    font-family: 'Inter', sans-serif !important;
-    color: #00A3FF !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    font-size: 0.7rem !important;
-    letter-spacing: 0.5px !important;
-    margin: 0 !important;
-}
-
-/* --- ÉTATS VIDES & LOADER --- */
-.empty-state {
-    text-align: center;
-    padding: 80px 20px;
-    color: #6b7280;
-}
-
-.empty-state .icon {
-    font-size: 3rem;
-    color: #d1d5db;
-    margin-bottom: 10px;
-}
-
-.empty-state h2 {
-    color: #111;
-    font-weight: 800;
-    font-size: 1.5rem;
-    margin-bottom: 8px;
-    font-family: 'Inter', sans-serif;
-}
-
-.loader {
-    display: flex;
-    justify-content: center;
-    padding: 100px 0;
-}
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f4f6;
-    border-top-color: #00A3FF;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* ==========================================================================
-   🎯 MOBILE (Boutons flottants, Modal et 2 Colonnes)
-   ========================================================================== */
-.mobile-fab {
-    display: none;
-}
-
-/* Modal Desktop invisible */
-.mobile-modal-bg {
-    display: none;
-}
-
-@media (max-width: 950px) {
-    .grid-3 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .anton-title {
-        font-size: 3.5rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .sidebar-wrapper {
-        display: none;
-    }
-
-    .fixed-sidebar-content {
-        display: none;
-    }
-
-    .quiz-grid-area {
-        margin-left: 0;
-    }
-
-    .catalogue-page {
-        padding-top: 100px;
-    }
-
-    .anton-title {
-        font-size: 2.8rem;
-    }
-
-    /* 🎯 2 COLONNES SUR MOBILE */
-    .grid-3 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 15px;
-    }
-
-    /* On réduit légèrement le texte pour que ça rentre bien dans 2 colonnes sur petit écran */
-    .card-info-bottom {
-        padding: 10px !important;
-    }
-
-    .q-title {
-        font-size: 0.95rem !important;
-    }
-
-    .q-cat {
-        font-size: 0.65rem !important;
-    }
-
-    /* 🎯 BOUTONS FLOTTANTS (FABs) */
-    .mobile-fab {
-        display: flex;
-        position: fixed;
-        bottom: 25px;
-        width: 55px;
-        height: 55px;
-        border-radius: 50%;
-        border: none;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-        cursor: pointer;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.2s ease;
-    }
-
-    .mobile-fab:active {
-        transform: scale(0.9);
-    }
-
-    .icon-bold {
-        font-size: 28px;
-        font-weight: 600;
-    }
-
-    /* Bouton Retour (Bas Gauche, Blanc) */
-    .mobile-fab-back {
-        left: 20px;
-        background: #ffffff;
-        color: #111111;
-    }
-
-    /* Bouton Filtre (Bas Droite, Bleu) */
-    .mobile-fab-filter {
-        right: 20px;
-        background: #00A3FF;
-        color: #ffffff;
-    }
-
-    /* 🎯 MODAL DE FILTRES MOBILE */
-    .mobile-modal-bg {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.6);
-        z-index: 2000;
-        display: flex;
-        align-items: flex-end;
-    }
-
-    .mobile-modal-sheet {
-        position: relative;
-        top: 0;
-        width: 100%;
-        max-height: 85vh;
-        border-radius: 24px 24px 0 0 !important;
-        /* Arrondi en haut */
-        padding: 30px 20px 40px 20px !important;
-        margin: 0 !important;
-        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-    }
-
-    .modal-header h3 {
-        color: #fff;
-        font-weight: 800;
-        font-size: 1.3rem;
-        margin: 0;
-        font-family: 'Inter', sans-serif;
-    }
-
-    .close-btn {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
-}
-
-/* Animation Modal Mobile */
-.fade-slide-up-enter-active,
-.fade-slide-up-leave-active {
-    transition: opacity 0.3s ease;
-}
-
-.fade-slide-up-enter-from,
-.fade-slide-up-leave-to {
-    opacity: 0;
-}
-
-.fade-slide-up-enter-active .mobile-modal-sheet,
-.fade-slide-up-leave-active .mobile-modal-sheet {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fade-slide-up-enter-from .mobile-modal-sheet,
-.fade-slide-up-leave-to .mobile-modal-sheet {
-    transform: translateY(100%);
-}
-</style>
+<style scoped src="./catalogue-ui.css"></style>
 

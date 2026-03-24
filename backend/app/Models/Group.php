@@ -20,6 +20,13 @@ class Group extends Model
         'description',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'is_public' => 'boolean',
+        ];
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');

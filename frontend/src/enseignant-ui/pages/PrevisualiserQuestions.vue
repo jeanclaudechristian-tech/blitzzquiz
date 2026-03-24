@@ -3,9 +3,6 @@
     <AppHeader />
     <main class="preview-main" v-if="quizLoaded">
       <header class="preview-header">
-        <button type="button" class="back-button" @click="goBack">
-          ← Retour à la création
-        </button>
         <h1>{{ quizTitle }}</h1>
       </header>
 
@@ -17,7 +14,7 @@
             class="btn-primary"
             @click="goToAddQuestions"
           >
-            ➕ Ajouter des questions
+               Ajouter des questions
           </button>
         </div>
 
@@ -35,7 +32,12 @@
               {{ q.texte }}
             </div>
 
-            <div class="question-text fill-in-text" v-else v-html="renderFillInText(q)"></div>
+            <div class="question-text fill-in-text" v-else>
+              <template v-for="(part, pIndex) in getFillInParts(q)" :key="`${q.id || index}-part-${pIndex}`">
+                <span v-if="part.type === 'text'">{{ part.value }}</span>
+                <span v-else class="preview-blank-tag">{{ part.value }}</span>
+              </template>
+            </div>
 
             <div class="choices-preview">
               <template v-if="q.type === 'QCM'">
@@ -64,7 +66,7 @@
                   <div v-for="(blank, bIndex) in q.metadata?.blanks" :key="bIndex" class="fill-in-answer-item">
                     <span class="answer-num">#{{ bIndex + 1 }}</span>
                     <span class="answer-tags">
-                      {{ blank.accepted_answers.join(' / ') }}
+                      {{ Array.isArray(blank?.accepted_answers) ? blank.accepted_answers.join(' / ') : '-' }}
                     </span>
                   </div>
                 </div>
@@ -84,7 +86,7 @@
             class="btn-secondary"
             @click="goToAddQuestions"
           >
-            ✏️ Modifier les questions
+               Modifier les questions
           </button>
           <button type="button" class="btn-primary" @click="goBack">
             Retour à la création
@@ -93,8 +95,32 @@
       </div>
     </main>
 
+    <div v-else-if="loadError" class="loading-state">
+      <div class="load-error-card">
+        <h2>Chargement impossible</h2>
+        <p>{{ loadError }}</p>
+        <button type="button" class="btn-primary" @click="retryLoad">
+          Réessayer
+        </button>
+      </div>
+    </div>
+
     <div v-else class="loading-state">
-      <p>Chargement des questions...</p>
+      <div class="loading-skeleton" aria-busy="true" aria-live="polite">
+        <div class="skeleton-header">
+          <div class="skeleton-pill"></div>
+          <div class="skeleton-title"></div>
+        </div>
+        <div class="skeleton-container">
+          <div class="skeleton-card" v-for="n in 3" :key="n">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line medium"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        </div>
+        <p>Chargement des questions...</p>
+      </div>
     </div>
   </div>
 </template>
@@ -111,11 +137,20 @@ export default {
   data() {
     return {
       quizLoaded: false,
+      loadError: '',
       quizTitle: '',
       questions: [],
     }
   },
   methods: {
+    normalizeQuestions(rawQuestions) {
+      const list = Array.isArray(rawQuestions) ? rawQuestions.slice() : []
+      return list.sort((a, b) => {
+        const aPos = Number(a?.position ?? a?.order ?? a?.id ?? 0)
+        const bPos = Number(b?.position ?? b?.order ?? b?.id ?? 0)
+        return aPos - bPos
+      })
+    },
     async loadQuizData() {
       const quizId = this.$route.params.id
       if (!quizId) {
@@ -124,22 +159,25 @@ export default {
         return
       }
 
-      try {
-        // Titre du quiz
-        const { data: quiz } = await api.get(`/quizzes/${quizId}`)
-        this.quizTitle = quiz.titre || 'Quiz sans titre'
+      this.quizLoaded = false
+      this.loadError = ''
 
-        // Questions du quiz
-        const { data: questions } = await api.get(
-          `/quizzes/${quizId}/questions`,
-        )
-        this.questions = Array.isArray(questions) ? questions : []
+      try {
+        // Chargement parallèle pour réduire le temps d'attente
+        const [{ data: quiz }, { data: questions }] = await Promise.all([
+          api.get(`/quizzes/${quizId}`),
+          api.get(`/quizzes/${quizId}/questions`),
+        ])
+        this.quizTitle = quiz?.titre || 'Quiz sans titre'
+        this.questions = this.normalizeQuestions(questions)
+        this.quizLoaded = true
       } catch (e) {
         console.error('Erreur chargement prévisualisation', e.response?.data || e)
-        this.questions = []
+        this.loadError = "Impossible de charger la prévisualisation pour le moment."
       }
-
-      this.quizLoaded = true
+    },
+    retryLoad() {
+      this.loadQuizData()
     },
     goBack() {
       this.$router.push('/enseignant')
@@ -147,12 +185,29 @@ export default {
     goToAddQuestions() {
       this.$router.push(`/enseignant/quiz/${this.$route.params.id}/questions`)
     },
-    renderFillInText(q) {
-      if (!q.texte) return '';
-      // 将 [[1]] 替换为带编号的蓝色小方块占位符
-      return q.texte.replace(/\[\[(\d+)\]\]/g, (match, number) => {
-        return `<span class="preview-blank-tag">${number}</span>`;
-      });
+    getFillInParts(q) {
+      const text = typeof q?.texte === 'string' ? q.texte : ''
+      if (!text) return [{ type: 'text', value: '' }]
+
+      const parts = []
+      const regex = /\[\[(\d+)\]\]/g
+      let lastIndex = 0
+      let match = regex.exec(text)
+
+      while (match) {
+        if (match.index > lastIndex) {
+          parts.push({ type: 'text', value: text.slice(lastIndex, match.index) })
+        }
+        parts.push({ type: 'blank', value: match[1] })
+        lastIndex = regex.lastIndex
+        match = regex.exec(text)
+      }
+
+      if (lastIndex < text.length) {
+        parts.push({ type: 'text', value: text.slice(lastIndex) })
+      }
+
+      return parts
     },
   },
   mounted() {
