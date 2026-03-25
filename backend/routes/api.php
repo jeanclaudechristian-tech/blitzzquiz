@@ -44,7 +44,7 @@ Route::get('/categories', function () {
 // ==========================================
 // ROUTES PROTÉGÉES
 // ==========================================
-Route::middleware(['auth:sanctum', EnsureUserIsNotDisabled ::class])->group(function () {
+Route::middleware(['auth:sanctum', EnsureUserIsNotDisabled::class])->group(function () {
 
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);

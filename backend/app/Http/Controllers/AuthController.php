@@ -39,7 +39,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->input('role', 'STUDENT'),
             'education_level' => $request->education_level,
-            'is_disabled' => false,
+            'is_disabled' => (bool) false,
         ]);
 
         event(new Registered($user));
