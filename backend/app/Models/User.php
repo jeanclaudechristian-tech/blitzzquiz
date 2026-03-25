@@ -26,6 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'apple_id',
         'supabase_id',
+        'is_disabled',
     ];
 
     protected $hidden = [
@@ -37,31 +38,24 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'password' => 'hashed',
+            'is_disabled' => 'boolean',
         ];
     }
-
-    // =========================================================
-    // Relations (UML aligned)
-    // =========================================================
-
 
     public function quizzes(): HasMany
     {
         return $this->hasMany(Quiz::class, 'owner_id');
     }
 
-
     public function ownedGroups(): HasMany
     {
         return $this->hasMany(Group::class, 'owner_id');
     }
 
-
     public function groups(): BelongsToMany
     {
         return $this->belongsToMany(Group::class, 'user_groups', 'user_id', 'group_id');
     }
-
 
     public function results(): HasMany
     {
@@ -70,37 +64,28 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendPasswordResetNotification($token)
     {
-        // 1. 获取你在 .env 中定义的 Vercel 前端地址 [cite: 1, 2026-03-15]
-        // 确保链接格式为：https://your-vercel-app.com/reset-password?token=xxx&email=xxx
         $url = env('FRONTEND_URL') . '/reset-password?token=' . $token . '&email=' . $this->email;
-
-        // 2. 触发自定义通知类 [cite: 2026-03-15]
         $this->notify(new \App\Notifications\ResetPasswordNotification($url));
     }
 
     public function sendEmailVerificationNotification()
     {
-        // 生成带签名的后端路由
         $temporarySignedUrl = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(60),
             ['id' => $this->getKey(), 'hash' => sha1($this->getEmailForVerification())]
         );
 
-        // 拼接到你的前端地址上
         $url = env('FRONTEND_URL') . '/verify-email?queryURL=' . urlencode($temporarySignedUrl);
 
-        // 触发通知
         $this->notify(new CustomVerifyEmailNotification($url));
     }
 
     public function isSuperAdmin(): bool
     {
         $adminEmailsString = env('SUPER_ADMIN_EMAILS', '');
+        $adminEmails = array_filter(array_map('trim', explode(',', $adminEmailsString)));
 
-        // 🎯 核心修复：使用 array_map('trim', ...) 杀掉所有看不见的空格
-        $adminEmails = array_map('trim', explode(',', $adminEmailsString));
-
-        return $this->role === 'ADMIN' && in_array($this->email, $adminEmails);
+        return $this->role === 'ADMIN' && in_array($this->email, $adminEmails, true);
     }
 }
