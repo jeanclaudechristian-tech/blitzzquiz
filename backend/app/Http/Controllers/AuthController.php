@@ -39,7 +39,6 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->input('role', 'STUDENT'),
             'education_level' => $request->education_level,
-            'is_disabled' => false,
         ]);
 
         event(new Registered($user));
@@ -191,7 +190,6 @@ class AuthController extends Controller
             'role' => $request->role,
             'education_level' => $request->education_level,
             'email_verified_at' => now(),
-            'is_disabled' => false,
         ]);
 
         $token = $user->createToken('quiz-token')->plainTextToken;
