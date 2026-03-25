@@ -75,6 +75,7 @@ let headerRafId = null;
 const sortBy = ref('recent');
 const selectedLevel = ref('Tous');
 const selectedCategory = ref(route.query.category || '');
+const catalogueSearch = ref('');
 
 // 🎯 FIX: Changement de Cégep par "Collégial"
 const levels = ['Tous', 'Primaire', 'Secondaire', 'Collégial', 'Université'];
@@ -215,6 +216,7 @@ watch(() => route.query.category, (newCat) => { selectedCategory.value = newCat 
 watch(() => route.query.scope, () => { loadQuizzes(); });
 
 const filteredQuizzes = computed(() => {
+    const search = catalogueSearch.value.trim().toLowerCase();
     let result = quizzes.value.filter((q) => {
         const matchCat = !selectedCategory.value || String(q.category).toLowerCase() === selectedCategory.value.toLowerCase();
 
@@ -230,10 +232,46 @@ const filteredQuizzes = computed(() => {
             matchLvl = dbLevel === selectedLevel.value.toLowerCase();
         }
 
-        return matchCat && matchLvl;
+        const title = String(q.titre || '').toLowerCase();
+        const category = String(q.category || '').toLowerCase();
+        const code = String(q.code_quiz || '').toLowerCase();
+        const matchSearch = !search
+            || title.includes(search)
+            || category.includes(search)
+            || code.includes(search);
+
+        return matchCat && matchLvl && matchSearch;
     });
     return sortBy.value === 'recent' ? result.slice().reverse() : result;
 });
+
+const catalogueSuggestions = computed(() => {
+    const search = catalogueSearch.value.trim().toLowerCase();
+    if (!search) return [];
+
+    const scoreQuiz = (quiz) => {
+        const title = String(quiz.titre || '').toLowerCase();
+        const category = String(quiz.category || '').toLowerCase();
+        const code = String(quiz.code_quiz || '').toLowerCase();
+        if (title.startsWith(search)) return 3;
+        if (title.includes(search)) return 2;
+        if (category.includes(search) || code.includes(search)) return 1;
+        return 0;
+    };
+
+    return quizzes.value
+        .map((quiz) => ({ quiz, score: scoreQuiz(quiz) }))
+        .filter((entry) => entry.score > 0)
+        .sort((a, b) => b.score - a.score || String(a.quiz.titre).localeCompare(String(b.quiz.titre)))
+        .slice(0, 6)
+        .map((entry) => entry.quiz);
+});
+
+const showSuggestions = computed(() => catalogueSearch.value.trim().length >= 1);
+
+const applySuggestion = (quiz) => {
+    catalogueSearch.value = quiz.titre || '';
+};
 
 const dynamicTitle = computed(() => {
     if (scopeMine.value) {
@@ -324,6 +362,32 @@ onUnmounted(() => {
                             <span class="material-symbols-outlined">add</span>
                             Nouveau quiz
                         </button>
+                    </div>
+                    <div class="catalogue-search-wrap">
+                        <div class="catalogue-search-box">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                            <input
+                                v-model="catalogueSearch"
+                                type="text"
+                                placeholder="Rechercher un quiz..."
+                                class="catalogue-search-input"
+                            />
+                        </div>
+                        <div v-if="showSuggestions" class="catalogue-suggestions">
+                            <button
+                                v-for="quiz in catalogueSuggestions"
+                                :key="`suggest-${quiz.id}`"
+                                type="button"
+                                class="suggestion-item"
+                                @click="applySuggestion(quiz)"
+                            >
+                                <span class="suggestion-title">{{ quiz.titre }}</span>
+                                <span class="suggestion-meta">{{ quiz.category }}</span>
+                            </button>
+                            <p v-if="catalogueSuggestions.length === 0" class="suggestion-empty">
+                                Aucun quiz trouvé pour "{{ catalogueSearch }}"
+                            </p>
+                        </div>
                     </div>
                 </header>
 

@@ -185,6 +185,107 @@
     margin-bottom: 40px;
 }
 
+.catalogue-search-wrap {
+    margin-top: 18px;
+    position: relative;
+    max-width: 620px;
+}
+
+.catalogue-search-box {
+    position: relative;
+}
+
+.catalogue-search-input {
+    width: 100%;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px 12px 44px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111111;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background: #ffffff;
+}
+
+.catalogue-search-input:focus {
+    border-color: #00a3ff;
+    box-shadow: 0 0 0 4px rgba(0, 163, 255, 0.1);
+}
+
+.catalogue-search-box .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+.catalogue-suggestions {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+    overflow: hidden;
+}
+
+.suggestion-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    background: #ffffff;
+    text-align: left;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.2s ease;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: #f8fbff;
+}
+
+.suggestion-title {
+    color: #111111;
+    font-size: 0.92rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.suggestion-meta {
+    color: #00a3ff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.suggestion-empty {
+    margin: 0;
+    padding: 14px;
+    color: #6b7280;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 .anton-title {
     font-family: 'Anton', sans-serif;
     font-size: 4.5rem;
@@ -430,6 +531,10 @@
 
     .anton-title {
         font-size: 2.8rem;
+    }
+
+    .catalogue-search-wrap {
+        max-width: 100%;
     }
 
     .grid-3 {
