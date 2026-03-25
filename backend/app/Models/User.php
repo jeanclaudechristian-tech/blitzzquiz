@@ -88,4 +88,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
         return $this->role === 'ADMIN' && in_array($this->email, $adminEmails, true);
     }
+
+    public function setIsDisabledAttribute($value)
+    {
+        // filter_var 可以把 '0', 0, 'false', false 等都正确转为真正的布尔 bool
+        $this->attributes['is_disabled'] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
 }
