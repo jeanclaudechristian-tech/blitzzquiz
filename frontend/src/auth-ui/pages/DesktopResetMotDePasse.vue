@@ -79,7 +79,7 @@ export default {
         });
 
         // 3. 成功后跳转
-        this.$router.push('/succes');
+        this.$router.push('/connexion');
       } catch (error) {
         console.error(error);
         alert(error.response?.data?.message || "Erreur lors de la réinitialisation");
