@@ -116,4 +116,87 @@ class AdminUserController extends Controller
             'code' => 200,
         ];
     }
+
+    public function destroy($id)
+   {
+       $target = User::findOrFail($id);
+       $auth = $this->authorizeAction(request()->user(), $target);
+
+       if (!$auth['status']) {
+           return response()->json(['message' => $auth['message']], $auth['code']);
+       }
+
+       $target->delete();
+
+       return response()->json([
+           'message' => 'User deleted successfully'
+       ]);
+   }
+
+   public function resetPassword($id)
+   {
+       $target = User::findOrFail($id);
+       $auth = $this->authorizeAction(request()->user(), $target);
+
+       if (!$auth['status']) {
+           return response()->json(['message' => $auth['message']], $auth['code']);
+       }
+
+       $newPassword = Str::random(12);
+       $target->password = Hash::make($newPassword);
+       $target->save();
+
+       // 触发邮件通知
+       $target->notify(new AdminResetPasswordNotification($newPassword));
+
+       return response()->json([
+           'message' => 'Password reset',
+           'data' => [
+               'id' => $target->id,
+               'temporary_password' => $newPassword,
+           ],
+       ]);
+   }
+   public function inviteAdmin(Request $request)
+   {
+       $request->validate([
+           'email' => 'required|email',
+       ]);
+
+       $email = $request->email;
+       $user = User::where('email', $email)->first();
+       $temporaryPassword = null;
+       $isNewUser = false;
+
+       if ($user) {
+           // 情况 A：用户已存在，直接提升权限
+           $user->role = 'ADMIN';
+           $user->save();
+       } else {
+           // 情况 B：用户不存在，创建新账号
+           $isNewUser = true;
+           $temporaryPassword = Str::random(12); // 生成12位随机密码
+
+           // 截取邮箱前缀作为默认昵称
+           $nickname = explode('@', $email)[0];
+
+           $user = User::create([
+               'email' => $email,
+               'nickname' => $nickname,
+               'password' => Hash::make($temporaryPassword),
+               'role' => 'ADMIN',
+               'is_disabled' => false,
+           ]);
+       }
+
+       $user->notify(new AdminInvitationNotification($temporaryPassword, $isNewUser));
+
+       return response()->json([
+           'message' => $isNewUser ? 'Admin account created and invitation sent' : 'User promoted to admin and notified',
+           'data' => [
+               'email' => $user->email,
+               'role' => $user->role
+           ]
+       ]);
+   }
 }
