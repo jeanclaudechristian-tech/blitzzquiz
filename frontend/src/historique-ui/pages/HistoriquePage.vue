@@ -51,7 +51,22 @@
         </div>
       </div>
 
-      <div v-if="filteredHistory.length" class="history-list">
+      <div v-if="isLoadingHistory" class="loading-state">
+        <div class="loading-spinner"></div>
+        <h2>Chargement en cours...</h2>
+        <p>Récupération de votre historique de quiz.</p>
+      </div>
+
+      <div v-else-if="loadError" class="empty-state">
+        <span class="material-symbols-outlined icon-huge">error</span>
+        <h2>Chargement impossible</h2>
+        <p>{{ loadError }}</p>
+        <button type="button" class="blitzz-btn" @click="loadHistory">
+          Réessayer
+        </button>
+      </div>
+
+      <div v-else-if="filteredHistory.length" class="history-list">
         <div
           v-for="(attempt, index) in filteredHistory"
           :key="attempt.id"
@@ -147,6 +162,8 @@ export default {
       isDropdownOpen: false, 
       showQuizModal: false,
       selectedQuizId: null,
+      isLoadingHistory: false,
+      loadError: '',
     }
   },
   computed: {
@@ -178,6 +195,8 @@ export default {
       this.sortHistory();
     },
     async loadHistory() {
+      this.isLoadingHistory = true
+      this.loadError = ''
       try {
         const { data } = await api.get('/me/results')
         this.history = (Array.isArray(data) ? data : []).map((item) => ({
@@ -190,6 +209,9 @@ export default {
       } catch (e) {
         console.error('Erreur chargement historique', e.response?.data || e)
         this.history = []
+        this.loadError = "Impossible de charger l'historique pour le moment."
+      } finally {
+        this.isLoadingHistory = false
       }
       this.sortHistory()
     },
@@ -329,6 +351,20 @@ export default {
 .empty-state p { color: #666; margin: 0 0 24px 0; }
 .blitzz-btn { background: #00A3FF; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
 .blitzz-btn:hover { background: #0082cc; }
+
+.loading-state { text-align: center; padding: 80px 20px; }
+.loading-state h2 { font-size: 1.8rem; font-weight: 800; color: #111; margin: 0 0 10px 0; }
+.loading-state p { color: #666; margin: 0; }
+.loading-spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #00A3FF;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: history-spin 0.9s linear infinite;
+}
+@keyframes history-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
   .controls-bar { flex-direction: column; align-items: stretch; }
