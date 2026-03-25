@@ -24,6 +24,57 @@ class GroupController extends Controller
         }
     }
 
+    private function compareAttempts(\App\Models\Result $left, \App\Models\Result $right): int
+    {
+        $scoreComparison = (int) ($right->score ?? 0) <=> (int) ($left->score ?? 0);
+        if ($scoreComparison !== 0) {
+            return $scoreComparison;
+        }
+
+        $leftDuration = $left->duration_seconds;
+        $rightDuration = $right->duration_seconds;
+        $leftHasDuration = $leftDuration !== null;
+        $rightHasDuration = $rightDuration !== null;
+
+        if ($leftHasDuration && $rightHasDuration) {
+            $durationComparison = (int) $leftDuration <=> (int) $rightDuration;
+            if ($durationComparison !== 0) {
+                return $durationComparison;
+            }
+        } elseif ($leftHasDuration !== $rightHasDuration) {
+            return $leftHasDuration ? -1 : 1;
+        }
+
+        $leftTimestamp = $this->resolveAttemptTimestamp($left);
+        $rightTimestamp = $this->resolveAttemptTimestamp($right);
+
+        if ($leftTimestamp !== $rightTimestamp) {
+            return $leftTimestamp <=> $rightTimestamp;
+        }
+
+        return (int) ($left->id ?? 0) <=> (int) ($right->id ?? 0);
+    }
+
+    private function resolveAttemptTimestamp(\App\Models\Result $attempt): int
+    {
+        $candidates = [$attempt->date_tentative, $attempt->created_at];
+
+        foreach ($candidates as $candidate) {
+            if ($candidate instanceof \DateTimeInterface) {
+                return $candidate->getTimestamp();
+            }
+
+            if (is_string($candidate) && $candidate !== '') {
+                $timestamp = strtotime($candidate);
+                if ($timestamp !== false) {
+                    return $timestamp;
+                }
+            }
+        }
+
+        return PHP_INT_MAX;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -417,8 +468,6 @@ class GroupController extends Controller
     public function quizRanking(Group $group, \App\Models\Quiz $quiz)
     {
         $userId = Auth::id();
-
-        // 1. 权限鉴定：只有 Owner 和 Member 可以看排名
         $isOwner = ($userId === $group->owner_id);
         $isMember = $group->members()->where('user_id', $userId)->exists();
 
@@ -426,23 +475,34 @@ class GroupController extends Controller
             return response()->json(['error' => 'Accès refusé'], 403);
         }
 
-        // 2. 收集有资格参与排名的人员名单（群成员 + 也许还有群主）
         $memberIds = $group->members()->pluck('users.id')->push($group->owner_id)->unique();
 
-        // 3. 查询 Result 表，获取最高分排名
-        // 假设你的 Result 模型里有 public function user() 关联
         $results = \App\Models\Result::with('user:id,nickname,avatar')
             ->where('quiz_id', $quiz->id)
             ->whereIn('user_id', $memberIds)
             ->get();
 
-        // 4. 数据清洗：如果学生可以多次答题，我们只取他分数最高的那一次作为排名依据
-        $ranking = $results->groupBy('user_id')->map(function ($userResults) {
-            // 选出该用户分数最高的那条记录
-            return $userResults->sortByDesc('score')->first();
-        })
-        ->sortByDesc('score') // 全局按最高分降序
-        ->values(); // 重置数组索引
+        $resultsByUser = $results->groupBy('user_id');
+
+        $bestResults = $resultsByUser
+            ->map(function ($userResults) {
+                return $userResults
+                    ->sort(fn ($left, $right) => $this->compareAttempts($left, $right))
+                    ->first();
+            })
+            ->filter();
+
+        $ranking = $bestResults
+            ->sort(fn ($left, $right) => $this->compareAttempts($left, $right))
+            ->values()
+            ->map(function ($result) use ($resultsByUser) {
+                $result->setAttribute(
+                    'attempts_count',
+                    (int) ($resultsByUser->get($result->user_id)?->count() ?? 1)
+                );
+
+                return $result;
+            });
 
         return response()->json($ranking);
     }

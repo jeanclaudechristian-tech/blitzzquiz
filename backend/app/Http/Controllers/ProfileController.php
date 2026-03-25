@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SupabaseStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -50,9 +51,57 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function uploadAvatar(Request $request, SupabaseStorageService $supabaseStorage)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'avatar' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+        ]);
+
+        if (!$supabaseStorage->enabled()) {
+            return response()->json([
+                'message' => 'Le stockage de photos de profil nest pas configure.',
+            ], 503);
+        }
+
+        try {
+            $avatarUrl = $supabaseStorage->uploadUploadedFile($validated['avatar']);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'Erreur lors du televersement de la photo de profil.',
+            ], 422);
+        }
+
+        $previousAvatar = $user->avatar;
+        $user->avatar = $avatarUrl;
+        $user->save();
+
+        if ($previousAvatar && $previousAvatar !== $avatarUrl && $supabaseStorage->isManagedPublicUrl($previousAvatar)) {
+            try {
+                $supabaseStorage->deleteByPublicUrl($previousAvatar);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Photo de profil mise a jour.',
+            'user' => $user,
+        ]);
+    }
+
     public function password(Request $request)
     {
         $user = $request->user();
+
+        if (!empty($user->google_id) || !empty($user->apple_id)) {
+            return response()->json([
+                'message' => 'Ce compte utilise une authentification externe (Google/Apple).',
+            ], 403);
+        }
 
         $validated = $request->validate([
             'current_password' => ['required', 'string'],

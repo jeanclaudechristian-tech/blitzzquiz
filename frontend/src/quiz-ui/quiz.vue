@@ -173,6 +173,7 @@ export default {
       inReview: false,
       answers: [],
       finalResult: null,
+      startedAtMs: null,
       loading: false,
       error: '',
       scrollLockY: 0,
@@ -243,6 +244,7 @@ export default {
           this.quizLoaded = true;
           this.quizState = 'lobby';
           this.answers = new Array(this.questions.length).fill(null);
+          this.startedAtMs = null;
         } else {
           this.error = 'Ce quiz ne contient pas encore de questions.';
         }
@@ -402,14 +404,22 @@ export default {
 
       const correct = Number(score.toFixed(2));
       const percent = total ? Math.round((score / total) * 100) : 0;
+      const durationSeconds = Number.isFinite(this.startedAtMs)
+        ? Math.max(0, Math.round((Date.now() - this.startedAtMs) / 1000))
+        : null;
       this.finalResult = {
         total,
         correct,
         percent,
+        durationSeconds,
       };
 
       try {
-        await api.post(`/quizzes/${id}/results`, { score: percent });
+        const payload = { score: percent };
+        if (durationSeconds !== null) {
+          payload.duration_seconds = durationSeconds;
+        }
+        await api.post(`/quizzes/${id}/results`, payload);
       } catch (e) {
         console.error('Erreur enregistrement resultat', e);
       }
@@ -420,6 +430,7 @@ export default {
       this.quizState = 'result';
     },
     startQuizFromLobby() {
+      this.startedAtMs = Date.now();
       this.quizState = 'playing';
     },
     replayQuiz() {
@@ -429,6 +440,7 @@ export default {
       this.showFeedback = false;
       this.inReview = false;
       this.finalResult = null;
+      this.startedAtMs = Date.now();
       this.quizState = 'playing';
     },
     closeModal(useRouteFallback = true) {

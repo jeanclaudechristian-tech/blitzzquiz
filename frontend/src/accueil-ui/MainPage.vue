@@ -21,7 +21,15 @@
         <main v-else class="welcome-section">
           <div class="welcome-container welcome-remodel">
             <div class="welcome-avatar" aria-hidden="true">
+              <img
+                v-if="userAvatar"
+                :src="userAvatar"
+                alt="Photo de profil"
+                class="welcome-avatar-image"
+                @error="handleAvatarError"
+              />
               <svg
+                v-else
                 class="welcome-avatar-icon"
                 xmlns="http://www.w3.org/2000/svg"
                 width="52"
@@ -146,9 +154,13 @@ export default {
     return {
       isLoggedIn: false,
       userName: '',
+      userAvatar: '',
     }
   },
   methods: {
+    handleAvatarError() {
+      this.userAvatar = ''
+    },
     checkUserAuth() {
       const token = localStorage.getItem('token')
       const userStr = localStorage.getItem('user')
@@ -158,19 +170,37 @@ export default {
         if (userStr) {
           try {
             const userObj = JSON.parse(userStr)
-            this.userName = userObj.username || userObj.email?.split('@')[0] || 'Étudiant'
+            this.userAvatar = userObj.avatar || ''
+            this.userName =
+              userObj.nickname ||
+              userObj.name ||
+              userObj.username ||
+              userObj.nom ||
+              userObj.email?.split('@')[0] ||
+              'Étudiant'
           } catch (e) {
+            this.userAvatar = ''
             this.userName = 'Étudiant'
           }
+        } else {
+          this.userAvatar = ''
+          this.userName = 'Ã‰tudiant'
         }
       } else {
         this.isLoggedIn = false
         this.userName = ''
+        this.userAvatar = ''
       }
     },
   },
   mounted() {
     this.checkUserAuth()
+    window.addEventListener('user-updated', this.checkUserAuth)
+    window.addEventListener('storage', this.checkUserAuth)
+  },
+  beforeUnmount() {
+    window.removeEventListener('user-updated', this.checkUserAuth)
+    window.removeEventListener('storage', this.checkUserAuth)
   },
   // Met à jour "Bonjour X" quand tu reviens de la page de connexion.
   watch: {
@@ -236,6 +266,7 @@ export default {
   width: 236px;
   height: 236px;
   border-radius: 999px;
+  overflow: hidden;
   display: grid;
   place-items: center;
   color: #1f2937;
@@ -247,6 +278,13 @@ export default {
 .welcome-avatar-icon {
   width: 128px;
   height: 128px;
+}
+
+.welcome-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .welcome-title-remodel {

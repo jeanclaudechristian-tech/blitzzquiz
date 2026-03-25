@@ -105,6 +105,7 @@ export default {
       showFeedback: false,
       inReview: false,
       answers: [],
+      startedAtMs: null,
       loading: false,
       error: '',
       finishing: false,
@@ -140,6 +141,7 @@ export default {
         this.$router.push('/etudiant')
       } else {
         this.quizLoaded = true
+        this.startedAtMs = Date.now()
       }
     },
     choiceText(opt) {
@@ -199,18 +201,22 @@ export default {
       })
 
       const percent = total ? Math.round((correct / total) * 100) : 0
+      const durationSeconds = Number.isFinite(this.startedAtMs)
+        ? Math.max(0, Math.round((Date.now() - this.startedAtMs) / 1000))
+        : null
       const quizId = this.$route.params.id
 
       const result = {
         total,
         correct,
         percent,
+        durationSeconds,
       }
 
       try {
-        await api.post(`/quizzes/${quizId}/results`, {
-          score: percent,
-        })
+        const payload = { score: percent }
+        if (durationSeconds !== null) payload.duration_seconds = durationSeconds
+        await api.post(`/quizzes/${quizId}/results`, payload)
       } catch (e) {
         console.error('Erreur enregistrement résultat', e.response?.data || e)
       }

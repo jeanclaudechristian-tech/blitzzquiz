@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me', [ProfileController::class, 'me']);
     Route::patch('/me', [ProfileController::class, 'update']);
+    Route::post('/me/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::patch('/me/password', [ProfileController::class, 'password']);
     Route::put('/auth/password', [ProfileController::class, 'password']);
 

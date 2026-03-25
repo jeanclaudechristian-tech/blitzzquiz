@@ -91,6 +91,13 @@
   border: 1px solid rgba(0, 163, 255, 0.14);
 }
 
+.hero-avatar-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 .hero-avatar {
   width: 72px;
   height: 72px;
@@ -103,6 +110,27 @@
   letter-spacing: 0.08em;
   color: #ffffff;
   background: linear-gradient(135deg, var(--color-dark, #1a1a1a), #3b4451);
+  overflow: hidden;
+}
+
+.hero-avatar span {
+  line-height: 1;
+}
+
+.hero-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-input-hidden {
+  display: none;
+}
+
+.btn-avatar {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 0.82rem;
 }
 
 .hero-summary-copy {
@@ -178,6 +206,30 @@
   line-height: 1;
   letter-spacing: 0.03em;
   color: var(--color-dark, #1a1a1a);
+}
+
+.card-header h2.is-striked {
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+  text-decoration-color: rgba(180, 35, 24, 0.7);
+  opacity: 0.78;
+}
+
+.profil-card.is-password-disabled {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.08), rgba(148, 163, 184, 0.02));
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.password-lock-note {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #9a3412;
+}
+
+.btn-primary.btn-locked {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
 }
 
 .profil-fields {

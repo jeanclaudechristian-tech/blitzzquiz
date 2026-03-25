@@ -14,6 +14,7 @@ class Result extends Model
         'user_id',
         'quiz_id',
         'score',
+        'duration_seconds',
         'date_tentative',
     ];
 

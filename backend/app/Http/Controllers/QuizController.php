@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class QuizController extends Controller
@@ -553,14 +554,24 @@ class QuizController extends Controller
     {
         $user = Auth::user();
 
-        $data = $request->validate(['score' => 'required|integer|min:0|max:100']);
+        $data = $request->validate([
+            'score' => 'required|integer|min:0|max:100',
+            'duration_seconds' => 'nullable|integer|min:0|max:86400',
+        ]);
 
-        $result = Result::create([
+        $payload = [
             'user_id' => $user->id,
             'quiz_id' => $quiz->id,
             'score' => $data['score'],
             'date_tentative' => now(),
-        ]);
+        ];
+
+        // Backward compatible: still saves score even if migration not yet applied.
+        if (Schema::hasColumn('results', 'duration_seconds') && array_key_exists('duration_seconds', $data)) {
+            $payload['duration_seconds'] = $data['duration_seconds'];
+        }
+
+        $result = Result::create($payload);
 
         $quiz->increment('plays_count');
 

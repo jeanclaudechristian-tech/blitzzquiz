@@ -191,6 +191,11 @@ const routes = [
     name: "etudiant-profil",
     component: EtudiantProfil,
   },
+  {
+    path: "/profil",
+    name: "profil",
+    component: EtudiantProfil,
+  },
 ];
 
 const router = createRouter({

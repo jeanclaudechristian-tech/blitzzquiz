@@ -20,7 +20,33 @@
         </div>
 
         <aside class="hero-summary">
-          <div class="hero-avatar">{{ initials }}</div>
+          <div class="hero-avatar-wrapper">
+            <div class="hero-avatar">
+              <img
+                v-if="avatarUrl"
+                :src="avatarUrl"
+                alt="Photo de profil"
+                class="hero-avatar-image"
+                @error="avatarUrl = ''"
+              />
+              <span v-else>{{ initials }}</span>
+            </div>
+            <input
+              ref="avatarInput"
+              class="avatar-input-hidden"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              @change="handleAvatarPicked"
+            />
+            <button
+              class="btn-secondary btn-avatar"
+              type="button"
+              :disabled="uploadingAvatar"
+              @click="openAvatarPicker"
+            >
+              {{ uploadingAvatar ? 'Upload...' : 'Changer la photo' }}
+            </button>
+          </div>
 
           <div class="hero-summary-copy">
             <span class="summary-overline">Compte actif</span>
@@ -92,12 +118,18 @@
           </div>
         </section>
 
-        <section class="profil-card panel-surface">
+        <section
+          class="profil-card panel-surface"
+          :class="{ 'is-password-disabled': isPasswordChangeDisabled }"
+        >
           <header class="card-header">
             <p class="card-kicker">Securite</p>
-            <h2>Changer le mot de passe</h2>
+            <h2 :class="{ 'is-striked': isPasswordChangeDisabled }">Changer le mot de passe</h2>
             <p class="card-description">
               Utilise un mot de passe unique pour proteger ton compte.
+            </p>
+            <p v-if="isPasswordChangeDisabled" class="password-lock-note">
+              Mot de passe gere par {{ authProviderLabel }}. Modification indisponible.
             </p>
           </header>
 
@@ -107,6 +139,7 @@
               <InputMotDePasse
                 v-model="passwordForm.current_password"
                 placeholder="Mot de passe actuel"
+                :disabled="isPasswordChangeDisabled"
               />
             </div>
 
@@ -115,6 +148,7 @@
               <InputMotDePasse
                 v-model="passwordForm.new_password"
                 placeholder="Nouveau mot de passe"
+                :disabled="isPasswordChangeDisabled"
               />
             </div>
 
@@ -123,6 +157,7 @@
               <InputConfirmerMotDePasse
                 v-model="passwordForm.new_password_confirmation"
                 placeholder="Confirmer le nouveau mot de passe"
+                :disabled="isPasswordChangeDisabled"
               />
             </div>
           </div>
@@ -136,7 +171,8 @@
             <button
               class="btn-primary"
               type="button"
-              :disabled="savingPassword"
+              :class="{ 'btn-locked': isPasswordChangeDisabled }"
+              :disabled="savingPassword || isPasswordChangeDisabled"
               @click="updatePassword"
             >
               {{
@@ -191,6 +227,10 @@ export default {
         new_password: '',
         new_password_confirmation: '',
       },
+      avatarUrl: '',
+      uploadingAvatar: false,
+      hasGoogleAuth: false,
+      hasAppleAuth: false,
       savingProfile: false,
       savingPassword: false,
       message: '',
@@ -217,7 +257,17 @@ export default {
     educationLevelLabel() {
       return EDUCATION_LEVEL_LABELS[this.form.education_level] || 'A definir'
     },
+    isPasswordChangeDisabled() {
+      return this.hasGoogleAuth || this.hasAppleAuth
+    },
+    authProviderLabel() {
+      if (this.hasGoogleAuth && this.hasAppleAuth) return 'Google/Apple'
+      if (this.hasGoogleAuth) return 'Google'
+      if (this.hasAppleAuth) return 'Apple'
+      return 'OAuth'
+    },
     passwordStatusLabel() {
+      if (this.isPasswordChangeDisabled) return `Gere par ${this.authProviderLabel}`
       if (this.savingPassword) return 'Mise a jour'
       return 'Active'
     },
@@ -232,12 +282,82 @@ export default {
       this.form.education_level = this.normalizeEducationLevel(
         user.education_level || ''
       )
+      this.avatarUrl = user.avatar || ''
+      this.hasGoogleAuth = Boolean(user.google_id)
+      this.hasAppleAuth = Boolean(user.apple_id)
     } catch (error) {
       this.error = 'Impossible de charger le profil'
       console.error(error)
     }
   },
   methods: {
+    openAvatarPicker() {
+      this.$refs.avatarInput?.click()
+    },
+    mergeUserInStorage(updatedUser) {
+      if (!updatedUser) return
+
+      let currentUser = {}
+      try {
+        const rawUser = localStorage.getItem('user')
+        currentUser = rawUser ? JSON.parse(rawUser) : {}
+      } catch {
+        currentUser = {}
+      }
+
+      const mergedUser = {
+        ...currentUser,
+        ...updatedUser,
+      }
+      localStorage.setItem('user', JSON.stringify(mergedUser))
+      window.dispatchEvent(new Event('user-updated'))
+    },
+    async handleAvatarPicked(event) {
+      const input = event?.target
+      const file = input?.files?.[0]
+      if (!file) return
+
+      const maxBytes = 5 * 1024 * 1024
+      if (file.size > maxBytes) {
+        this.error = 'Image trop lourde (max 5 MB).'
+        this.message = ''
+        if (input) input.value = ''
+        return
+      }
+
+      this.uploadingAvatar = true
+      this.message = ''
+      this.error = ''
+
+      try {
+        const formData = new FormData()
+        formData.append('avatar', file)
+
+        const { data } = await axios.post('/me/avatar', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+
+        const updatedUser = data?.user
+        if (updatedUser) {
+          this.avatarUrl = updatedUser.avatar || ''
+          this.form.email = updatedUser.email || this.form.email
+          this.form.username = updatedUser.nickname || updatedUser.username || this.form.username
+          this.form.education_level = this.normalizeEducationLevel(
+            updatedUser.education_level || this.form.education_level
+          )
+          this.mergeUserInStorage(updatedUser)
+        }
+
+        this.message = data?.message || 'Photo de profil mise a jour'
+      } catch (error) {
+        this.error =
+          error.response?.data?.message ||
+          'Erreur lors du televersement de la photo de profil'
+      } finally {
+        this.uploadingAvatar = false
+        if (input) input.value = ''
+      }
+    },
     async updateProfile() {
       this.savingProfile = true
       this.message = ''
@@ -251,6 +371,11 @@ export default {
         }
 
         const { data } = await axios.patch('/me', payload)
+        const updatedUser = data?.user
+        if (updatedUser) {
+          this.avatarUrl = updatedUser.avatar || this.avatarUrl
+          this.mergeUserInStorage(updatedUser)
+        }
         this.message = data.message || 'Profil mis a jour'
       } catch (error) {
         this.error =
@@ -261,6 +386,12 @@ export default {
       }
     },
     async updatePassword() {
+      if (this.isPasswordChangeDisabled) {
+        this.message = ''
+        this.error = `Ce compte utilise ${this.authProviderLabel}. Le mot de passe se gere chez ${this.authProviderLabel}.`
+        return
+      }
+
       this.savingPassword = true
       this.message = ''
       this.error = ''

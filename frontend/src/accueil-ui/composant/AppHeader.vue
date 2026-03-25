@@ -109,8 +109,15 @@
           <button class="auth-link" @click="$router.push('/inscription')">S'inscrire</button>
         </template>
         <template v-else>
-          <div class="avatar" @click="$router.push('/etudiant/profil')" style="cursor: pointer;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          <div class="avatar" @click="$router.push('/profil')" style="cursor: pointer;">
+            <img
+              v-if="userAvatar"
+              :src="userAvatar"
+              alt="Avatar"
+              class="avatar-img"
+              @error="handleAvatarError"
+            />
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
@@ -155,6 +162,7 @@ const userRole = ref('');
 const showGuestModal = ref(false);
 const isCodeModalOpen = ref(false);
 const isSuper = ref(false);
+const userAvatar = ref('');
 
 const showQuizModal = ref(false);
 const selectedQuizId = ref(null);
@@ -221,23 +229,34 @@ const goToQuiz = (quiz) => {
   showQuizModal.value = true;
 };
 
+const parseStoredUser = () => {
+  const raw = localStorage.getItem('user');
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
 const checkAuthStatus = () => {
   const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const userObj = parseStoredUser();
   isLoggedIn.value = !!token;
-  if (userStr) {
-    try {
-      const userObj = JSON.parse(userStr);
-      userRole.value = userObj.role;
-      isSuper.value = userObj.is_super === true;
-    } catch (e) {
-      userRole.value = '';
-      isSuper.value = false;
-    }
+  if (userObj) {
+    userRole.value = userObj.role;
+    isSuper.value = userObj.is_super === true;
+    userAvatar.value = userObj.avatar || '';
   } else {
     userRole.value = '';
     isSuper.value = false;
+    userAvatar.value = '';
   }
+};
+
+const handleAvatarError = () => {
+  userAvatar.value = '';
 };
 
 const handleLogout = async () => {
@@ -355,6 +374,8 @@ onMounted(() => {
   window.addEventListener('scroll', handleScroll);
   window.addEventListener('click', closeAll);
   window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('user-updated', checkAuthStatus);
+  window.addEventListener('storage', checkAuthStatus);
 });
 
 onUnmounted(() => {
@@ -363,6 +384,8 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
   window.removeEventListener('click', closeAll);
   window.removeEventListener('mousemove', handleMouseMove);
+  window.removeEventListener('user-updated', checkAuthStatus);
+  window.removeEventListener('storage', checkAuthStatus);
 });
 </script>
 

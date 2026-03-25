@@ -173,6 +173,7 @@ const mapQuiz = (q) => {
     return {
         id: q.id,
         titre: q.titre,
+        code_quiz: q.code_quiz || '',
         category: catName || 'Général',
         image: resolveQuizImage(q),
         education_level: q.education_level || 'Tous',
@@ -366,7 +367,10 @@ onUnmounted(() => {
                                         <span>{{ quiz.category }}</span>
                                     </div>
                                 </div>
-                                <span class="row-titre-text">{{ quiz.titre }}</span>
+                                <div class="row-title-meta">
+                                    <span class="row-titre-text">{{ quiz.titre }}</span>
+                                    <span class="row-code-text">Code: <strong>{{ quiz.code_quiz || '------' }}</strong></span>
+                                </div>
                             </div>
 
                             <!-- Visibilité -->
