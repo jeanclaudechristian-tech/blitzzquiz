@@ -12,7 +12,7 @@ use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Middleware\AdminOnly;
 use App\Http\Middleware\CheckSuperAdmin;
-
+use App\Http\Middleware\EnsureUserIsNotDisabled;
 // ==========================================
 //  ROUTES PUBLIQUES
 // ==========================================
@@ -44,7 +44,7 @@ Route::get('/categories', function () {
 // ==========================================
 // ROUTES PROTÉGÉES
 // ==========================================
-Route::middleware(['auth:sanctum', 'not.disabled'])->group(function () {
+Route::middleware(['auth:sanctum', EnsureUserIsNotDisabled ::class])->group(function () {
 
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
