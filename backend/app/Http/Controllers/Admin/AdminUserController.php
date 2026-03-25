@@ -29,9 +29,10 @@ class AdminUserController extends Controller
             });
         }
 
-        return response()->json(
-            $query->orderBy('id', 'desc')->paginate(20)
-        );
+
+        return response()->json([
+            'data' => $query->orderByDesc('id')->paginate(20),
+        ]);
     }
 
     public function disable($id)
@@ -55,7 +56,6 @@ class AdminUserController extends Controller
                 ], $auth['code']);
             }
 
-
             DB::statement(
                 'UPDATE users SET is_disabled = NOT is_disabled, updated_at = NOW() WHERE id = ?',
                 [$target->id]
@@ -63,11 +63,15 @@ class AdminUserController extends Controller
 
             $target->refresh();
 
+            if ((bool) $target->is_disabled) {
+                $target->tokens()->delete();
+            }
+
             return response()->json([
                 'message' => $target->is_disabled ? 'User disabled' : 'User enabled',
                 'data' => [
                     'id' => $target->id,
-                    'is_disabled' => $target->is_disabled,
+                    'is_disabled' => (bool) $target->is_disabled,
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -80,9 +84,6 @@ class AdminUserController extends Controller
         }
     }
 
-    /**
-     * 权限检查
-     */
     private function authorizeAction($me, $target): array
     {
         if ($me->id === $target->id) {
