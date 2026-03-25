@@ -631,4 +631,22 @@ class QuizController extends Controller
             ], 500);
         }
     }
+
+    public function allPublic(Request $request): JsonResponse
+    {
+        try {
+            $quizzes = Quiz::with('categoryRelation')
+                ->withCount('questions')
+                ->whereRaw('is_public IS TRUE') // 确保兼容 Postgres 布尔类型
+                ->latest()
+                ->get();
+
+            return response()->json($quizzes);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erreur lors de la récupération des quiz publics',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

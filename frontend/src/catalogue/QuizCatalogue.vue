@@ -198,7 +198,7 @@ const loadQuizzes = async () => {
         } else {
             const token = localStorage.getItem('token');
             const raw = token
-                ? await quizService.list()
+                ? await quizService.listAllPublic()
                 : await quizService.listPublic();
             quizzes.value = raw.map(mapQuiz);
         }

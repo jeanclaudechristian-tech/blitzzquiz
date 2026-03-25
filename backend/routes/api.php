@@ -36,6 +36,7 @@ Route::post('/email/resend-verification', [AuthController::class, 'resendVerific
 
 Route::get('/quizzes/public', [QuizController::class, 'publicIndex']);
 Route::get('/quizzes/search', [QuizController::class, 'search']);
+Route::get('/quizzes/all-public', [QuizController::class, 'allPublic']);
 
 Route::get('/categories', function () {
     return response()->json(\App\Models\Category::all());

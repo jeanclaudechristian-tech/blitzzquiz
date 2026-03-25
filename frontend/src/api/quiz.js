@@ -206,4 +206,9 @@ export const quizService = {
 
     return response.data || [];
   },
+
+  async listAllPublic() {
+    const response = await api.get("/quizzes/all-public");
+    return response.data || [];
+  },
 };
