@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Notifications\AdminInvitationNotification;
 use App\Notifications\AdminResetPasswordNotification;
+use Illuminate\Support\Facades\DB;
 
 class AdminUserController extends Controller
 {
