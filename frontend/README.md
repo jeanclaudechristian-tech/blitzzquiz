@@ -11,7 +11,7 @@
 Le module BlizzQuiz Frontend est l'interface utilisateur officielle, optimisée pour la performance sous Vite 7. Le service est désormais déployé sur Vercel pour garantir une accessibilité mondiale et une haute disponibilité sans aucune dépendance matérielle locale.
 
 * **Plateforme d'hébergement :** Vercel Cloud
-* **Point de terminaison :** https://blizzquiz.vercel.app
+* **Point de terminaison :** https://blitzzquiz.vercel.app
 * **Workflow :** Déploiement continu (CI/CD) via GitHub
 
 ---
