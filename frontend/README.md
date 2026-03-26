@@ -22,7 +22,7 @@ L'accès est désormais simplifié : plus besoin de configuration VPN ou de rés
 
 ### Accès Direct au Web
 Ouvrez simplement votre navigateur (Safari, Chrome) sur n'importe quel appareil, que ce soit votre PC ou votre mobile Le Monde :
-**https://blizzquiz.vercel.app**
+**[https://blitzzquiz.vercel.app](https://blitzzquiz.vercel.app/)**
 
 
 
